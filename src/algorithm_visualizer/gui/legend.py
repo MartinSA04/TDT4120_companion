@@ -31,12 +31,16 @@ class Legend(QWidget):
 
     KIND_ROLES: ClassVar[dict[str, list[str]]] = {
         "bars": ["compare", "swap", "pivot", "sorted"],
+        "bubble": ["compare", "swap", "sorted"],
+        "selection": ["pivot", "compare", "sorted"],
+        "insertion": ["pivot", "compare", "sorted"],
+        "quick": ["pivot", "swap", "sorted"],
         "search": ["pivot", "eliminated", "found"],
     }
     ROLE_LABELS: ClassVar[dict[str, str]] = {
         "compare": "comparing",
         "swap": "swapping",
-        "pivot": "pivot / mid",
+        "pivot": "pivot / min / key",
         "sorted": "sorted",
         "eliminated": "eliminated",
         "found": "found",
@@ -56,6 +60,8 @@ class Legend(QWidget):
                 break
             w = item.widget()
             if w is not None:
+                # Detach immediately to stop painting; deleteLater handles cleanup.
+                w.setParent(None)
                 w.deleteLater()
         items: list[tuple[str, QColor]] = [("default", DEFAULT_BAR)]
         for role in self.KIND_ROLES.get(kind, self.KIND_ROLES["bars"]):

@@ -34,11 +34,20 @@ class VariablesPanel(QWidget):
         for name_lbl, val_lbl in self._rows.values():
             self._grid.removeWidget(name_lbl)
             self._grid.removeWidget(val_lbl)
+            # setParent(None) detaches immediately so the widget stops painting.
+            # deleteLater alone leaves the old label visible until the next
+            # event-loop iteration, which causes ghost text on algorithm switch.
+            name_lbl.setParent(None)
+            val_lbl.setParent(None)
             name_lbl.deleteLater()
             val_lbl.deleteLater()
         self._rows.clear()
         self._empty.setVisible(not names)
-        for row, name in enumerate(names):
+        # The empty placeholder lives at row 0 spanning both columns — start
+        # actual variable rows below it so they never overlap when shown.
+        first_row = 1 if names else 0
+        for offset, name in enumerate(names):
+            row = first_row + offset
             name_lbl = QLabel(name)
             name_lbl.setObjectName("varName")
             val_lbl = QLabel("—")
@@ -47,8 +56,7 @@ class VariablesPanel(QWidget):
             self._grid.addWidget(name_lbl, row, 0)
             self._grid.addWidget(val_lbl, row, 1)
             self._rows[name] = (name_lbl, val_lbl)
-        # Push rows to the top
-        self._grid.setRowStretch(max(len(names), 1), 1)
+        self._grid.setRowStretch(first_row + max(len(names), 1), 1)
 
     def set_values(self, values: dict[str, Any]) -> None:
         for name, (_, val_lbl) in self._rows.items():

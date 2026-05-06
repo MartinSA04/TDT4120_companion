@@ -10,8 +10,8 @@ from algorithm_visualizer.core import Algorithm, Step, step
 class BinarySearch(Algorithm):
     name = "Binary Search"
     description = (
-        "Maintain a [lo, hi] window. Inspect the middle element; if it isn't "
-        "the target, eliminate the half that can't contain it. O(log n)."
+        "Maintain a [lo, hi] window. Inspect the middle; if it isn't the target, "
+        "eliminate the half that can't possibly contain it. O(log n)."
     )
     view_kind = "search"
 
@@ -37,17 +37,19 @@ class BinarySearch(Algorithm):
         target = data[(n * 3) // 4]
         lo, hi = 0, n - 1
         yield step(
-            f"Set window: lo = 0, hi = {hi}. Searching for target = {target}.",
+            f"Initial window: lo = 0, hi = {hi}. Searching for target = {target}.",
             data,
             line=2,
             variables={"target": target, "lo": lo, "hi": hi, "n": n},
+            windows={"frame": (lo, hi)},
         )
         while lo <= hi:
             yield step(
-                f"Window non-empty (lo = {lo} ≤ hi = {hi}); continue.",
+                f"Window non-empty (lo = {lo} ≤ hi = {hi}); continue searching.",
                 data,
                 line=3,
                 variables={"target": target, "lo": lo, "hi": hi},
+                windows={"frame": (lo, hi)},
             )
             mid = (lo + hi) // 2
             yield step(
@@ -61,6 +63,7 @@ class BinarySearch(Algorithm):
                     "mid": mid,
                     "a[mid]": data[mid],
                 },
+                windows={"frame": (lo, hi)},
             )
             if data[mid] == target:
                 yield step(
@@ -75,11 +78,12 @@ class BinarySearch(Algorithm):
                         "result": mid,
                     },
                     found=[mid],
+                    windows={"frame": (lo, hi)},
                 )
                 return
             if data[mid] < target:
                 yield step(
-                    f"a[mid] = {data[mid]} < target: discard left half. New lo = mid + 1.",
+                    f"a[mid] = {data[mid]} < target: discard the left half.",
                     data,
                     line=8,
                     variables={
@@ -87,12 +91,14 @@ class BinarySearch(Algorithm):
                         "lo": lo,
                         "hi": hi,
                         "mid": mid,
+                        "eliminated": "left",
                     },
+                    windows={"frame": (lo, hi)},
                 )
                 lo = mid + 1
             else:
                 yield step(
-                    f"a[mid] = {data[mid]} > target: discard right half. New hi = mid - 1.",
+                    f"a[mid] = {data[mid]} > target: discard the right half.",
                     data,
                     line=10,
                     variables={
@@ -100,11 +106,13 @@ class BinarySearch(Algorithm):
                         "lo": lo,
                         "hi": hi,
                         "mid": mid,
+                        "eliminated": "right",
                     },
+                    windows={"frame": (lo, hi)},
                 )
                 hi = mid - 1
         yield step(
-            f"Window empty (lo > hi): {target} is not in the list.",
+            f"Window collapsed (lo > hi): {target} is not in the list.",
             data,
             line=11,
             variables={"target": target, "lo": lo, "hi": hi, "result": -1},

@@ -11,8 +11,9 @@ class SelectionSort(Algorithm):
     name = "Selection Sort"
     description = (
         "Build a sorted prefix by repeatedly scanning the unsorted suffix for "
-        "the minimum, then swapping it into the next slot."
+        "its minimum, then swapping that minimum into the next slot."
     )
+    view_kind = "selection"
 
     code = """
     def selection_sort(a: list[int]) -> list[int]:
@@ -38,19 +39,20 @@ class SelectionSort(Algorithm):
             sorted_prefix = list(range(i))
             m = i
             yield step(
-                f"Outer i = {i}: looking for the minimum of a[{i}:].",
+                f"Outer pass i = {i}: searching a[{i}:] for its minimum.",
                 data,
                 line=3,
                 variables={"n": n, "i": i, "m": m, "a[m]": data[m]},
-                pointers={"i": i, "m": m},
+                pointers={"i": i},
                 sorted=sorted_prefix,
+                windows={"unsorted": (i, n - 1)} if i < n else {},
             )
             yield step(
-                f"Tentatively m = i = {i}, so a[m] = {data[m]} is the smallest seen so far.",
+                f"Tentatively m = i = {i}; smallest seen so far is a[m] = {data[m]}.",
                 data,
                 line=4,
                 variables={"n": n, "i": i, "m": m, "a[m]": data[m]},
-                pointers={"i": i, "m": m},
+                pointers={"i": i},
                 pivot=m,
                 sorted=sorted_prefix,
             )
@@ -67,7 +69,7 @@ class SelectionSort(Algorithm):
                         "a[j]": data[j],
                         "a[m]": data[m],
                     },
-                    pointers={"i": i, "m": m, "j": j},
+                    pointers={"i": i, "j": j},
                     compare=j,
                     pivot=m,
                     sorted=sorted_prefix,
@@ -85,18 +87,18 @@ class SelectionSort(Algorithm):
                             "j": j,
                             "a[m]": data[m],
                         },
-                        pointers={"i": i, "m": m, "j": j},
+                        pointers={"i": i, "j": j},
                         pivot=m,
                         sorted=sorted_prefix,
                     )
             if m != i:
                 data[i], data[m] = data[m], data[i]
                 yield step(
-                    f"Swap a[{i}] and a[{m}]: minimum settles into the sorted prefix.",
+                    f"Swap a[{i}] and a[{m}]: minimum lands in the sorted prefix.",
                     data,
                     line=8,
                     variables={"n": n, "i": i, "m": m, "a[i]": data[i]},
-                    pointers={"i": i, "m": m},
+                    pointers={"i": i},
                     swap=[i, m],
                     sorted=list(range(i + 1)),
                 )
@@ -106,7 +108,7 @@ class SelectionSort(Algorithm):
                     data,
                     line=8,
                     variables={"n": n, "i": i, "m": m, "a[i]": data[i]},
-                    pointers={"i": i, "m": m},
+                    pointers={"i": i},
                     sorted=list(range(i + 1)),
                 )
         yield step("All elements placed — sorted.", data, line=9, sorted=list(range(n)))
