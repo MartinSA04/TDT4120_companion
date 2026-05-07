@@ -259,7 +259,10 @@ function StudyView(props) {
   const relatedAlgorithms = lecture.algorithmIds
     .map((id) => algorithms.find((a) => a.id === id))
     .filter(Boolean);
-  const planned = course.plannedTools.filter((tool) => tool.lectureId === lecture.id);
+  const planned = course.plannedTools.filter((tool) =>
+    tool.lectureId === lecture.id &&
+    !algorithms.some((algo) => algo.id === tool.id)
+  );
   const quizzes = lecture.quizIds.map((id) => course.byId.quizzes[id]).filter(Boolean);
   const allGoals = lecture.learningGoals;
   const masteredInLecture = allGoals.filter((g) => masteredSet.has(g.id)).length;

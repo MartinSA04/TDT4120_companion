@@ -875,6 +875,26 @@ const globalLearningGoals = [
   { id: "Z10", text: t("Angi presist output og krav til output.", "Precisely state output and its required properties.") },
 ];
 
+const liveToolsByLecture = {
+  l03: ["merge-sort", "recursion-tree"],
+  l04: ["counting-radix"],
+  l05: ["heap-priority-queue", "binary-search-tree"],
+  l06: ["dp-table"],
+  l07: ["activity-selection"],
+  l08: ["bfs-dfs"],
+  l09: ["mst-kruskal-prim"],
+  l10: ["shortest-paths"],
+  l11: ["floyd-warshall"],
+  l12: ["max-flow"],
+  l13: ["np-reductions"],
+  l14: ["np-reductions"],
+};
+
+lectures.forEach((lecture) => {
+  const liveIds = liveToolsByLecture[lecture.id] || [];
+  lecture.algorithmIds = [...new Set([...(lecture.algorithmIds || []), ...liveIds])];
+});
+
 function indexById(items) {
   return items.reduce((acc, item) => {
     acc[item.id] = item;

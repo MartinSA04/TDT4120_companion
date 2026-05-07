@@ -720,16 +720,301 @@ function SearchView({ frame, maxValue, height = 280 }) {
 }
 
 // =============================================================
+// Structured topic views — trees, graphs, tables, buckets, timelines
+// =============================================================
+function colorForRole(role) {
+  if (role === "found" || role === "sorted") return "var(--role-sorted)";
+  if (role === "swap") return "var(--role-swap)";
+  if (role === "compare") return "var(--role-compare)";
+  if (role === "pivot" || role === "focus") return "var(--role-pivot)";
+  if (role === "eliminated") return "var(--role-eliminated)";
+  return "var(--role-default)";
+}
+
+function GraphView({ frame, height = 300 }) {
+  const visual = frame.visual || {};
+  const nodes = visual.nodes || [];
+  const edges = visual.edges || [];
+  const byId = {};
+  nodes.forEach((n) => { byId[n.id] = n; });
+  const isTree = visual.type === "tree";
+
+  return (
+    <div className="structured-view" style={{ minHeight: height }}>
+      <svg viewBox="0 0 100 120" className="diagram-svg" role="img">
+        {edges.map((e, idx) => {
+          const a = byId[e.from];
+          const b = byId[e.to];
+          if (!a || !b) return null;
+          const color = colorForRole(e.role);
+          return (
+            <g key={`${e.from}-${e.to}-${idx}`}>
+              <line
+                x1={a.x}
+                y1={a.y}
+                x2={b.x}
+                y2={b.y}
+                stroke={color}
+                strokeWidth={e.role && e.role !== "default" ? 1.2 : 0.55}
+                strokeDasharray={e.role === "eliminated" ? "2 2" : ""}
+                opacity={e.role === "eliminated" ? 0.45 : 0.95}
+              />
+              {e.label && (
+                <text
+                  x={(a.x + b.x) / 2}
+                  y={(a.y + b.y) / 2 - 2}
+                  textAnchor="middle"
+                  className="edge-label"
+                >
+                  {e.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
+        {nodes.map((n) => {
+          const role = n.role || "default";
+          const fill = role === "eliminated" ? "var(--surface-sunken)" : "var(--surface-2)";
+          const stroke = colorForRole(role);
+          const wide = isTree && String(n.label).length > 3;
+          const w = Math.min(36, Math.max(13, String(n.label).length * 2.25));
+          return (
+            <g key={n.id} opacity={role === "eliminated" ? 0.55 : 1}>
+              {wide ? (
+                <rect
+                  x={n.x - w / 2}
+                  y={n.y - 4.8}
+                  width={w}
+                  height={9.6}
+                  fill={fill}
+                  stroke={stroke}
+                  strokeWidth={role !== "default" ? 1.2 : 0.7}
+                />
+              ) : (
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r={isTree ? 5.3 : 5.8}
+                  fill={fill}
+                  stroke={stroke}
+                  strokeWidth={role !== "default" ? 1.4 : 0.7}
+                />
+              )}
+              <text x={n.x} y={n.y + 1.5} textAnchor="middle" className="node-label">
+                {n.label}
+              </text>
+              {n.sublabel && (
+                <text x={n.x} y={n.y + 10.5} textAnchor="middle" className="node-sublabel">
+                  {n.sublabel}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      <MetaStrip visual={visual} />
+    </div>
+  );
+}
+
+function MetaStrip({ visual }) {
+  const items = [];
+  if (visual.array) items.push(["array", `[${visual.array.join(", ")}]`]);
+  if (visual.frontier) items.push(["frontier", visual.frontier.join(" → ")]);
+  if (visual.mode) items.push(["mode", visual.mode]);
+  if (visual.sets) items.push(["sets", visual.sets.join("   ")]);
+  if (visual.cut) items.push(["cut side", visual.cut.join(", ")]);
+  if (visual.minCut) items.push(["min cut", visual.minCut]);
+  if (visual.residual) items.push(["residual", visual.residual.join(" · ")]);
+  if (visual.levelCosts) items.push(["levels", visual.levelCosts.join(" | ")]);
+  if (!items.length) return null;
+
+  return (
+    <div className="meta-strip">
+      {items.map(([label, value]) => (
+        <span key={label}><strong>{label}</strong>{value}</span>
+      ))}
+    </div>
+  );
+}
+
+function TableView({ frame, height = 300 }) {
+  const visual = frame.visual || {};
+  const rows = visual.rows || [];
+  const cols = visual.cols || [];
+  const values = visual.values || [];
+  const activeKey = Array.isArray(visual.active) ? visual.active.join(":") : "";
+  const deps = new Set((visual.dependency || []).map((p) => p.join(":")));
+  const path = new Set((visual.path || []).map((p) => p.join(":")));
+
+  return (
+    <div className="structured-view table-view" style={{ minHeight: height }}>
+      <div
+        className="dp-grid"
+        style={{
+          gridTemplateColumns: `minmax(54px, auto) repeat(${cols.length}, minmax(44px, 1fr))`,
+        }}
+      >
+        <div className="dp-corner">i \ j</div>
+        {cols.map((c, j) => (
+          <div key={c} className={visual.colHighlight === j ? "dp-head active" : "dp-head"}>{c}</div>
+        ))}
+        {rows.map((r, i) => (
+          <React.Fragment key={r}>
+            <div className={visual.rowHighlight === i ? "dp-row-head active" : "dp-row-head"}>{r}</div>
+            {cols.map((c, j) => {
+              const key = `${i}:${j}`;
+              const cls = [
+                "dp-cell",
+                activeKey === key ? "active" : "",
+                deps.has(key) ? "dependency" : "",
+                path.has(key) ? "path" : "",
+              ].filter(Boolean).join(" ");
+              return <div key={`${r}-${c}`} className={cls}>{values[i]?.[j] ?? ""}</div>;
+            })}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BucketsView({ frame, height = 300 }) {
+  const visual = frame.visual || {};
+  const array = visual.array || [];
+  const buckets = visual.buckets || {};
+  return (
+    <div className="structured-view buckets-view" style={{ minHeight: height }}>
+      <div className="bucket-active">{visual.active}</div>
+      <div className="array-strip">
+        {array.map((v, i) => <span key={`${v}-${i}`}>{v}</span>)}
+      </div>
+      <div className="bucket-grid">
+        {Object.entries(buckets).map(([label, items]) => (
+          <div key={label} className="bucket">
+            <strong>{label}</strong>
+            <div>
+              {(items || []).map((v, i) => <span key={`${v}-${i}`}>{v}</span>)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TimelineView({ frame, height = 300 }) {
+  const visual = frame.visual || {};
+  const activities = visual.activities || [];
+  const selected = new Set(visual.selected || []);
+  const rejected = new Set(visual.rejected || []);
+  const [lo, hi] = visual.range || [0, 10];
+  const span = Math.max(1, hi - lo);
+  return (
+    <div className="structured-view timeline-view" style={{ minHeight: height }}>
+      <div className="timeline-axis">
+        {Array.from({ length: hi - lo + 1 }).map((_, i) => (
+          <span key={i}>{lo + i}</span>
+        ))}
+      </div>
+      <div className="timeline-rows">
+        {activities.map((a) => {
+          const left = ((a.start - lo) / span) * 100;
+          const width = ((a.end - a.start) / span) * 100;
+          const role = selected.has(a.id) ? "selected" : rejected.has(a.id) ? "rejected" : visual.active === a.id ? "active" : "";
+          return (
+            <div key={a.id} className="timeline-row">
+              <span className="timeline-label">{a.label}</span>
+              <div className="timeline-track">
+                <span
+                  className={`interval ${role}`}
+                  style={{ left: `${left}%`, width: `${width}%` }}
+                >
+                  {a.start}-{a.end}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ReductionView({ frame, height = 300 }) {
+  const visual = frame.visual || {};
+  const boxes = visual.boxes || [];
+  const arrows = visual.arrows || [];
+  const pos = {};
+  boxes.forEach((b, i) => {
+    pos[b.id] = { x: 12 + i * (76 / Math.max(1, boxes.length - 1)), y: 48 };
+  });
+  return (
+    <div className="structured-view reduction-view" style={{ minHeight: height }}>
+      <svg viewBox="0 0 100 100" className="diagram-svg" role="img">
+        {arrows.map(([from, to, label], i) => {
+          const a = pos[from];
+          const b = pos[to];
+          if (!a || !b) return null;
+          const y = i % 2 ? 66 : 35;
+          return (
+            <g key={`${from}-${to}-${i}`}>
+              <path
+                d={`M ${a.x + 9} ${y} C ${(a.x + b.x) / 2} ${y - 12}, ${(a.x + b.x) / 2} ${y - 12}, ${b.x - 9} ${y}`}
+                fill="none"
+                stroke="var(--accent)"
+                strokeWidth="0.8"
+                markerEnd="url(#arrow)"
+              />
+              <text x={(a.x + b.x) / 2} y={y - 14} textAnchor="middle" className="edge-label">{label}</text>
+            </g>
+          );
+        })}
+        <defs>
+          <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 z" fill="var(--accent)" />
+          </marker>
+        </defs>
+      </svg>
+      <div
+        className="reduction-boxes"
+        style={{ gridTemplateColumns: `repeat(${boxes.length || 1}, minmax(0, 1fr))` }}
+      >
+        {boxes.map((box) => (
+          <div key={box.id} className={`reduction-box ${box.role || ""}`}>
+            <strong>{box.title}</strong>
+            <span>{box.body}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StructuredVisualization({ frame, viewKind, height }) {
+  const kind = frame.visual?.type || frame.viewKind || viewKind;
+  if (kind === "table") return <TableView frame={frame} height={height} />;
+  if (kind === "buckets") return <BucketsView frame={frame} height={height} />;
+  if (kind === "timeline") return <TimelineView frame={frame} height={height} />;
+  if (kind === "reduction") return <ReductionView frame={frame} height={height} />;
+  return <GraphView frame={frame} height={height} />;
+}
+
+// =============================================================
 // Top-level dispatch
 // =============================================================
 function Visualization({ frame, viewKind, maxValue, height }) {
-  if (viewKind === "search") {
+  const kind = frame.visual?.type || frame.viewKind || viewKind;
+  if (kind === "search") {
     return <SearchView frame={frame} maxValue={maxValue} height={height} />;
+  }
+  if (["tree", "graph", "flow", "table", "buckets", "timeline", "reduction"].includes(kind)) {
+    return <StructuredVisualization frame={frame} viewKind={kind} height={height} />;
   }
   return (
     <Bars
       frame={frame}
-      viewKind={viewKind}
+      viewKind={kind}
       maxValue={maxValue}
       height={height}
     />

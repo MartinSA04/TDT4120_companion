@@ -362,6 +362,43 @@ const LEGEND_FOR = {
     ["eliminated", "eliminated"],
     ["found", "found"],
   ],
+  tree: [
+    ["default", "node"],
+    ["pivot", "active"],
+    ["swap", "violation"],
+    ["sorted", "settled"],
+    ["found", "chosen"],
+  ],
+  graph: [
+    ["default", "unknown"],
+    ["pivot", "frontier"],
+    ["eliminated", "blocked"],
+    ["found", "accepted"],
+  ],
+  table: [
+    ["default", "cell"],
+    ["pivot", "dependency"],
+    ["compare", "choice"],
+    ["found", "answer"],
+  ],
+  buckets: [
+    ["default", "input"],
+    ["compare", "counting"],
+    ["sorted", "stable"],
+    ["found", "sorted"],
+  ],
+  timeline: [
+    ["default", "candidate"],
+    ["pivot", "active"],
+    ["eliminated", "rejected"],
+    ["found", "selected"],
+  ],
+  reduction: [
+    ["default", "problem"],
+    ["pivot", "transform"],
+    ["compare", "assumption"],
+    ["found", "result"],
+  ],
 };
 
 function Legend({ viewKind }) {
