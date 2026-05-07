@@ -505,9 +505,10 @@ function VisualizerPage({ algorithms, course, lang, theme, onTheme, requestedAlg
 
 function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId }) {
   const initialIdx = Math.max(0, algorithms.findIndex((a) => a.id === requestedAlgoId));
+  const initialData = useMemo(() => algorithms[initialIdx].defaultData(), [algorithms, initialIdx]);
   const [algoIdx, setAlgoIdx] = useState(initialIdx);
-  const [size, setSize] = useState(20);
-  const [data, setData] = useState(() => algorithms[initialIdx].defaultData());
+  const [size, setSize] = useState(() => initialData.length);
+  const [data, setData] = useState(() => initialData);
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(70);
@@ -647,6 +648,8 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
   } = window.AlgViz;
 
   const doing = labelFor(frame);
+  const compactViewKinds = new Set(["tree", "graph", "flow", "table", "buckets", "timeline", "reduction"]);
+  const vizHeight = compactViewKinds.has(algo.viewKind) ? 220 : 300;
 
   return (
     <div className="visualizer-workbench">
@@ -697,7 +700,7 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
                 frame={frame}
                 viewKind={algo.viewKind}
                 maxValue={maxValue}
-                height={300}
+                height={vizHeight}
               />
             </div>
           </Viewfinder>

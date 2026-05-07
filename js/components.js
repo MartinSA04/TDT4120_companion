@@ -301,7 +301,7 @@ const NOTE_FOR = {
 
 function Marginalia({ frame }) {
   const label = window.AlgViz.labelFor(frame);
-  const note = (NOTE_FOR[label] || NOTE_FOR.init)(frame.variables || {});
+  const note = frame.note || (NOTE_FOR[label] || NOTE_FOR.init)(frame.variables || {});
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
@@ -688,14 +688,14 @@ function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, onShuffle
       style={{
         display: "grid",
         gridTemplateColumns: "var(--catalogue-grid-cols, 1fr auto)",
-        gap: 24,
+        gap: 14,
         alignItems: "center",
-        padding: "14px 36px",
+        padding: "8px 20px",
         borderBottom: "1px solid var(--rule-soft)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 0, flexWrap: "wrap" }}>
-        <span className="eyebrow" style={{ marginRight: 16 }}>Catalogue</span>
+        <span className="eyebrow" style={{ marginRight: 12 }}>Catalogue</span>
         {algorithms.map((a, i) => {
           const active = i === activeIdx;
           const big_o =
@@ -712,9 +712,9 @@ function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, onShuffle
                 color: active ? "var(--bg)" : "var(--ink-2)",
                 border: "1px solid transparent",
                 borderRight: "1px solid var(--rule-faint)",
-                padding: "8px 16px",
+                padding: "6px 10px",
                 fontFamily: "var(--font-body)",
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: active ? 600 : 400,
                 cursor: "pointer",
                 display: "flex",
@@ -738,7 +738,7 @@ function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, onShuffle
         })}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span className="eyebrow">Size n =</span>
         <input
           type="range"
@@ -746,7 +746,7 @@ function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, onShuffle
           max={40}
           value={size}
           onChange={(e) => onSize(parseInt(e.target.value, 10))}
-          style={{ width: 120 }}
+          style={{ width: 110 }}
         />
         <span
           style={{
@@ -766,7 +766,7 @@ function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, onShuffle
             fontFamily: "var(--font-mono)",
             fontSize: 11,
             fontWeight: 600,
-            padding: "6px 14px",
+            padding: "5px 12px",
             background: "var(--surface-2)",
             color: "var(--ink)",
             border: "1px solid var(--ink)",

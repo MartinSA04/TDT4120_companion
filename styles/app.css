@@ -177,9 +177,9 @@ button, input { border-radius: 0; }
 .companion-header {
   display: grid;
   grid-template-columns: minmax(280px, 1fr) auto auto;
-  gap: 24px;
-  align-items: end;
-  padding: 24px 32px 18px;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 24px 10px;
   border-bottom: 2px solid var(--ink);
   background: var(--surface);
 }
@@ -187,7 +187,7 @@ button, input { border-radius: 0; }
 .companion-title {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
 .companion-title h1,
@@ -202,7 +202,7 @@ button, input { border-radius: 0; }
 }
 
 .companion-title h1 {
-  font-size: 34px;
+  font-size: 26px;
 }
 
 .companion-title p,
@@ -212,7 +212,11 @@ button, input { border-radius: 0; }
   margin: 0;
   max-width: 74ch;
   color: var(--ink-2);
-  line-height: 1.55;
+  line-height: 1.4;
+}
+
+.companion-title p {
+  font-size: 13px;
 }
 
 .app-nav {
@@ -237,7 +241,7 @@ button, input { border-radius: 0; }
 }
 
 .nav-tab {
-  padding: 9px 12px;
+  padding: 7px 10px;
   border-right: 1px solid var(--rule-soft);
 }
 
@@ -269,7 +273,7 @@ button, input { border-radius: 0; }
 }
 
 .segmented button {
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-right: 1px solid var(--rule-soft);
 }
 
@@ -786,8 +790,8 @@ button, input { border-radius: 0; }
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 20px;
-  padding: 14px 20px;
+  gap: 14px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--rule-soft);
   background: var(--surface);
 }
@@ -819,7 +823,7 @@ button, input { border-radius: 0; }
 .visualizer-grid {
   display: grid;
   grid-template-columns: var(--viz-grid-cols);
-  min-height: 700px;
+  min-height: 560px;
   border-bottom: 1px solid var(--rule-soft);
 }
 
@@ -834,15 +838,15 @@ button, input { border-radius: 0; }
 .viz-stage {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   min-width: 0;
-  padding: 20px 24px 16px;
+  padding: 14px 18px 14px;
   background: var(--bg);
 }
 
 .viz-frame {
   position: relative;
-  padding: 28px 22px 22px;
+  padding: 20px 18px 16px;
   background: var(--surface);
   border: 1px solid var(--rule-soft);
 }
@@ -862,10 +866,10 @@ button, input { border-radius: 0; }
 .viz-right-rail {
   border-left: 1px solid var(--rule-soft);
   background: var(--surface);
-  padding: 20px 22px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
   min-width: 0;
 }
 
@@ -889,13 +893,14 @@ button, input { border-radius: 0; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
 }
 
 .diagram-svg {
   width: 100%;
-  min-height: 280px;
+  height: 210px;
+  min-height: 0;
   overflow: visible;
 }
 
@@ -959,7 +964,7 @@ button, input { border-radius: 0; }
 .dp-head,
 .dp-row-head,
 .dp-cell {
-  min-height: 38px;
+  min-height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1023,7 +1028,7 @@ button, input { border-radius: 0; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
+  min-height: 30px;
   border: 1px solid var(--ink);
   background: var(--surface-2);
   color: var(--ink);
@@ -1038,7 +1043,7 @@ button, input { border-radius: 0; }
 }
 
 .bucket {
-  min-height: 86px;
+  min-height: 64px;
   padding: 8px;
   border: 1px dashed var(--rule-soft);
   background: var(--bg-tint);
@@ -1097,7 +1102,7 @@ button, input { border-radius: 0; }
 
 .timeline-track {
   position: relative;
-  height: 28px;
+  height: 22px;
   background:
     linear-gradient(to right, var(--rule-faint) 1px, transparent 1px);
   background-size: 10% 100%;
@@ -1137,8 +1142,8 @@ button, input { border-radius: 0; }
 }
 
 .reduction-view .diagram-svg {
-  min-height: 90px;
-  margin-bottom: -28px;
+  height: 70px;
+  margin-bottom: -20px;
 }
 
 .reduction-boxes {
@@ -1148,8 +1153,8 @@ button, input { border-radius: 0; }
 }
 
 .reduction-box {
-  min-height: 108px;
-  padding: 14px;
+  min-height: 82px;
+  padding: 10px;
   border: 1px solid var(--rule-soft);
   border-top: 3px solid var(--role-default);
   background: var(--surface-2);
@@ -1163,7 +1168,7 @@ button, input { border-radius: 0; }
 .reduction-box strong {
   margin-bottom: 8px;
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 400;
 }
 

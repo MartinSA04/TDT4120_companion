@@ -1360,13 +1360,735 @@ return answer_y
 };
 
 // ============================================================
+// Data-driven course visualizers
+// ============================================================
+function clamp(value, lo, hi) {
+  return Math.max(lo, Math.min(hi, value));
+}
+
+function demoValues(input, max = 12, min = 4) {
+  const source = Array.isArray(input) && input.length ? input : shuffledRange(min, 19);
+  const n = clamp(source.length, min, max);
+  return source.slice(0, n).map((value, idx) =>
+    Number.isFinite(value) ? Math.max(1, Math.round(value)) : idx + 1
+  );
+}
+
+function shortList(values, limit = 8) {
+  const shown = values.slice(0, limit).join(" ");
+  return values.length > limit ? `${shown} ...` : shown;
+}
+
+function roleMap(ids, role) {
+  const map = {};
+  ids.forEach((id) => { map[id] = role; });
+  return map;
+}
+
+function completeTreeNodes(values, roles = {}) {
+  const levels = Math.max(1, Math.floor(Math.log2(values.length)) + 1);
+  return values.map((value, idx) => {
+    const level = Math.floor(Math.log2(idx + 1));
+    const first = 2 ** level - 1;
+    const pos = idx - first;
+    const slots = 2 ** level;
+    const x = ((pos + 1) * 100) / (slots + 1);
+    const y = 10 + level * (88 / Math.max(1, levels - 1));
+    return node(String(idx), String(value), x, y, roles[idx] || "default", `a[${idx}]`);
+  });
+}
+
+function completeTreeEdges(count, roles = {}) {
+  const edges = [];
+  for (let i = 1; i < count; i++) {
+    const parent = Math.floor((i - 1) / 2);
+    edges.push(edge(String(parent), String(i), "", roles[i] || "default"));
+  }
+  return edges;
+}
+
+function circleNodes(count, roles = {}, sublabels = {}, labels = null) {
+  const r = count <= 5 ? 32 : 36;
+  return Array.from({ length: count }, (_, i) => {
+    const angle = -Math.PI / 2 + (2 * Math.PI * i) / count;
+    return node(
+      `v${i}`,
+      labels?.[i] || (i === 0 ? "s" : String.fromCharCode(96 + i)),
+      50 + Math.cos(angle) * r,
+      52 + Math.sin(angle) * r,
+      roles[`v${i}`] || "default",
+      sublabels[`v${i}`] || ""
+    );
+  });
+}
+
+function graphEdgeKey(e) {
+  return `${e.from}-${e.to}`;
+}
+
+function makeIntervalTree(values) {
+  const nodes = [];
+  const edges = [];
+  function visit(lo, hi, depth, maxDepth, parent = null) {
+    const id = `${lo}-${hi}`;
+    const mid = (lo + hi) / 2;
+    nodes.push(node(id, `A[${lo}..${hi}]`, 8 + (mid / Math.max(1, values.length - 1)) * 84, 10 + depth * 26, "default", shortList(values.slice(lo, hi + 1), 5)));
+    if (parent) edges.push(edge(parent, id, depth === 1 ? "split" : ""));
+    if (lo < hi && depth < maxDepth) {
+      const m = Math.floor((lo + hi) / 2);
+      visit(lo, m, depth + 1, maxDepth, id);
+      visit(m + 1, hi, depth + 1, maxDepth, id);
+    }
+  }
+  visit(0, values.length - 1, 0, Math.min(3, Math.ceil(Math.log2(values.length))));
+  return { nodes, edges };
+}
+
+function liveTopicFrame(line, desc, visual, variables = {}, role = "pivot") {
+  return {
+    ...topicFrame(line, desc, visual, variables, role),
+    note: desc,
+  };
+}
+
+const liveMergeSort = {
+  ...mergeSort,
+  code:
+`def merge(left: list[int], right: list[int]) -> list[int]:
+    out: list[int] = []
+    i = j = 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            out.append(left[i])
+            i += 1
+        else:
+            out.append(right[j])
+            j += 1
+    return out + left[i:] + right[j:]
+
+def merge_sort(a: list[int]) -> list[int]:
+    if len(a) <= 1:
+        return a.copy()
+    mid = len(a) // 2
+    left = merge_sort(a[:mid])
+    right = merge_sort(a[mid:])
+    return merge(left, right)`,
+  defaultData() { return shuffledRange(8, 31); },
+  run(input) {
+    const values = demoValues(input, 8, 4);
+    const sorted = [...values].sort((a, b) => a - b);
+    const tree = makeIntervalTree(values);
+    const rootId = `0-${values.length - 1}`;
+    const firstSplitIds = tree.nodes.filter((n) => n.id !== rootId && n.id.split("-").some(Boolean)).slice(0, 2).map((n) => n.id);
+    const dimmed = tree.nodes.map((n) => n.id === rootId ? { ...n, role: "focus" } : { ...n, role: "eliminated" });
+    return [
+      liveTopicFrame(13, "Start with the current shuffled input. The full split tree is shown dimmed so the first frame is not a placeholder.", graphVisual("tree", dimmed, tree.edges.map((e) => ({ ...e, role: "eliminated" })), { array: values }), { n: values.length, shown: `${values.length}/${input.length}` }),
+      liveTopicFrame(16, "Split into left and right halves, then recurse on each half.", graphVisual("tree", tree.nodes.map((n) => firstSplitIds.includes(n.id) || n.id === rootId ? { ...n, role: "pivot" } : { ...n, role: "eliminated" }), tree.edges), { mid: Math.floor(values.length / 2) }),
+      liveTopicFrame(16, "Continue splitting until every visible leaf is a base case.", graphVisual("tree", tree.nodes.map((n) => n.id.includes("-") && n.id.split("-")[0] === n.id.split("-")[1] ? { ...n, role: "found" } : n), tree.edges), { depth: Math.ceil(Math.log2(values.length)) }, "found"),
+      liveTopicFrame(17, "Merge calls rebuild sorted runs while returning from recursion.", graphVisual("tree", tree.nodes.map((n) => ({ ...n, role: "sorted" })), tree.edges.map((e) => ({ ...e, role: "sorted" })), { array: sorted }), { result: `[${sorted.join(", ")}]` }, "sorted"),
+    ];
+  },
+};
+
+const liveRecursionTree = {
+  ...recursionTree,
+  code:
+`def level_costs(n: int, branches: int = 2) -> list[int]:
+    costs: list[int] = []
+    size = n
+    width = 1
+    while size >= 1:
+        costs.append(width * size)
+        size //= branches
+        width *= branches
+    return costs`,
+  defaultData() { return shuffledRange(8, 37); },
+  run(input) {
+    const n = Math.max(4, input.length || 8);
+    const branches = 2 + ((input[0] || n) % 3);
+    const childCount = branches;
+    const root = node("n", `n=${n}`, 50, 10, "focus", `first=${input[0] || n}`);
+    const children = Array.from({ length: childCount }, (_, i) =>
+      node(`c${i}`, `n/${branches}`, 24 + i * (52 / Math.max(1, childCount - 1)), 42, "compare", `cost ${Math.floor(n / branches)}`)
+    );
+    const leaves = Array.from({ length: childCount }, (_, i) =>
+      node(`l${i}`, "...", 24 + i * (52 / Math.max(1, childCount - 1)), 76, "sorted", "base cases")
+    );
+    const edges = [...children.map((c) => edge("n", c.id)), ...children.map((c, i) => edge(c.id, leaves[i].id))];
+    return [
+      liveTopicFrame(1, `Use the current size n=${n}. The first shuffled value selects a ${branches}-way recurrence for this demo.`, graphVisual("tree", [root, ...children.map((c) => ({ ...c, role: "eliminated" })), ...leaves.map((l) => ({ ...l, role: "eliminated" }))], edges.map((e) => ({ ...e, role: "eliminated" })), { levelCosts: [`${n}`] }), { n, branches }),
+      liveTopicFrame(4, `Expand into ${branches} subproblems. The total work on this level is still about n.`, graphVisual("tree", [root, ...children], children.map((c) => edge("n", c.id)), { levelCosts: [`${n}`, `${branches} * ${Math.floor(n / branches)} ≈ ${n}`] }), { level: 1 }, "compare"),
+      liveTopicFrame(6, "Keep expanding until the subproblem size reaches 1.", graphVisual("tree", [root, ...children, ...leaves], edges, { levelCosts: [`${n}`, `≈ ${n}`, "..."] }), { height: `log_${branches} n` }, "sorted"),
+      liveTopicFrame(7, "The total is level cost times number of levels.", graphVisual("tree", [root, ...children, ...leaves].map((x) => ({ ...x, role: "found" })), edges.map((e) => ({ ...e, role: "found" })), { levelCosts: [`Θ(${n} log ${n})`] }), { total: `Theta(n log_${branches} n)` }, "found"),
+    ];
+  },
+};
+
+const liveCountingRadix = {
+  ...countingRadix,
+  code:
+`def counting_sort_by_digit(a: list[int], exp: int) -> list[int]:
+    count = [0] * 10
+    out = [0] * len(a)
+    for x in a:
+        count[(x // exp) % 10] += 1
+    for i in range(1, 10):
+        count[i] += count[i - 1]
+    for x in reversed(a):
+        d = (x // exp) % 10
+        out[count[d] - 1] = x
+        count[d] -= 1
+    return out
+
+def radix_sort(a: list[int]) -> list[int]:
+    out = a.copy()
+    exp = 1
+    while max(out, default=0) // exp > 0:
+        out = counting_sort_by_digit(out, exp)
+        exp *= 10
+    return out`,
+  defaultData() { return shuffledRange(10, 41); },
+  run(input) {
+    const values = demoValues(input, 12, 4).map((v, i) => 10 + ((v * 7 + i * 3) % 90));
+    const bucketBy = (arr, exp) => arr.reduce((acc, x) => {
+      const d = Math.floor(x / exp) % 10;
+      acc[d] = [...(acc[d] || []), x];
+      return acc;
+    }, {});
+    const onesBuckets = bucketBy(values, 1);
+    const byOnes = Object.keys(onesBuckets).sort((a, b) => a - b).flatMap((k) => onesBuckets[k]);
+    const tensBuckets = bucketBy(byOnes, 10);
+    const sorted = Object.keys(tensBuckets).sort((a, b) => a - b).flatMap((k) => tensBuckets[k]);
+    return [
+      liveTopicFrame(19, "Convert the current input into two-digit keys, preserving shuffled order.", { type: "buckets", array: values, buckets: {}, active: "input order" }, { n: values.length }),
+      liveTopicFrame(4, "Count by ones digit.", { type: "buckets", array: values, buckets: onesBuckets, active: "ones digit" }, { exp: 1 }, "compare"),
+      liveTopicFrame(10, "Stable output by ones digit. Equal digits keep their previous order.", { type: "buckets", array: byOnes, buckets: { output: byOnes }, active: "stable output" }, { stable: "yes" }, "sorted"),
+      liveTopicFrame(4, "Repeat counting sort by tens digit.", { type: "buckets", array: byOnes, buckets: tensBuckets, active: "tens digit" }, { exp: 10 }, "compare"),
+      liveTopicFrame(20, "After the final digit pass the keys are sorted.", { type: "buckets", array: sorted, buckets: { sorted }, active: "done" }, { result: `[${sorted.join(", ")}]` }, "found"),
+    ];
+  },
+};
+
+const liveHeapPQ = {
+  ...heapPQ,
+  code:
+`def max_heapify(a: list[int], i: int, heap_size: int) -> None:
+    left = 2 * i + 1
+    right = 2 * i + 2
+    largest = i
+    if left < heap_size and a[left] > a[largest]:
+        largest = left
+    if right < heap_size and a[right] > a[largest]:
+        largest = right
+    if largest != i:
+        a[i], a[largest] = a[largest], a[i]
+        max_heapify(a, largest, heap_size)
+
+def build_max_heap(a: list[int]) -> None:
+    for i in range(len(a) // 2 - 1, -1, -1):
+        max_heapify(a, i, len(a))`,
+  defaultData() { return shuffledRange(10, 43); },
+  run(input) {
+    const original = demoValues(input, 15, 4);
+    const heap = [...original];
+    const frames = [
+      liveTopicFrame(14, "Read the current array as a complete binary tree.", graphVisual("tree", completeTreeNodes(heap), completeTreeEdges(heap.length), { array: heap }), { heapSize: heap.length }),
+    ];
+    const heapify = (i, size, collect = false) => {
+      while (true) {
+        const l = 2 * i + 1;
+        const r = 2 * i + 2;
+        let largest = i;
+        if (l < size && heap[l] > heap[largest]) largest = l;
+        if (r < size && heap[r] > heap[largest]) largest = r;
+        if (collect) {
+          frames.push(liveTopicFrame(5, `Compare index ${i} with children ${l < size ? l : "-"} and ${r < size ? r : "-"}.`, graphVisual("tree", completeTreeNodes(heap, roleMap([i, l, r].filter((x) => x < size), "compare")), completeTreeEdges(heap.length), { array: heap }), { i, largest }, "compare"));
+        }
+        if (largest === i) break;
+        [heap[i], heap[largest]] = [heap[largest], heap[i]];
+        if (collect) {
+          frames.push(liveTopicFrame(10, `Swap with the larger child at index ${largest}.`, graphVisual("tree", completeTreeNodes(heap, roleMap([i, largest], "swap")), completeTreeEdges(heap.length), { array: heap }), { i, largest }, "swap"));
+        }
+        i = largest;
+      }
+    };
+    for (let i = Math.floor(heap.length / 2) - 1; i >= 0; i--) heapify(i, heap.length);
+    frames.push(liveTopicFrame(15, "After build_max_heap, every parent dominates its children.", graphVisual("tree", completeTreeNodes(heap, roleMap(range(heap.length), "sorted")), completeTreeEdges(heap.length), { array: heap }), { max: heap[0] }, "sorted"));
+    if (heap.length > 1) {
+      [heap[0], heap[heap.length - 1]] = [heap[heap.length - 1], heap[0]];
+      frames.push(liveTopicFrame(10, "Extract max by swapping the root with the last heap element.", graphVisual("tree", completeTreeNodes(heap, { 0: "swap", [heap.length - 1]: "found" }), completeTreeEdges(heap.length), { array: heap }), { extracted: heap[heap.length - 1] }, "swap"));
+      heapify(0, heap.length - 1, true);
+      frames.push(liveTopicFrame(11, "Heapify restores the heap property on the remaining heap.", graphVisual("tree", completeTreeNodes(heap, roleMap(range(heap.length - 1), "sorted")), completeTreeEdges(heap.length), { array: heap }), { heapSize: heap.length - 1 }, "found"));
+    }
+    return frames;
+  },
+};
+
+const liveBST = {
+  ...bst,
+  code:
+`class Node:
+    def __init__(self, key: int) -> None:
+        self.key = key
+        self.left: Node | None = None
+        self.right: Node | None = None
+
+def insert(root: Node | None, key: int) -> Node:
+    if root is None:
+        return Node(key)
+    if key < root.key:
+        root.left = insert(root.left, key)
+    elif key > root.key:
+        root.right = insert(root.right, key)
+    return root
+
+def tree_search(root: Node | None, key: int) -> Node | None:
+    if root is None or root.key == key:
+        return root
+    if key < root.key:
+        return tree_search(root.left, key)
+    return tree_search(root.right, key)`,
+  defaultData() { return shuffledRange(10, 47); },
+  run(input) {
+    const values = [...new Set(demoValues(input, 15, 4))];
+    const tree = { key: values[0], left: null, right: null, id: "0" };
+    let nextId = 1;
+    function insertNode(root, key) {
+      if (key < root.key) {
+        if (root.left) insertNode(root.left, key);
+        else root.left = { key, left: null, right: null, id: String(nextId++) };
+      } else if (key > root.key) {
+        if (root.right) insertNode(root.right, key);
+        else root.right = { key, left: null, right: null, id: String(nextId++) };
+      }
+    }
+    values.slice(1).forEach((v) => insertNode(tree, v));
+    const ordered = [];
+    function inorder(t, depth = 0, parent = null, edges = []) {
+      if (!t) return edges;
+      inorder(t.left, depth + 1, t.id, edges);
+      ordered.push({ ...t, depth, parent });
+      inorder(t.right, depth + 1, t.id, edges);
+      return edges;
+    }
+    inorder(tree);
+    const maxDepth = Math.max(...ordered.map((x) => x.depth), 1);
+    const pos = {};
+    ordered.forEach((item, i) => { pos[item.id] = { x: 8 + (i * 84) / Math.max(1, ordered.length - 1), y: 10 + (item.depth * 88) / maxDepth }; });
+    const makeVisual = (roles = {}) => {
+      const nodes = ordered.map((item) => node(item.id, String(item.key), pos[item.id].x, pos[item.id].y, roles[item.id] || "default"));
+      const edges = ordered.filter((item) => item.parent).map((item) => edge(item.parent, item.id, item.key < ordered.find((x) => x.id === item.parent).key ? "<" : ">"));
+      return graphVisual("tree", nodes, edges, { array: values });
+    };
+    const key = values[values.length - 1];
+    const frames = [liveTopicFrame(1, `Build a BST from the shuffled insertion order, then search for ${key}.`, makeVisual({ [tree.id]: "focus" }), { key, root: tree.key })];
+    let cur = tree;
+    while (cur) {
+      frames.push(liveTopicFrame(cur.key === key ? 18 : key < cur.key ? 20 : 21, `Compare ${key} with ${cur.key}.`, makeVisual({ [cur.id]: cur.key === key ? "found" : "pivot" }), { key, x: cur.key }, cur.key === key ? "found" : "pivot"));
+      if (cur.key === key) break;
+      cur = key < cur.key ? cur.left : cur.right;
+    }
+    return frames;
+  },
+};
+
+const liveDPTable = {
+  ...dpTable,
+  code:
+`def knapsack(values: list[int], weights: list[int], capacity: int) -> int:
+    n = len(values)
+    table = [[0] * (capacity + 1) for _ in range(n + 1)]
+    for i in range(1, n + 1):
+        for w in range(capacity + 1):
+            table[i][w] = table[i - 1][w]
+            if weights[i - 1] <= w:
+                take = table[i - 1][w - weights[i - 1]] + values[i - 1]
+                table[i][w] = max(table[i][w], take)
+    return table[n][capacity]`,
+  defaultData() { return shuffledRange(8, 53); },
+  run(input) {
+    const raw = demoValues(input, 18, 6);
+    const itemCount = clamp(Math.floor(raw.length / 2), 3, 6);
+    const weights = raw.slice(0, itemCount).map((v) => (v % 5) + 1);
+    const values = raw.slice(itemCount, itemCount * 2).map((v) => (v % 9) + 1);
+    while (values.length < itemCount) values.push((raw[values.length] % 9) + 1);
+    const capacity = clamp(Math.ceil(raw.length / 2), 5, 10);
+    const table = Array.from({ length: itemCount + 1 }, () => Array(capacity + 1).fill(0));
+    const snapshots = [];
+    for (let i = 1; i <= itemCount; i++) {
+      for (let w = 0; w <= capacity; w++) {
+        table[i][w] = table[i - 1][w];
+        if (weights[i - 1] <= w) {
+          table[i][w] = Math.max(table[i][w], table[i - 1][w - weights[i - 1]] + values[i - 1]);
+        }
+      }
+      snapshots.push(table.map((row) => [...row]));
+    }
+    const rows = ["0", ...values.map((value, i) => `i${i + 1} w${weights[i]} v${value}`)];
+    const cols = range(capacity + 1).map(String);
+    const blank = table.map((row, i) => row.map((v) => i === 0 ? v : ""));
+    return [
+      liveTopicFrame(3, "Create a table from the current item weights, values, and capacity.", tableVisual(rows, cols, blank, { active: [0, 0] }), { items: itemCount, capacity, weights: `[${weights.join(", ")}]`, values: `[${values.join(", ")}]` }),
+      liveTopicFrame(5, "The base row is zero because no items give no value.", tableVisual(rows, cols, blank, { rowHighlight: 0 }), { i: 0 }, "sorted"),
+      liveTopicFrame(8, "Fill the first item row using the take-or-skip recurrence.", tableVisual(rows, cols, snapshots[0], { rowHighlight: 1, active: [1, Math.min(capacity, weights[0])] }), { item: 1, w: weights[0], v: values[0] }, "compare"),
+      liveTopicFrame(9, "Later rows combine a skip cell and a take cell from the previous row.", tableVisual(rows, cols, snapshots[Math.min(1, snapshots.length - 1)], { rowHighlight: Math.min(2, itemCount), active: [Math.min(2, itemCount), capacity], dependency: [[Math.min(1, itemCount - 1), capacity], [Math.min(1, itemCount - 1), Math.max(0, capacity - weights[Math.min(1, itemCount - 1)])]] }), { skip: "prev row", take: "prev row minus weight" }, "pivot"),
+      liveTopicFrame(11, "The final bottom-right cell is the optimum for this shuffled instance.", tableVisual(rows, cols, snapshots[snapshots.length - 1], { active: [itemCount, capacity] }), { optimum: table[itemCount][capacity] }, "found"),
+    ];
+  },
+};
+
+const liveActivitySelection = {
+  ...activitySelection,
+  code:
+`Activity = tuple[int, int]
+
+def activity_selection(activities: list[Activity]) -> list[Activity]:
+    ordered = sorted(activities, key=lambda x: x[1])
+    chosen: list[Activity] = []
+    last_finish = -1
+    for start, finish in ordered:
+        if start >= last_finish:
+            chosen.append((start, finish))
+            last_finish = finish
+    return chosen`,
+  defaultData() { return shuffledRange(9, 59); },
+  run(input) {
+    const values = demoValues(input, 10, 5);
+    const activities = values.map((v, i) => {
+      const start = (v + i * 2) % 12;
+      const end = start + 1 + (v % 4);
+      return { id: `a${i + 1}`, label: `a${i + 1}`, start, end };
+    }).sort((a, b) => a.end - b.end || a.start - b.start);
+    const selected = [];
+    const rejected = [];
+    let lastFinish = -1;
+    const frames = [liveTopicFrame(4, "Sort the generated intervals by finish time.", { type: "timeline", activities, selected: [], rejected: [], active: activities[0]?.id, range: [0, Math.max(...activities.map((a) => a.end), 10)] }, { n: activities.length })];
+    activities.forEach((a) => {
+      if (a.start >= lastFinish) {
+        selected.push(a.id);
+        lastFinish = a.end;
+        frames.push(liveTopicFrame(7, `Choose ${a.label}; it starts after the previous finish time.`, { type: "timeline", activities, selected: [...selected], rejected: [...rejected], active: a.id, range: [0, Math.max(...activities.map((x) => x.end), 10)] }, { lastFinish }, "found"));
+      } else {
+        rejected.push(a.id);
+        frames.push(liveTopicFrame(6, `Reject ${a.label}; it overlaps the last chosen activity.`, { type: "timeline", activities, selected: [...selected], rejected: [...rejected], active: a.id, range: [0, Math.max(...activities.map((x) => x.end), 10)] }, { overlap: "yes" }, "eliminated"));
+      }
+    });
+    return frames;
+  },
+};
+
+function graphFromValues(input, maxNodes = 8) {
+  const values = demoValues(input, maxNodes, 4);
+  const n = values.length;
+  const edges = [];
+  for (let i = 0; i < n - 1; i++) {
+    edges.push({ u: i, v: i + 1, w: 1 + (values[i] % 9) });
+  }
+  for (let i = 0; i < n - 2; i++) {
+    if ((values[i] + i) % 2 === 0) edges.push({ u: i, v: i + 2, w: 1 + ((values[i] + values[i + 1]) % 9) });
+  }
+  return { values, n, edges };
+}
+
+const liveBfsDfs = {
+  ...bfsDfs,
+  code:
+`from collections import deque
+
+def bfs(adj: list[list[int]], source: int) -> list[int]:
+    seen = [False] * len(adj)
+    order: list[int] = []
+    q: deque[int] = deque([source])
+    seen[source] = True
+    while q:
+        u = q.popleft()
+        order.append(u)
+        for v in adj[u]:
+            if not seen[v]:
+                seen[v] = True
+                q.append(v)
+    return order
+
+def dfs(adj: list[list[int]], source: int) -> list[int]:
+    seen = [False] * len(adj)
+    order: list[int] = []
+    def visit(u: int) -> None:
+        seen[u] = True
+        order.append(u)
+        for v in adj[u]:
+            if not seen[v]:
+                visit(v)
+    visit(source)
+    return order`,
+  defaultData() { return shuffledRange(8, 61); },
+  run(input) {
+    const { n, edges } = graphFromValues(input, 8);
+    const adj = Array.from({ length: n }, () => []);
+    edges.forEach(({ u, v }) => { adj[u].push(v); adj[v].push(u); });
+    const graphEdges = edges.map(({ u, v }) => edge(`v${u}`, `v${v}`));
+    const bfsOrder = [];
+    const seen = new Set([0]);
+    const q = [0];
+    while (q.length) {
+      const u = q.shift();
+      bfsOrder.push(u);
+      adj[u].forEach((v) => {
+        if (!seen.has(v)) { seen.add(v); q.push(v); }
+      });
+    }
+    const dfsOrder = [];
+    const dfsSeen = new Set();
+    function visit(u) {
+      dfsSeen.add(u);
+      dfsOrder.push(u);
+      adj[u].forEach((v) => { if (!dfsSeen.has(v)) visit(v); });
+    }
+    visit(0);
+    return [
+      liveTopicFrame(3, "Start from source 0. Shuffle changes the generated edges.", graphVisual("graph", circleNodes(n, { v0: "focus" }), graphEdges, { frontier: ["0"] }), { vertices: n, edges: edges.length }),
+      liveTopicFrame(7, "BFS uses a queue, so it discovers vertices by distance layers.", graphVisual("graph", circleNodes(n, roleMap(bfsOrder.slice(0, Math.min(4, bfsOrder.length)).map((i) => `v${i}`), "found")), graphEdges, { frontier: bfsOrder.slice(1, 4).map(String), mode: "BFS" }), { order: bfsOrder.join(" ") }, "found"),
+      liveTopicFrame(26, "DFS uses recursion, so it follows one branch before backtracking.", graphVisual("graph", circleNodes(n, roleMap(dfsOrder.slice(0, Math.min(4, dfsOrder.length)).map((i) => `v${i}`), "pivot")), graphEdges, { frontier: dfsOrder.slice(0, 4).map(String), mode: "DFS" }), { order: dfsOrder.join(" ") }, "pivot"),
+      liveTopicFrame(15, "Both traversals finish in Θ(V+E), but their trees differ.", graphVisual("graph", circleNodes(n, roleMap(bfsOrder.map((i) => `v${i}`), "found")), graphEdges.map((e) => ({ ...e, role: "found" })), { mode: "complete" }), { time: `Theta(${n}+${edges.length})` }, "found"),
+    ];
+  },
+};
+
+const liveMST = {
+  ...mst,
+  code:
+`Edge = tuple[int, int, int]
+
+def kruskal(vertices: int, edges: list[Edge]) -> list[Edge]:
+    parent = list(range(vertices))
+    def find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    tree: list[Edge] = []
+    for u, v, weight in sorted(edges, key=lambda e: e[2]):
+        ru, rv = find(u), find(v)
+        if ru != rv:
+            parent[ru] = rv
+            tree.append((u, v, weight))
+    return tree`,
+  defaultData() { return shuffledRange(8, 67); },
+  run(input) {
+    const { n, edges } = graphFromValues(input, 8);
+    const weighted = edges.map((e, i) => ({ ...e, w: e.w + (i % 3) }));
+    const parent = range(n);
+    const find = (x) => parent[x] === x ? x : (parent[x] = find(parent[x]));
+    const chosen = [];
+    const frames = [liveTopicFrame(14, "Start with one disjoint set per vertex.", graphVisual("graph", circleNodes(n), weighted.map((e) => edge(`v${e.u}`, `v${e.v}`, String(e.w))), { sets: range(n).map((i) => `{${i}}`) }), { components: n })];
+    weighted.slice().sort((a, b) => a.w - b.w).forEach((e) => {
+      const ru = find(e.u);
+      const rv = find(e.v);
+      if (ru !== rv) {
+        parent[ru] = rv;
+        chosen.push(`${e.u}-${e.v}`);
+        frames.push(liveTopicFrame(16, `Accept edge ${e.u}-${e.v} with weight ${e.w}; it connects two components.`, graphVisual("graph", circleNodes(n), weighted.map((x) => ({ ...edge(`v${x.u}`, `v${x.v}`, String(x.w)), role: chosen.includes(`${x.u}-${x.v}`) ? "found" : "default" }))), { edge: `${e.u}-${e.v}`, weight: e.w }, "found"));
+      }
+    });
+    return frames;
+  },
+};
+
+const liveShortestPaths = {
+  ...shortestPaths,
+  code:
+`import heapq
+
+Edge = tuple[int, int, int]
+
+def dijkstra(vertices: int, edges: list[Edge], source: int) -> list[float]:
+    adj: list[list[tuple[int, int]]] = [[] for _ in range(vertices)]
+    for u, v, weight in edges:
+        adj[u].append((v, weight))
+    dist = [float("inf")] * vertices
+    dist[source] = 0
+    heap: list[tuple[int, int]] = [(0, source)]
+    while heap:
+        du, u = heapq.heappop(heap)
+        if du != dist[u]:
+            continue
+        for v, weight in adj[u]:
+            if dist[v] > du + weight:
+                dist[v] = du + weight
+                heapq.heappush(heap, (dist[v], v))
+    return dist`,
+  defaultData() { return shuffledRange(7, 71); },
+  run(input) {
+    const { n, edges } = graphFromValues(input, 7);
+    const directed = edges.map((e) => ({ u: e.u, v: e.v, w: e.w }));
+    const dist = Array(n).fill(Infinity);
+    dist[0] = 0;
+    const settled = [];
+    const frames = [liveTopicFrame(8, "Initialize source distance to 0 and every other distance to infinity.", graphVisual("graph", circleNodes(n, { v0: "found" }, Object.fromEntries(range(n).map((i) => [`v${i}`, i === 0 ? "d=0" : "d=∞"]))), directed.map((e) => edge(`v${e.u}`, `v${e.v}`, String(e.w)))), { source: 0 })];
+    while (settled.length < n) {
+      let u = -1;
+      for (let i = 0; i < n; i++) if (!settled.includes(i) && (u === -1 || dist[i] < dist[u])) u = i;
+      if (u === -1 || dist[u] === Infinity) break;
+      settled.push(u);
+      directed.filter((e) => e.u === u).forEach((e) => {
+        if (dist[e.v] > dist[u] + e.w) dist[e.v] = dist[u] + e.w;
+      });
+      frames.push(liveTopicFrame(15, `Settle ${u} and relax its outgoing edges.`, graphVisual("graph", circleNodes(n, roleMap(settled.map((i) => `v${i}`), "found"), Object.fromEntries(range(n).map((i) => [`v${i}`, `d=${dist[i] === Infinity ? "∞" : dist[i]}`]))), directed.map((e) => ({ ...edge(`v${e.u}`, `v${e.v}`, String(e.w)), role: e.u === u ? "pivot" : "default" }))), { u, settled: settled.join(" ") }, "pivot"));
+      if (frames.length > 5) break;
+    }
+    return frames;
+  },
+};
+
+const liveFloydWarshall = {
+  ...floydWarshall,
+  code:
+`def floyd_warshall(weight: list[list[float]]) -> list[list[float]]:
+    n = len(weight)
+    dist = [row.copy() for row in weight]
+    for k in range(n):
+        for i in range(n):
+            for j in range(n):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    return dist`,
+  defaultData() { return shuffledRange(6, 73); },
+  run(input) {
+    const values = demoValues(input, 6, 4);
+    const n = values.length;
+    const inf = 999;
+    const dist = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 0 : (((values[i] + values[j] + i) % 3 === 0) ? inf : 1 + ((values[i] + values[j]) % 9))));
+    const rows = range(n).map((i) => String.fromCharCode(97 + i));
+    const fmt = (m) => m.map((row) => row.map((v) => v >= inf ? "∞" : v));
+    const frames = [liveTopicFrame(3, "Build the weight matrix from the current shuffled input.", tableVisual(rows, rows, fmt(dist), { active: [0, Math.min(1, n - 1)] }), { vertices: n })];
+    for (let k = 0; k < Math.min(n, 3); k++) {
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) dist[i][j] = Math.min(dist[i][j], dist[i][k] + dist[k][j]);
+      }
+      frames.push(liveTopicFrame(6, `Allow ${rows[k]} as an intermediate vertex.`, tableVisual(rows, rows, fmt(dist), { rowHighlight: k, colHighlight: k, active: [0, Math.min(n - 1, k + 1)] }), { k: rows[k] }, "compare"));
+    }
+    for (let k = Math.min(n, 3); k < n; k++) {
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) dist[i][j] = Math.min(dist[i][j], dist[i][k] + dist[k][j]);
+    }
+    frames.push(liveTopicFrame(7, "After every k, the matrix contains all-pairs shortest path distances.", tableVisual(rows, rows, fmt(dist), { active: [n - 1, 0] }), { complete: "APSP" }, "found"));
+    return frames;
+  },
+};
+
+const liveMaxFlow = {
+  ...maxFlow,
+  code:
+`from collections import deque
+
+Edge = tuple[int, int, int]
+
+def edmonds_karp(vertices: int, edges: list[Edge], source: int, sink: int) -> int:
+    capacity = [[0] * vertices for _ in range(vertices)]
+    for u, v, cap in edges:
+        capacity[u][v] += cap
+    flow = 0
+    while True:
+        parent = [-1] * vertices
+        parent[source] = source
+        q: deque[int] = deque([source])
+        while q and parent[sink] == -1:
+            u = q.popleft()
+            for v, cap in enumerate(capacity[u]):
+                if parent[v] == -1 and cap > 0:
+                    parent[v] = u
+                    q.append(v)
+        if parent[sink] == -1:
+            return flow
+        add = 10**9
+        v = sink
+        while v != source:
+            u = parent[v]
+            add = min(add, capacity[u][v])
+            v = u
+        v = sink
+        while v != source:
+            u = parent[v]
+            capacity[u][v] -= add
+            capacity[v][u] += add
+            v = u
+        flow += add`,
+  defaultData() { return shuffledRange(10, 79); },
+  run(input) {
+    const values = demoValues(input, 12, 6);
+    const internal = clamp(Math.floor(values.length / 2), 2, 5);
+    const n = internal + 2;
+    const labels = ["s", ...range(internal).map((i) => String.fromCharCode(97 + i)), "t"];
+    const source = 0;
+    const sink = n - 1;
+    const caps = [];
+    for (let i = 1; i <= internal; i++) {
+      caps.push({ u: source, v: i, cap: 2 + (values[i - 1] % 9), flow: 0 });
+      caps.push({ u: i, v: sink, cap: 2 + (values[i] % 9), flow: 0 });
+      if (i < internal) caps.push({ u: i, v: i + 1, cap: 1 + (values[i + 1] % 6), flow: 0 });
+    }
+    const positions = [node("v0", "s", 12, 52), ...range(internal).map((i) => node(`v${i + 1}`, labels[i + 1], 34 + (i * 32) / Math.max(1, internal - 1), i % 2 ? 72 : 32)), node(`v${sink}`, "t", 88, 52)];
+    const draw = (active = [], role = "pivot") => graphVisual("flow", positions, caps.map((e) => edge(`v${e.u}`, `v${e.v}`, `${e.flow}/${e.cap}`, active.includes(`${e.u}-${e.v}`) ? role : "default")));
+    const frames = [liveTopicFrame(4, "Build a flow network from the current capacities.", draw(), { vertices: n, edges: caps.length })];
+    let total = 0;
+    for (let i = 1; i <= internal; i++) {
+      const out = caps.find((e) => e.u === source && e.v === i);
+      const into = caps.find((e) => e.u === i && e.v === sink);
+      const add = Math.min(out.cap - out.flow, into.cap - into.flow);
+      if (add <= 0) continue;
+      out.flow += add;
+      into.flow += add;
+      total += add;
+      frames.push(liveTopicFrame(23, `Augment along s-${labels[i]}-t by ${add}.`, draw([`0-${i}`, `${i}-${sink}`], "found"), { augment: add, value: total }, "found"));
+    }
+    frames.push(liveTopicFrame(31, "No direct augmenting path remains in this generated network.", draw([], "found"), { maxFlow: total }, "found"));
+    return frames;
+  },
+};
+
+const liveNPReductions = {
+  ...npReductions,
+  code:
+`def subset_sum_to_knapsack(nums: list[int], target: int) -> tuple[list[int], list[int], int, int]:
+    weights = nums.copy()
+    values = nums.copy()
+    capacity = target
+    required_value = target
+    return weights, values, capacity, required_value
+
+def answer_preserved(nums: list[int], target: int, chosen: list[int]) -> bool:
+    subset_yes = sum(chosen) == target
+    weights, values, capacity, required_value = subset_sum_to_knapsack(nums, target)
+    knapsack_yes = sum(chosen) <= capacity and sum(chosen) >= required_value
+    return subset_yes == knapsack_yes`,
+  defaultData() { return shuffledRange(8, 83); },
+  run(input) {
+    const nums = demoValues(input, 8, 4).map((v) => 1 + (v % 12));
+    const target = Math.max(3, Math.floor(nums.reduce((a, b) => a + b, 0) / 2));
+    const instance = `[${nums.join(", ")}], target=${target}`;
+    return [
+      liveTopicFrame(1, "Start with a concrete Subset Sum instance generated from the current input.", { type: "reduction", boxes: [
+        { id: "known", title: "Subset Sum", body: instance, role: "focus" },
+        { id: "target", title: "Knapsack decision", body: "not built yet" },
+      ], arrows: [] }, { n: nums.length, target }),
+      liveTopicFrame(2, "Map every number to both a weight and a value.", { type: "reduction", boxes: [
+        { id: "known", title: "Subset Sum", body: instance, role: "focus" },
+        { id: "transform", title: "Polynomial transform", body: "weights=nums, values=nums", role: "pivot" },
+        { id: "target", title: "Knapsack", body: `capacity=${target}, required=${target}` },
+      ], arrows: [["known", "transform", "O(n)"], ["transform", "target", "instance"]] }, { time: "O(n)" }, "pivot"),
+      liveTopicFrame(9, "A chosen subset sums to target exactly when the constructed knapsack reaches required value within capacity.", { type: "reduction", boxes: [
+        { id: "known", title: "Subset Sum yes", body: `sum(chosen) = ${target}`, role: "found" },
+        { id: "target", title: "Knapsack yes", body: `weight <= ${target}, value >= ${target}`, role: "found" },
+      ], arrows: [["known", "target", "iff"]] }, { preserves: "yes/no" }, "found"),
+    ];
+  },
+};
+
+// ============================================================
 // Public registry
 // ============================================================
 const ALL = [
   bubble, insertion, selection, quick, binary,
-  mergeSort, recursionTree, countingRadix, heapPQ, bst, dpTable,
-  activitySelection, bfsDfs, mst, shortestPaths, floydWarshall, maxFlow,
-  npReductions,
+  liveMergeSort, liveRecursionTree, liveCountingRadix, liveHeapPQ, liveBST,
+  liveDPTable, liveActivitySelection, liveBfsDfs, liveMST, liveShortestPaths,
+  liveFloydWarshall, liveMaxFlow, liveNPReductions,
 ];
 
 function labelFor(frame) {
