@@ -4,14 +4,14 @@
 // =============================================================
 // Bars — generic bar chart that interprets every Step primitive.
 //
-// A single "Bars" component handles all four sort visualizations.
-// Per-algorithm flavor is driven by what the frame contains:
-//   - highlights → bar fill colors
-//   - pointers   → labelled chips above bars
-//   - windows    → "frame" outlines / "le" region shades / "gap" empty slots
-//   - floating   → small boxes above the named index
-//   - viewKind   → opt-in extra decorations (pair bracket, divider,
-//                  ★ min badge, pivot horizontal line)
+// Layout strategy:
+//   - The bars themselves live in a CSS grid `repeat(N, 1fr)` so column
+//     widths stay aligned to indices.
+//   - All decorations (sorted-region tints, partition outline, pair bracket,
+//     ★ min badge, horizontal pivot/min lines, vertical divider) are
+//     ABSOLUTE-positioned overlays on top of the same wrapper. They compute
+//     their `left` / `width` from index ranges so they never compete with
+//     bars for grid cells (which is what was making bars jump on step).
 // =============================================================
 
 const ROLE_PRIORITY = ["swap", "compare", "pivot", "found", "eliminated", "sorted"];
@@ -22,6 +22,21 @@ function roleAt(highlights, idx) {
     if (highlights[r] && highlights[r].includes(idx)) return r;
   }
   return null;
+}
+
+// Convert an inclusive index range [lo, hi] into the {left, width} percent
+// pair that overlays exactly the bar columns lo..hi (treating the bar grid
+// as N equal columns; gaps between bars are bridged by the overlay).
+function bandOf(lo, hi, n) {
+  const cell = 100 / n;
+  return {
+    left: `${lo * cell}%`,
+    width: `${(hi - lo + 1) * cell}%`,
+  };
+}
+
+function columnLeftPct(idx, n) {
+  return `${(idx + 0.5) * (100 / n)}%`;
 }
 
 function Bars({ frame, viewKind, maxValue, height = 280 }) {
@@ -41,20 +56,34 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
     pointerByIdx[idx].push(name);
   }
 
+  // Headroom above the bar grid: pointer rail + (optional) floating-box
+  // band + (optional) ★ min badge band.
   const hasFloating = floatingIndices.size > 0;
-  const hasPivotLine =
-    viewKind === "quick" &&
-    typeof frame.variables?.pivot === "number" &&
-    Array.isArray(windows.frame);
+  const pointerStack = Math.max(
+    1,
+    ...Object.values(pointerByIdx).map((ns) => ns.length)
+  );
+  const pointerH = 6 + pointerStack * 18 + 8;
+  const floatingH = hasFloating ? 60 : 0;
+  const minBadgeH = viewKind === "selection" ? 22 : 0;
+  const topBand = pointerH + floatingH + minBadgeH;
 
-  // Top decoration band — extra room above bars for floating boxes,
-  // pair brackets, ★ badges, etc.
-  const topBand =
-    (hasFloating ? 56 : 0) +
-    (viewKind === "selection" ? 24 : 0) + // ★ min badge headroom
-    8;
+  // ---- Sorted-region tint band ----
+  let sortedBand = null;
+  if (
+    (viewKind === "bubble" ||
+      viewKind === "selection" ||
+      viewKind === "insertion") &&
+    (highlights.sorted || []).length > 0
+  ) {
+    const s = [...highlights.sorted].sort((a, b) => a - b);
+    sortedBand = { from: s[0], to: s[s.length - 1] };
+  }
+  // ---- Quick-sort partition window + ≤-region ----
+  const frameWin = Array.isArray(windows.frame) ? windows.frame : null;
+  const leWin = Array.isArray(windows.le) ? windows.le : null;
 
-  // ---- Selection-sort decorations (★ min badge + horizontal min line) ----
+  // ---- Selection-sort: ★ min + horizontal min-value line ----
   let selectionMin = null;
   if (viewKind === "selection") {
     const pivotIdx = highlights.pivot && highlights.pivot[0];
@@ -78,97 +107,90 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
     }
   }
 
-  // ---- Sorted-suffix divider (bubble + selection + insertion) ----
+  // ---- Vertical sorted/unsorted divider ----
   let divider = null;
   if (viewKind === "bubble") {
     const sortedIdx = (highlights.sorted || []).slice().sort((a, b) => a - b);
     if (sortedIdx.length && sortedIdx[0] > 0 && sortedIdx[0] < n) {
-      divider = { at: sortedIdx[0], leftLabel: "unsorted", rightLabel: "sorted" };
+      divider = { at: sortedIdx[0] };
     }
   } else if (viewKind === "selection" || viewKind === "insertion") {
     const i = frame.variables?.i;
     if (typeof i === "number" && i > 0 && i < n) {
-      divider = {
-        at: i,
-        leftLabel: "sorted",
-        rightLabel: viewKind === "insertion" ? "unsorted" : "unsorted",
-      };
+      divider = { at: i };
     }
   }
 
-  // ---- Insertion-sort gap (rendered as outlined slot) ----
+  // ---- Insertion-sort gap (rendered as outlined slot in place of the bar) ----
   const gapWindow = Array.isArray(windows.gap) ? windows.gap : null;
   const gapIdx = gapWindow ? gapWindow[0] : null;
 
-  // ---- Quick-sort frame box + le region ----
-  const frameWin = Array.isArray(windows.frame) ? windows.frame : null;
-  const leWin = Array.isArray(windows.le) ? windows.le : null;
+  // ---- Quick-sort horizontal pivot line (height-relative y) ----
+  const hasPivotLine =
+    viewKind === "quick" &&
+    typeof frame.variables?.pivot === "number" &&
+    frameWin;
 
-  // CSS column tracks
   const cols = `repeat(${n}, 1fr)`;
-  const colSpan = (lo, hi) => ({
-    gridColumn: `${lo + 1} / ${hi + 2}`,
-  });
 
   return (
-    <div style={{ position: "relative", padding: "0 4px", paddingTop: topBand }}>
-      {/* ---------- Pointer rail ---------- */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: cols,
-          gap: 4,
-          minHeight: 28,
-          marginBottom: 6,
-          alignItems: "end",
-        }}
-      >
-        {data.map((_, idx) => (
-          <div
-            key={idx}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              gap: 2,
-            }}
-          >
-            {pointerByIdx[idx]?.map((name) => (
-              <div key={name} className="chip">{name}</div>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {/* ---------- Floating boxes (insertion-sort key) ---------- */}
-      {hasFloating && (
+    <div style={{ position: "relative", padding: "0 4px" }}>
+      {/* Headroom above bars for the pointer rail, floating boxes, ★ min badge */}
+      <div style={{ height: topBand, position: "relative" }}>
+        {/* ---------- Pointer rail (chips above bars) ---------- */}
         <div
           style={{
-            position: "relative",
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: pointerH,
             display: "grid",
             gridTemplateColumns: cols,
             gap: 4,
-            height: 0,
+            alignItems: "end",
           }}
         >
-          {Object.entries(floating).map(([idxStr, value]) => {
+          {data.map((_, idx) => (
+            <div
+              key={idx}
+              style={{
+                gridColumn: `${idx + 1} / ${idx + 2}`,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 2,
+                paddingBottom: 4,
+              }}
+            >
+              {pointerByIdx[idx]?.map((name) => (
+                <div key={name} className="chip">
+                  {name}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* ---------- Floating boxes (insertion-sort key) ---------- */}
+        {hasFloating &&
+          Object.entries(floating).map(([idxStr, value]) => {
             const idx = +idxStr;
+            const left = columnLeftPct(idx, n);
             return (
               <div
                 key={idx}
                 style={{
-                  ...colSpan(idx, idx),
-                  position: "relative",
-                  height: 0,
+                  position: "absolute",
+                  left,
+                  bottom: pointerH + 6,
+                  transform: "translateX(-50%)",
+                  pointerEvents: "none",
                 }}
               >
                 <div
                   style={{
-                    position: "absolute",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    bottom: 4,
                     padding: "4px 10px",
                     background: "var(--surface-2)",
                     border: "1px solid var(--ink)",
@@ -181,159 +203,188 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
                 >
                   ↑ key={value}
                 </div>
-                {/* dotted connector to slot */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "50%",
-                    bottom: -22,
-                    width: 0,
-                    height: 22,
-                    borderLeft: "1px dotted var(--role-pivot)",
-                  }}
-                />
               </div>
             );
           })}
-        </div>
-      )}
 
-      {/* ---------- Bars ---------- */}
+        {/* ---------- ★ min badge ---------- */}
+        {selectionMin && (
+          <div
+            style={{
+              position: "absolute",
+              left: columnLeftPct(selectionMin.idx, n),
+              bottom: pointerH + floatingH + 4,
+              transform: "translateX(-50%)",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              fontWeight: 700,
+              color: "var(--role-pivot)",
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+            }}
+          >
+            ★ min
+          </div>
+        )}
+      </div>
+
+      {/* ---------- Bars + decorations ---------- */}
       <div
         className="bars-row"
         style={{
-          display: "grid",
-          gridTemplateColumns: cols,
-          gap: 4,
-          height,
-          alignItems: "end",
           position: "relative",
+          height,
         }}
       >
-        {/* Quick-sort window outline (sits behind bars) */}
-        {frameWin && (
+        {/* === Decoration overlays (BEHIND the bars) === */}
+
+        {/* Sorted-region soft tint */}
+        {sortedBand && (
           <div
             style={{
-              ...colSpan(frameWin[0], frameWin[1]),
-              gridRow: 1,
-              border: "1px dashed var(--ink-3)",
-              alignSelf: "stretch",
-              margin: "-6px -4px",
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              ...bandOf(sortedBand.from, sortedBand.to, n),
+              background:
+                "color-mix(in srgb, var(--role-sorted) 12%, transparent)",
               pointerEvents: "none",
+              zIndex: 0,
             }}
           />
         )}
+
         {/* Quick-sort ≤-pivot region tint */}
         {leWin && leWin[0] <= leWin[1] && (
           <div
             style={{
-              ...colSpan(leWin[0], leWin[1]),
-              gridRow: 1,
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              ...bandOf(leWin[0], leWin[1], n),
               background:
                 "color-mix(in srgb, var(--role-pivot) 12%, transparent)",
-              alignSelf: "stretch",
-              margin: "0 -2px",
               pointerEvents: "none",
+              zIndex: 0,
             }}
           />
         )}
-        {/* Bubble / selection sorted-region tint */}
-        {(viewKind === "bubble" || viewKind === "selection" || viewKind === "insertion") &&
-          (highlights.sorted || []).length > 0 &&
-          (() => {
-            const s = [...highlights.sorted].sort((a, b) => a - b);
+
+        {/* Quick-sort partition window outline */}
+        {frameWin && frameWin[0] <= frameWin[1] && (
+          <div
+            style={{
+              position: "absolute",
+              top: -6,
+              bottom: -6,
+              ...bandOf(frameWin[0], frameWin[1], n),
+              border: "1px dashed var(--ink-3)",
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+          />
+        )}
+
+        {/* Vertical sorted/unsorted divider */}
+        {divider && (
+          <div
+            style={{
+              position: "absolute",
+              left: `${(divider.at * 100) / n}%`,
+              top: -8,
+              bottom: -8,
+              width: 0,
+              borderLeft: "1px dashed var(--role-sorted)",
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+          />
+        )}
+
+        {/* === Bars themselves (in their own clean grid) === */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            gridTemplateColumns: cols,
+            gap: 4,
+            alignItems: "end",
+            zIndex: 1,
+          }}
+        >
+          {data.map((value, idx) => {
+            const isGap = gapIdx === idx;
+            const role = roleAt(highlights, idx);
+            const fill = role ? `var(--role-${role})` : "var(--role-default)";
+            const h = (value / Math.max(maxValue, 1)) * (height - 4);
+            const isFocus = role && FOCUS_ROLES.has(role);
             return (
               <div
+                key={idx}
                 style={{
-                  ...colSpan(s[0], s[s.length - 1]),
-                  gridRow: 1,
-                  background:
-                    "color-mix(in srgb, var(--role-sorted) 12%, transparent)",
-                  alignSelf: "stretch",
-                  margin: "0 -2px",
-                  pointerEvents: "none",
+                  gridColumn: `${idx + 1} / ${idx + 2}`,
+                  position: "relative",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "flex-end",
                 }}
-              />
+              >
+                {isGap ? (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: 18,
+                      border: "1px dashed var(--rule-strong)",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: h,
+                      background: fill,
+                      border: "1px solid var(--ink)",
+                      borderBottom: "none",
+                      position: "relative",
+                      transition:
+                        "height 200ms var(--ease-out), background 200ms var(--ease-out)",
+                    }}
+                  >
+                    {isFocus && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: -22,
+                          left: 0,
+                          right: 0,
+                          textAlign: "center",
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: `var(--role-${role})`,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {value}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             );
-          })()}
+          })}
+        </div>
 
-        {/* Bars themselves */}
-        {data.map((value, idx) => {
-          const isGap = gapIdx === idx;
-          const role = roleAt(highlights, idx);
-          // Default fill: prussian blue (or the sorted-suffix tint via region)
-          const fill = role
-            ? `var(--role-${role})`
-            : `var(--role-default)`;
-          const h = (value / Math.max(maxValue, 1)) * (height - 4);
-          const isFocus = role && FOCUS_ROLES.has(role);
-          return (
-            <div
-              key={idx}
-              style={{
-                gridRow: 1,
-                position: "relative",
-                height: "100%",
-                display: "flex",
-                alignItems: "flex-end",
-                zIndex: 1,
-              }}
-            >
-              {isGap ? (
-                <div
-                  style={{
-                    width: "100%",
-                    height: 18,
-                    border: "1px dashed var(--rule-strong)",
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: h,
-                    background: fill,
-                    border: "1px solid var(--ink)",
-                    borderBottom: "none",
-                    position: "relative",
-                    transition:
-                      "height 200ms var(--ease-out), background 200ms var(--ease-out)",
-                  }}
-                >
-                  {isFocus && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: -22,
-                        left: 0,
-                        right: 0,
-                        textAlign: "center",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: `var(--role-${role})`,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {value}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {/* === Above-bars overlays === */}
 
-        {/* Bubble pair bracket */}
+        {/* Bubble pair bracket (sits at top of bars area) */}
         {pairBracket && (
           <div
             style={{
-              ...colSpan(pairBracket.from, pairBracket.to),
-              gridRow: 1,
-              alignSelf: "start",
-              marginTop: -10,
-              marginLeft: -3,
-              marginRight: -3,
+              position: "absolute",
+              top: -10,
+              ...bandOf(pairBracket.from, pairBracket.to, n),
               borderTop: `2px solid var(--role-${pairBracket.role})`,
               borderLeft: `2px solid var(--role-${pairBracket.role})`,
               borderRight: `2px solid var(--role-${pairBracket.role})`,
@@ -344,29 +395,7 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
           />
         )}
 
-        {/* Selection ★ min badge */}
-        {selectionMin && (
-          <div
-            style={{
-              ...colSpan(selectionMin.idx, selectionMin.idx),
-              gridRow: 1,
-              alignSelf: "start",
-              marginTop: -36,
-              textAlign: "center",
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              fontWeight: 700,
-              color: "var(--role-pivot)",
-              whiteSpace: "nowrap",
-              pointerEvents: "none",
-              zIndex: 2,
-            }}
-          >
-            ★ min
-          </div>
-        )}
-
-        {/* Quick pivot horizontal line spanning the frame */}
+        {/* Quick-sort pivot horizontal line */}
         {hasPivotLine &&
           (() => {
             const pv = frame.variables.pivot;
@@ -374,28 +403,19 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
             return (
               <div
                 style={{
-                  ...colSpan(frameWin[0], frameWin[1]),
-                  gridRow: 1,
-                  position: "relative",
-                  alignSelf: "end",
+                  position: "absolute",
+                  ...bandOf(frameWin[0], frameWin[1], n),
+                  bottom: y,
                   height: 0,
+                  borderTop: "1px dashed var(--role-pivot)",
                   pointerEvents: "none",
-                  zIndex: 3,
+                  zIndex: 2,
                 }}
               >
-                <div
+                <span
                   style={{
                     position: "absolute",
-                    bottom: y,
-                    left: 0,
-                    right: 0,
-                    borderTop: "1px dashed var(--role-pivot)",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: y + 4,
+                    bottom: 4,
                     right: 4,
                     fontFamily: "var(--font-mono)",
                     fontSize: 10,
@@ -406,42 +426,34 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
                   }}
                 >
                   pivot = {pv}
-                </div>
+                </span>
               </div>
             );
           })()}
 
-        {/* Selection min horizontal line */}
-        {viewKind === "selection" && selectionMin &&
+        {/* Selection horizontal min line */}
+        {viewKind === "selection" &&
+          selectionMin &&
           (() => {
             const i = frame.variables?.i ?? 0;
-            const y = (selectionMin.value / Math.max(maxValue, 1)) * (height - 4);
             const lo = Math.max(0, Math.min(i, n - 1));
+            const y = (selectionMin.value / Math.max(maxValue, 1)) * (height - 4);
             return (
               <div
                 style={{
-                  ...colSpan(lo, n - 1),
-                  gridRow: 1,
-                  position: "relative",
-                  alignSelf: "end",
+                  position: "absolute",
+                  ...bandOf(lo, n - 1, n),
+                  bottom: y,
                   height: 0,
+                  borderTop: "1px dashed var(--role-pivot)",
                   pointerEvents: "none",
-                  zIndex: 3,
+                  zIndex: 2,
                 }}
               >
-                <div
+                <span
                   style={{
                     position: "absolute",
-                    bottom: y,
-                    left: 0,
-                    right: 0,
-                    borderTop: "1px dashed var(--role-pivot)",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: y + 4,
+                    bottom: 4,
                     right: 4,
                     fontFamily: "var(--font-mono)",
                     fontSize: 10,
@@ -452,10 +464,31 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
                   }}
                 >
                   current min = {selectionMin.value}
-                </div>
+                </span>
               </div>
             );
           })()}
+
+        {/* Floating-box → gap-slot dotted connectors */}
+        {hasFloating &&
+          Object.keys(floating).map((idxStr) => {
+            const idx = +idxStr;
+            return (
+              <div
+                key={`conn-${idx}`}
+                style={{
+                  position: "absolute",
+                  left: columnLeftPct(idx, n),
+                  top: -22,
+                  bottom: 18,
+                  width: 0,
+                  borderLeft: "1px dotted var(--role-pivot)",
+                  pointerEvents: "none",
+                  zIndex: 2,
+                }}
+              />
+            );
+          })}
       </div>
 
       {/* ---------- Index rail ---------- */}
@@ -471,6 +504,7 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
           <div
             key={idx}
             style={{
+              gridColumn: `${idx + 1} / ${idx + 2}`,
               textAlign: "center",
               fontFamily: "var(--font-mono)",
               fontSize: 10,
@@ -481,29 +515,6 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
           </div>
         ))}
       </div>
-
-      {/* ---------- Vertical sorted/unsorted divider ---------- */}
-      {divider &&
-        (() => {
-          // Position the divider at the boundary between two columns. We
-          // overlay an absolutely-positioned line that spans the bars area.
-          const left = `calc(${(divider.at / n) * 100}% + 4px)`;
-          return (
-            <div
-              style={{
-                position: "absolute",
-                left,
-                top: topBand,
-                bottom: 32,
-                width: 0,
-                borderLeft: "1px dashed var(--role-sorted)",
-                pointerEvents: "none",
-                zIndex: 1,
-              }}
-              aria-hidden
-            />
-          );
-        })()}
     </div>
   );
 }
@@ -541,7 +552,6 @@ function SearchView({ frame, maxValue, height = 280 }) {
   };
 
   const cols = `repeat(${n}, 1fr)`;
-  const colSpan = (a, b) => ({ gridColumn: `${a + 1} / ${b + 2}` });
 
   const ptrAt = {};
   for (const [name, val] of Object.entries({ lo, mid, hi })) {
@@ -552,7 +562,6 @@ function SearchView({ frame, maxValue, height = 280 }) {
 
   return (
     <div style={{ width: "100%", padding: "0 4px" }}>
-      {/* Target banner */}
       {target !== undefined && (
         <div
           style={{
@@ -568,7 +577,6 @@ function SearchView({ frame, maxValue, height = 280 }) {
         </div>
       )}
 
-      {/* Window bracket label + frame */}
       <div
         style={{
           textAlign: "center",
@@ -599,6 +607,7 @@ function SearchView({ frame, maxValue, height = 280 }) {
           <div
             key={idx}
             style={{
+              gridColumn: `${idx + 1} / ${idx + 2}`,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -613,22 +622,16 @@ function SearchView({ frame, maxValue, height = 280 }) {
         ))}
       </div>
 
-      {/* Cells with bracket frame around [lo..hi] */}
-      <div
-        style={{
-          position: "relative",
-          padding: 6,
-        }}
-      >
-        {/* Bracket frame */}
+      {/* Cells with absolute-positioned bracket */}
+      <div style={{ position: "relative", padding: 6 }}>
         {lo <= hi && (
           <div
             style={{
               position: "absolute",
               top: 0,
               bottom: 0,
-              left: `calc(${(lo / n) * 100}%)`,
-              width: `calc(${((hi - lo + 1) / n) * 100}%)`,
+              left: `${(lo / n) * 100}%`,
+              width: `${((hi - lo + 1) / n) * 100}%`,
               border: "1px dashed var(--ink)",
               pointerEvents: "none",
             }}
@@ -648,6 +651,7 @@ function SearchView({ frame, maxValue, height = 280 }) {
               <div
                 key={idx}
                 style={{
+                  gridColumn: `${idx + 1} / ${idx + 2}`,
                   height: 56,
                   background: bg,
                   border: "1px solid var(--ink)",
@@ -668,7 +672,7 @@ function SearchView({ frame, maxValue, height = 280 }) {
         </div>
       </div>
 
-      {/* Index row + eliminated label */}
+      {/* Index row */}
       <div
         style={{
           display: "grid",
@@ -681,6 +685,7 @@ function SearchView({ frame, maxValue, height = 280 }) {
           <div
             key={idx}
             style={{
+              gridColumn: `${idx + 1} / ${idx + 2}`,
               textAlign: "center",
               fontFamily: "var(--font-mono)",
               fontSize: 10,
@@ -715,7 +720,7 @@ function SearchView({ frame, maxValue, height = 280 }) {
 }
 
 // =============================================================
-// Top-level dispatch — pick the right visualization
+// Top-level dispatch
 // =============================================================
 function Visualization({ frame, viewKind, maxValue, height }) {
   if (viewKind === "search") {
