@@ -1,0 +1,160 @@
+/* ============================================================
+   Algorithm Visualizer — page-level styles
+   The design tokens come from tokens.css; everything here is
+   layout glue + element styling for the live page.
+   ============================================================ */
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  overflow-y: auto;
+  overflow-x: auto;
+  font-feature-settings: "ss01", "cv11";
+}
+
+#root {
+  min-height: 100%;
+}
+
+/* Native form-control color inheritance */
+input[type="range"] { accent-color: var(--accent); }
+
+button {
+  font-family: var(--font-body);
+}
+
+/* The page wants square corners; reset any UA defaults that round */
+button, input { border-radius: 0; }
+
+/* Scrubber track + tempo slider styling kept native */
+
+/* --- Code view active-line border emulation done via class --- */
+.code-line {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 14px;
+  padding: 1px 8px;
+  margin: 0 -8px;
+  border-left: 2px solid transparent;
+  white-space: pre;
+}
+.code-line.active {
+  background: var(--code-active-line);
+  border-left: 2px solid var(--code-active-gutter);
+}
+.code-line .gutter {
+  color: var(--ink-4);
+  text-align: right;
+  user-select: none;
+}
+.code-line.active .gutter {
+  color: var(--code-active-gutter);
+  font-weight: 600;
+}
+
+/* --- Pointer chip used in the bar pointer rail --- */
+.chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--rule-strong);
+  padding: 1px 6px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* --- Bar baseline rule --- */
+.bars-row {
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+/* --- Trace log row hovers --- */
+.trace-row { cursor: pointer; }
+.trace-row:hover:not(.active) { background: var(--rule-faint); }
+
+/* --- Catalogue tabs --- */
+.cat-tab { transition: background 120ms var(--ease-out); }
+.cat-tab:hover:not(.active) { background: var(--bg-tint); }
+
+/* --- Transport keys --- */
+.tkey {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  padding: 0 10px;
+  height: 32px;
+  min-width: 32px;
+  letter-spacing: 0.02em;
+  box-shadow: 1px 1px 0 var(--rule-soft);
+  cursor: pointer;
+}
+.tkey:hover { background: var(--bg-tint); }
+.tkey:active { transform: translate(1px, 1px); box-shadow: none; }
+.tkey.primary {
+  background: var(--accent);
+  color: var(--surface-2);
+  border-color: var(--accent);
+  box-shadow: none;
+  min-width: 56px;
+}
+.tkey.primary:hover { background: var(--accent-hover); }
+.tkey:disabled {
+  color: var(--ink-5);
+  border-color: var(--rule-soft);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* --- Range / scrubber styling --- */
+.scrubber-track {
+  position: relative;
+  height: 4px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--rule-soft);
+  cursor: pointer;
+}
+.scrubber-fill {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  background: var(--accent);
+  pointer-events: none;
+}
+.scrubber-tick {
+  position: absolute;
+  top: -4px;
+  width: 1px;
+  height: 4px;
+  background: var(--ink-4);
+  transform: translateX(-0.5px);
+  pointer-events: none;
+}
+
+/* --- Eyebrow utility --- */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+/* --- Marginalia card --- */
+.marginalia-card {
+  position: relative;
+  padding: 12px 14px 12px 18px;
+  background: var(--bg-tint);
+  border: 1px solid var(--rule-faint);
+  border-left: 3px solid var(--accent);
+}
