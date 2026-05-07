@@ -1,11 +1,16 @@
-# Algorithm Visualizer · Field Notes
+# NTNU AlgDat Study Companion · Field Notes
 
-A static web page that visualizes five classic algorithms — bubble sort,
-insertion sort, selection sort, quicksort, and binary search — with a
-field-notes/scientific-instrument aesthetic (paper or night themes).
+A static study companion for NTNU `Algoritmer og datastrukturer`, built around
+the course curriculum and the existing algorithm visualizer. It combines:
 
-The displayed source is Python. All trace generation runs client-side in
-JavaScript.
+- a bilingual lecture dashboard for the 14-course lecture sequence
+- learning goals, pitfalls, CLRS references, glossary cards, and self-tests
+- local progress tracking in `localStorage`
+- five live algorithm visualizations: bubble sort, insertion sort, selection
+  sort, quicksort, and binary search
+
+The displayed source is Python. All trace generation and study content runs
+client-side in JavaScript. There is no backend, API key, or build step.
 
 ## Running locally
 
@@ -43,10 +48,11 @@ styles/
   tokens.css         # design tokens (paper + night themes)
   app.css            # page-level layout + utility classes
 js/
+  courseData.js     # static bilingual curriculum, glossary, quizzes, tool map
   algorithms.js      # 5 algorithms — Python source string + JS generator
   views.js           # Bars + SearchView (the actual visualizations)
   components.js      # Masthead, CatalogueBar, CodeView, StepRibbon, …
-  app.js             # MainPage — composes everything
+  app.js             # routed study companion shell + embedded visualizer
 ```
 
 ## Adding a new algorithm

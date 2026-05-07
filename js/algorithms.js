@@ -54,9 +54,17 @@ function range(n) {
 // Bubble Sort
 // ============================================================
 const bubble = {
+  id: "bubble-sort",
   name: "Bubble Sort",
   description:
     "Walk the list comparing each adjacent pair; swap if out of order. After pass i, the i largest elements are locked in at the end.",
+  explanation: {
+    no: "Bubble Sort er en enkel sammenligningssortering som gjør lokale bytter. Den er nyttig for å se løkkeinvarianter og forskjellen på best-, average- og worst-case.",
+    en: "Bubble Sort is a simple comparison sort based on local swaps. It is useful for seeing loop invariants and the difference between best-, average-, and worst-case.",
+  },
+  courseRefs: ["l01", "l04"],
+  conceptIds: ["asymptotic-notation", "loop-invariant"],
+  learningGoalIds: ["A4", "A5", "Z3", "Z4", "Z6"],
   viewKind: "bubble",
   filename: "algorithms/bubble_sort.py",
   complexities: { best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)" },
@@ -134,9 +142,17 @@ const bubble = {
 // Insertion Sort
 // ============================================================
 const insertion = {
+  id: "insertion-sort",
   name: "Insertion Sort",
   description:
     "Take each new element as the 'key', lift it out, then slide cells right across the sorted prefix until the key drops into its place.",
+  explanation: {
+    no: "Insertion Sort bygger en sortert prefiks én nøkkel av gangen. Den er pensumnær tidlig fordi korrektheten kan vises med en tydelig løkkeinvariant.",
+    en: "Insertion Sort builds a sorted prefix one key at a time. It is useful early in the course because correctness follows from a clear loop invariant.",
+  },
+  courseRefs: ["l01"],
+  conceptIds: ["asymptotic-notation", "loop-invariant"],
+  learningGoalIds: ["A7", "Z3", "Z4", "Z6"],
   viewKind: "insertion",
   filename: "algorithms/insertion_sort.py",
   complexities: { best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)" },
@@ -242,9 +258,17 @@ const insertion = {
 // Selection Sort
 // ============================================================
 const selection = {
+  id: "selection-sort",
   name: "Selection Sort",
   description:
     "Build a sorted prefix by repeatedly scanning the unsorted suffix for its minimum, then swapping that minimum into the next slot.",
+  explanation: {
+    no: "Selection Sort gjør alltid samme antall sammenligninger, uavhengig av inputrekkefølge. Den gir en ryddig kontrast til adaptive algoritmer som Insertion Sort.",
+    en: "Selection Sort performs the same number of comparisons regardless of input order. It gives a clean contrast to adaptive algorithms such as Insertion Sort.",
+  },
+  courseRefs: ["l04"],
+  conceptIds: ["asymptotic-notation", "comparison-lower-bound", "loop-invariant"],
+  learningGoalIds: ["D1", "Z3", "Z4", "Z6"],
   viewKind: "selection",
   filename: "algorithms/selection_sort.py",
   complexities: { best: "O(n²)", avg: "O(n²)", worst: "O(n²)", space: "O(1)" },
@@ -351,9 +375,17 @@ const selection = {
 // Quick Sort  (Lomuto partition, rightmost pivot)
 // ============================================================
 const quick = {
+  id: "quick-sort",
   name: "Quick Sort",
   description:
     "Choose a pivot (here: rightmost), partition the window into ≤ pivot / > pivot, drop the pivot between them, then recurse on each side.",
+  explanation: {
+    no: "Quicksort viser splitt og hersk med partisjonering. Den er rask i forventning, men pivotvalg bestemmer forskjellen mellom god og dårlig kjøretid.",
+    en: "Quicksort demonstrates divide and conquer through partitioning. It is fast in expectation, but pivot choice determines the difference between good and poor running time.",
+  },
+  courseRefs: ["l03", "l04"],
+  conceptIds: ["divide-and-conquer", "recurrence", "comparison-lower-bound"],
+  learningGoalIds: ["C1", "C4", "C5", "Z3", "Z4", "Z6"],
   viewKind: "quick",
   filename: "algorithms/quick_sort.py",
   complexities: {
@@ -505,9 +537,17 @@ const quick = {
 // Binary Search
 // ============================================================
 const binary = {
+  id: "binary-search",
   name: "Binary Search",
   description:
     "Maintain a [lo, hi] window. Inspect the middle; if it isn't the target, eliminate the half that can't possibly contain it. O(log n).",
+  explanation: {
+    no: "Binærsøk bruker sortert input til å halvere søkevinduet. Det er en kompakt modell for rekursiv dekomponering, induksjon og logaritmisk kjøretid.",
+    en: "Binary search uses sorted input to halve the search window. It is a compact model for recursive decomposition, induction, and logarithmic running time.",
+  },
+  courseRefs: ["l03"],
+  conceptIds: ["divide-and-conquer", "recurrence", "induction", "bst"],
+  learningGoalIds: ["C2", "C5", "Z2", "Z3", "Z4", "Z6"],
   viewKind: "search",
   filename: "algorithms/binary_search.py",
   complexities: {

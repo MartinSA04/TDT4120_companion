@@ -647,9 +647,10 @@ function Masthead({ algo, n, idx, total, line, doing, theme, onTheme }) {
 function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, onShuffle }) {
   return (
     <div
+      className="catalogue-bar"
       style={{
         display: "grid",
-        gridTemplateColumns: "1fr auto",
+        gridTemplateColumns: "var(--catalogue-grid-cols, 1fr auto)",
         gap: 24,
         alignItems: "center",
         padding: "14px 36px",
@@ -781,7 +782,8 @@ function Cell({ label, value }) {
   );
 }
 
-function DescriptionBlock({ algo }) {
+function DescriptionBlock({ algo, lang = "en" }) {
+  const translated = algo.explanation?.[lang] || algo.description;
   return (
     <div style={{ flex: 1, padding: "16px 18px", borderTop: "1px solid var(--rule-soft)" }}>
       <span className="eyebrow">§ 02 · Description</span>
@@ -795,7 +797,7 @@ function DescriptionBlock({ algo }) {
           color: "var(--ink-2)",
         }}
       >
-        {algo.description}
+        {translated}
       </p>
       <div
         style={{
