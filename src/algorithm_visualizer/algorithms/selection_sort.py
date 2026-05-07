@@ -44,6 +44,7 @@ class SelectionSort(Algorithm):
                 line=3,
                 variables={"n": n, "i": i, "m": m, "a[m]": data[m]},
                 pointers={"i": i},
+                pivot=m,
                 sorted=sorted_prefix,
                 windows={"unsorted": (i, n - 1)} if i < n else {},
             )

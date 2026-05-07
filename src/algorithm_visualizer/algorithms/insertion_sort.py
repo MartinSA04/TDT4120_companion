@@ -38,6 +38,9 @@ class InsertionSort(Algorithm):
         )
         for i in range(1, n):
             key = data[i]
+            # `gap` is the index conceptually empty because the key was lifted
+            # out of it. It migrates left every time we shift a cell right.
+            gap = i
             yield step(
                 f"i = {i}: lift the key out of a[i]. Sorted prefix is a[:{i}].",
                 data,
@@ -45,8 +48,8 @@ class InsertionSort(Algorithm):
                 variables={"n": n, "i": i, "key": key},
                 pointers={"i": i},
                 sorted=list(range(i)),
-                floating={i: key},
-                windows={"key_origin": (i, i)},
+                floating={gap: key},
+                windows={"gap": (gap, gap)},
             )
             j = i - 1
             yield step(
@@ -56,12 +59,12 @@ class InsertionSort(Algorithm):
                 variables={"n": n, "i": i, "key": key, "j": j},
                 pointers={"j": j},
                 sorted=list(range(i)),
-                floating={j + 1: key},
-                windows={"key_origin": (i, i)},
+                floating={gap: key},
+                windows={"gap": (gap, gap)},
             )
             while j >= 0 and data[j] > key:
                 yield step(
-                    f"a[j] = {data[j]} > key = {key} — shift a[j] right into a[j+1].",
+                    f"a[j] = {data[j]} > key = {key} — shift a[j] right into the gap a[{gap}].",
                     data,
                     line=5,
                     variables={
@@ -71,28 +74,32 @@ class InsertionSort(Algorithm):
                         "j": j,
                         "a[j]": data[j],
                     },
-                    pointers={"j": j, "j+1": j + 1},
+                    pointers={"j": j},
                     compare=j,
                     sorted=list(range(i)),
-                    floating={j + 1: key},
-                    windows={"key_origin": (i, i)},
+                    floating={gap: key},
+                    windows={"gap": (gap, gap)},
                 )
                 data[j + 1] = data[j]
+                # The gap moves to j: a[j]'s value just got copied to a[j+1],
+                # so a[j] is now the empty slot that the key is hovering over.
+                gap = j
                 yield step(
-                    f"Shifted: a[{j + 1}] now holds {data[j + 1]}. Decrement j.",
+                    f"Shifted: a[{j + 1}] now holds {data[j + 1]}. Gap is now at a[{gap}].",
                     data,
                     line=6,
                     variables={"n": n, "i": i, "key": key, "j": j},
-                    pointers={"j": j, "j+1": j + 1},
+                    pointers={"j": j},
                     swap=[j + 1],
                     sorted=list(range(i)),
-                    floating={j + 1: key},
-                    windows={"key_origin": (i, i)},
+                    floating={gap: key},
+                    windows={"gap": (gap, gap)},
                 )
                 j -= 1
+            # Loop exit: gap == j + 1, which is where the key drops in.
             data[j + 1] = key
             yield step(
-                f"Drop the key into a[{j + 1}]. Sorted prefix grows to a[:{i + 1}].",
+                f"Drop the key into the gap at a[{j + 1}]. Sorted prefix grows to a[:{i + 1}].",
                 data,
                 line=8,
                 variables={"n": n, "i": i, "key": key, "j": j},

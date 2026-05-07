@@ -1,4 +1,9 @@
-"""Source-code panel that highlights the line emitting the current step."""
+"""Source-code panel that highlights the line emitting the current step.
+
+Field Notes styling: header strip with `§ 01 · Source` eyebrow + filename,
+square-cornered, active line gets a soft tint background, gutter number
+bolded in the active-gutter color.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +11,6 @@ import keyword
 
 from PySide6.QtCore import QRegularExpression, QSize, Qt
 from PySide6.QtGui import (
-    QColor,
     QFont,
     QPainter,
     QPaintEvent,
@@ -16,50 +20,72 @@ from PySide6.QtGui import (
     QTextCursor,
     QTextDocument,
 )
-from PySide6.QtWidgets import QPlainTextEdit, QTextEdit, QWidget
-
-from algorithm_visualizer.gui.theme import (
-    CODE_GUTTER_BG,
-    CODE_GUTTER_FG,
-    CODE_LINE_HIGHLIGHT,
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPlainTextEdit,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
+
+from algorithm_visualizer.gui import theme
 
 
 class _PythonHighlighter(QSyntaxHighlighter):
-    """Minimal Python syntax highlighter — keywords, strings, comments, numbers."""
+    """Token-based Python highlighter using the active theme's code colors."""
 
     def __init__(self, document: QTextDocument) -> None:
         super().__init__(document)
         self._rules: list[tuple[QRegularExpression, QTextCharFormat]] = []
+        self._build_rules()
+
+    def _build_rules(self) -> None:
+        self._rules = []
 
         kw_fmt = QTextCharFormat()
-        kw_fmt.setForeground(QColor("#c792ea"))
+        kw_fmt.setForeground(theme.color("code-keyword"))
         kw_fmt.setFontWeight(QFont.Weight.DemiBold)
         for word in keyword.kwlist:
             self._rules.append((QRegularExpression(rf"\b{word}\b"), kw_fmt))
 
         builtin_fmt = QTextCharFormat()
-        builtin_fmt.setForeground(QColor("#82aaff"))
-        for word in ("self", "True", "False", "None", "len", "range", "list", "set", "dict"):
+        builtin_fmt.setForeground(theme.color("code-builtin"))
+        for word in (
+            "self",
+            "True",
+            "False",
+            "None",
+            "len",
+            "range",
+            "list",
+            "set",
+            "dict",
+            "int",
+            "str",
+            "float",
+            "bool",
+        ):
             self._rules.append((QRegularExpression(rf"\b{word}\b"), builtin_fmt))
 
-        decorator_fmt = QTextCharFormat()
-        decorator_fmt.setForeground(QColor("#ffcb6b"))
-        self._rules.append((QRegularExpression(r"@\w+"), decorator_fmt))
-
         number_fmt = QTextCharFormat()
-        number_fmt.setForeground(QColor("#f78c6c"))
+        number_fmt.setForeground(theme.color("code-number"))
         self._rules.append((QRegularExpression(r"\b\d+(\.\d+)?\b"), number_fmt))
 
         string_fmt = QTextCharFormat()
-        string_fmt.setForeground(QColor("#c3e88d"))
+        string_fmt.setForeground(theme.color("code-string"))
         self._rules.append((QRegularExpression(r"\"[^\"\\]*(\\.[^\"\\]*)*\""), string_fmt))
         self._rules.append((QRegularExpression(r"'[^'\\]*(\\.[^'\\]*)*'"), string_fmt))
 
         comment_fmt = QTextCharFormat()
-        comment_fmt.setForeground(QColor("#546e7a"))
+        comment_fmt.setForeground(theme.color("code-comment"))
         comment_fmt.setFontItalic(True)
         self._rules.append((QRegularExpression(r"#[^\n]*"), comment_fmt))
+
+    def reload(self) -> None:
+        self._build_rules()
+        self.rehighlight()
 
     def highlightBlock(self, text: str) -> None:
         for pattern, fmt in self._rules:
@@ -70,7 +96,7 @@ class _PythonHighlighter(QSyntaxHighlighter):
 
 
 class _LineNumberArea(QWidget):
-    def __init__(self, editor: CodeView) -> None:
+    def __init__(self, editor: _CodeEdit) -> None:
         super().__init__(editor)
         self._editor = editor
 
@@ -81,11 +107,12 @@ class _LineNumberArea(QWidget):
         self._editor.paint_line_numbers(event)
 
 
-class CodeView(QPlainTextEdit):
-    """Read-only code panel with gutter line numbers and active-line highlight."""
+class _CodeEdit(QPlainTextEdit):
+    """The actual editing widget. `CodeView` wraps this with a header strip."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setObjectName("codeView")
         self.setReadOnly(True)
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         font = QFont("JetBrains Mono")
@@ -108,8 +135,14 @@ class CodeView(QPlainTextEdit):
         self._active_line = -1
         self._refresh_extra_selections()
 
+    def reload_palette(self) -> None:
+        if self._highlighter is not None:
+            self._highlighter.reload()
+        self._refresh_extra_selections()
+        self._gutter.update()
+        self.viewport().update()
+
     def set_active_line(self, line: int) -> None:
-        """`line` is 1-indexed and matches the source file's line numbering."""
         self._active_line = line
         self._refresh_extra_selections()
         if line > 0:
@@ -119,26 +152,43 @@ class CodeView(QPlainTextEdit):
         self._gutter.update()
 
     def line_number_area_width(self) -> int:
-        digits = max(3, len(str(max(1, self.blockCount()))))
-        return 14 + self.fontMetrics().horizontalAdvance("9") * digits
+        digits = max(2, len(str(max(1, self.blockCount()))))
+        return 22 + self.fontMetrics().horizontalAdvance("9") * digits
 
     def paint_line_numbers(self, event: QPaintEvent) -> None:
         painter = QPainter(self._gutter)
-        painter.fillRect(event.rect(), CODE_GUTTER_BG)
+        painter.fillRect(event.rect(), theme.color("code-bg"))
+        rule_x = self._gutter.width() - 1
+        painter.fillRect(
+            rule_x,
+            event.rect().top(),
+            1,
+            event.rect().height(),
+            theme.color("code-gutter"),
+        )
+
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
         top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
         bottom = top + int(self.blockBoundingRect(block).height())
-        width = self._gutter.width() - 6
         active_idx = self._active_line - 1
+        text_w = self._gutter.width() - 12  # leave room for the rule + padding
+        active_color = theme.color("code-active-gutter")
+        idle_color = theme.color("ink-4")
+
+        font = self.font()
+        font_bold = QFont(font)
+        font_bold.setWeight(QFont.Weight.Bold)
+
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
-                color = CODE_GUTTER_FG if block_number != active_idx else QColor("#f0b429")
-                painter.setPen(color)
+                is_active = block_number == active_idx
+                painter.setPen(active_color if is_active else idle_color)
+                painter.setFont(font_bold if is_active else font)
                 painter.drawText(
                     0,
                     top,
-                    width,
+                    text_w,
                     self.fontMetrics().height(),
                     Qt.AlignmentFlag.AlignRight,
                     str(block_number + 1),
@@ -169,9 +219,61 @@ class CodeView(QPlainTextEdit):
         if self._active_line <= 0:
             self.setExtraSelections([])
             return
-        selection = QTextEdit.ExtraSelection()
-        selection.format.setBackground(CODE_LINE_HIGHLIGHT)
-        selection.format.setProperty(QTextCharFormat.Property.FullWidthSelection, True)
-        cursor = QTextCursor(self.document().findBlockByNumber(self._active_line - 1))
-        selection.cursor = cursor
-        self.setExtraSelections([selection])
+        bg_sel = QTextEdit.ExtraSelection()
+        bg_sel.format.setBackground(theme.color("code-active-line"))
+        bg_sel.format.setProperty(QTextCharFormat.Property.FullWidthSelection, True)
+        bg_cursor = QTextCursor(self.document().findBlockByNumber(self._active_line - 1))
+        bg_sel.cursor = bg_cursor
+        self.setExtraSelections([bg_sel])
+
+
+class CodeView(QFrame):
+    """Header-stripped code panel with eyebrow + filename + line count."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("bgPanel")
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        header = QFrame()
+        header.setObjectName("bgPanel")
+        h_layout = QHBoxLayout(header)
+        h_layout.setContentsMargins(14, 10, 14, 10)
+        h_layout.setSpacing(10)
+
+        self._eyebrow = QLabel("§ 01 · Source")
+        self._eyebrow.setObjectName("eyebrow")
+
+        self._filename_label = QLabel("")
+        self._filename_label.setObjectName("monoDim")
+
+        self._lines_label = QLabel("")
+        self._lines_label.setObjectName("monoDim")
+
+        h_layout.addWidget(self._eyebrow)
+        h_layout.addWidget(self._filename_label)
+        h_layout.addStretch(1)
+        h_layout.addWidget(self._lines_label)
+
+        rule = QFrame()
+        rule.setObjectName("hairline")
+
+        self._edit = _CodeEdit()
+
+        layout.addWidget(header)
+        layout.addWidget(rule)
+        layout.addWidget(self._edit, stretch=1)
+
+        theme.on_theme_change(self._edit.reload_palette)
+
+    def set_source(self, text: str, filename: str = "") -> None:
+        self._edit.set_source(text)
+        line_count = len(text.splitlines()) or 1
+        self._lines_label.setText(f"{line_count} lines · python")
+        self._filename_label.setText(filename)
+
+    def set_active_line(self, line: int) -> None:
+        self._edit.set_active_line(line)
