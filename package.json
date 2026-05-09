@@ -1,0 +1,14 @@
+{
+  "name": "algorithm-visualizer-site",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Static Field Notes site — built with esbuild, deployed to GitHub Pages.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --serve"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
