@@ -1086,44 +1086,384 @@ const activitySelection = {
   },
 };
 
-const bfsDfs = {
-  id: "bfs-dfs",
-  name: "BFS / DFS",
+// ============================================================
+// BFS + DFS — share a layered demo graph
+// ============================================================
+//
+// 10-vertex undirected graph laid out in 5 layers, with a few cross-links
+// so DFS finds back edges and BFS shows interesting layer growth.
+//
+//             (s)               distance 0
+//            /   \
+//          (a)   (b)            distance 1
+//          / \   / \
+//        (c) (d-e) (f)          distance 2     ← d–e is a cross-link
+//         |   X   |
+//        (g) - + (h)            distance 3     ← g–t and h–t below
+//          \       /
+//             (t)               distance 4
+
+function traversalGraph() {
+  const nodes = [
+    { id: "s", x: 50, y: 8 },
+    { id: "a", x: 24, y: 28 }, { id: "b", x: 76, y: 28 },
+    { id: "c", x: 10, y: 50 }, { id: "d", x: 38, y: 50 },
+    { id: "e", x: 62, y: 50 }, { id: "f", x: 90, y: 50 },
+    { id: "g", x: 24, y: 74 }, { id: "h", x: 76, y: 74 },
+    { id: "t", x: 50, y: 92 },
+  ];
+  const edges = [
+    ["s", "a"], ["s", "b"],
+    ["a", "c"], ["a", "d"], ["b", "e"], ["b", "f"],
+    ["c", "g"], ["d", "g"], ["e", "h"], ["f", "h"],
+    ["d", "e"],
+    ["g", "t"], ["h", "t"],
+  ];
+  const adj = {};
+  nodes.forEach((n) => { adj[n.id] = []; });
+  edges.forEach(([u, v]) => { adj[u].push(v); adj[v].push(u); });
+  // Deterministic neighbour order so step traces are reproducible.
+  Object.values(adj).forEach((list) => list.sort());
+  return { nodes, edges, adj };
+}
+
+function edgeKey(u, v) {
+  return u < v ? `${u}-${v}` : `${v}-${u}`;
+}
+
+const bfs = {
+  id: "bfs",
+  name: "BFS",
   description:
-    "Graph traversal is controlled by the frontier discipline: FIFO gives BFS, LIFO/recursion gives DFS.",
+    "Breadth-first search explores vertices in order of distance from the source. A FIFO queue keeps the discovered-but-unfinished frontier; every popped vertex enqueues its undiscovered neighbours.",
   explanation: {
-    no: "BFS/DFS-visualiseringen viser samme graf med ulike frontier-regler.",
-    en: "The BFS/DFS visualization shows the same graph under different frontier rules.",
+    no: "BFS-visualiseringen viser distansebølger som brer seg ut fra kilden, sammen med FIFO-køen og hvilke kanter som klassifiseres som tre- eller kryss-kanter.",
+    en: "The BFS visualization shows distance waves spreading from the source, alongside the FIFO queue and which edges are classified as tree vs. cross.",
   },
   courseRefs: ["l08"],
-  conceptIds: ["graph-traversal", "bfs", "dfs"],
+  conceptIds: ["graph-traversal", "bfs"],
   learningGoalIds: ["H2", "H3", "H7", "H8", "H9"],
-  viewKind: "graph",
-  filename: "graphs/traversal.py",
+  viewKind: "bfs",
+  filename: "graphs/bfs.py",
   complexities: { best: "Θ(V+E)", avg: "Θ(V+E)", worst: "Θ(V+E)", space: "Θ(V)" },
   code:
-`def traverse(G, s, frontier):
-    discover s
-    while frontier:
-        u = frontier.pop()
-        for v in G.adj[u]:
-            if v is white:
-                discover v
-                frontier.push(v)`,
-  defaultData() { return range(8); },
+`from collections import deque
+
+def bfs(adj: dict[str, list[str]], source: str) -> dict[str, int]:
+    dist: dict[str, int] = {source: 0}
+    parent: dict[str, str | None] = {source: None}
+    queue: deque[str] = deque([source])
+    while queue:
+        u = queue.popleft()
+        for v in adj[u]:
+            if v not in dist:
+                dist[v] = dist[u] + 1
+                parent[v] = u
+                queue.append(v)
+    return dist`,
+  defaultData() { return range(10); },
   run() {
-    const nodes = [
-      node("s", "s", 15, 42), node("a", "a", 34, 20), node("b", "b", 34, 64),
-      node("c", "c", 56, 20), node("d", "d", 56, 64), node("e", "e", 78, 42),
-    ];
-    const edges = [edge("s", "a"), edge("s", "b"), edge("a", "c"), edge("b", "d"), edge("c", "e"), edge("d", "e")];
-    return [
-      topicFrame(1, "Start at s. The frontier contains discovered but unfinished nodes.", graphVisual("graph", nodes.map((n) => n.id === "s" ? { ...n, role: "focus" } : n), edges, { frontier: ["s"] }), { frontier: "queue/stack" }),
-      topicFrame(4, "BFS with a FIFO queue discovers a and b as distance 1.", graphVisual("graph", nodes.map((n) => ["s", "a", "b"].includes(n.id) ? { ...n, role: "found" } : n), edges.map((e) => e.from === "s" ? { ...e, role: "found" } : e), { frontier: ["a", "b"], mode: "BFS" }), { distance: 1 }, "found"),
-      topicFrame(4, "BFS continues layer by layer, reaching c and d before e.", graphVisual("graph", nodes.map((n) => ["s", "a", "b", "c", "d"].includes(n.id) ? { ...n, role: "found" } : n), edges, { frontier: ["c", "d"], mode: "BFS" }), { distance: 2 }, "found"),
-      topicFrame(4, "DFS uses the newest frontier item first, following one branch deeply.", graphVisual("graph", nodes.map((n) => ["s", "a", "c", "e"].includes(n.id) ? { ...n, role: "pivot" } : n), edges.map((e) => ["s-a", "a-c", "c-e"].includes(`${e.from}-${e.to}`) ? { ...e, role: "pivot" } : e), { frontier: ["b"], mode: "DFS" }), { path: "s-a-c-e" }, "pivot"),
-      topicFrame(5, "Both visit the reachable component in Θ(V+E); the frontier rule changes the traversal tree.", graphVisual("graph", nodes.map((n) => ({ ...n, role: "found" })), edges.map((e) => ({ ...e, role: "found" })), { mode: "complete" }), { time: "Theta(V+E)" }, "found"),
-    ];
+    const G = traversalGraph();
+    const source = "s";
+    const dist = { [source]: 0 };
+    const parent = { [source]: null };
+    const queue = [source];
+    const treeEdges = new Set();
+    const crossEdges = new Set();
+    const frames = [];
+
+    function snapshot({ line, desc, role = "pivot", activeNode = null, activeEdge = null, edgeKind = null, variables = {} }) {
+      frames.push({
+        line,
+        desc,
+        data: [],
+        viewKind: "bfs",
+        highlights: { [role]: [0] },
+        pointers: {},
+        variables,
+        visual: {
+          type: "bfs",
+          nodes: G.nodes.map((n) => ({
+            id: n.id,
+            x: n.x,
+            y: n.y,
+            dist: n.id in dist ? dist[n.id] : null,
+            state:
+              n.id === activeNode
+                ? "active"
+                : n.id in dist && !queue.includes(n.id)
+                ? "visited"
+                : queue.includes(n.id)
+                ? "frontier"
+                : "undiscovered",
+          })),
+          edges: G.edges.map(([u, v]) => {
+            const k = edgeKey(u, v);
+            const isActive =
+              activeEdge && edgeKey(activeEdge[0], activeEdge[1]) === k;
+            let cls = "default";
+            if (treeEdges.has(k)) cls = "tree";
+            else if (crossEdges.has(k)) cls = "cross";
+            if (isActive) cls = edgeKind || "active";
+            return { from: u, to: v, role: cls };
+          }),
+          source,
+          queue: [...queue],
+          dist: { ...dist },
+          parent: { ...parent },
+          activeNode,
+          activeEdge,
+        },
+      });
+    }
+
+    snapshot({
+      line: 4,
+      desc: `Initialise: d[${source}] = 0, queue = [${source}]. Source is the only discovered vertex.`,
+      role: "found",
+      activeNode: source,
+      variables: { source, queue: `[${source}]`, [`d[${source}]`]: 0 },
+    });
+
+    while (queue.length) {
+      const u = queue.shift();
+      snapshot({
+        line: 7,
+        desc: `Pop u = ${u} from the front of the queue. Distance d[${u}] = ${dist[u]}.`,
+        role: "pivot",
+        activeNode: u,
+        variables: { u, [`d[${u}]`]: dist[u], queue: queue.length ? `[${queue.join(", ")}]` : "[]" },
+      });
+      for (const v of G.adj[u]) {
+        const k = edgeKey(u, v);
+        if (!(v in dist)) {
+          // Tree edge: discover v
+          dist[v] = dist[u] + 1;
+          parent[v] = u;
+          treeEdges.add(k);
+          queue.push(v);
+          snapshot({
+            line: 12,
+            desc: `Edge ${u}–${v}: ${v} is undiscovered. Set d[${v}] = ${dist[v]}, parent[${v}] = ${u}, enqueue ${v}.`,
+            role: "found",
+            activeNode: u,
+            activeEdge: [u, v],
+            edgeKind: "tree",
+            variables: {
+              u, v,
+              [`d[${v}]`]: dist[v],
+              queue: `[${queue.join(", ")}]`,
+            },
+          });
+        } else {
+          // Cross edge — already discovered
+          if (!treeEdges.has(k)) crossEdges.add(k);
+          snapshot({
+            line: 9,
+            desc: `Edge ${u}–${v}: ${v} already has d[${v}] = ${dist[v]}. Skip — this edge is not in the BFS tree.`,
+            role: "eliminated",
+            activeNode: u,
+            activeEdge: [u, v],
+            edgeKind: "cross",
+            variables: { u, v, [`d[${v}]`]: dist[v] },
+          });
+        }
+      }
+    }
+
+    snapshot({
+      line: 15,
+      desc: "Queue empty. Tree edges form the BFS tree; every vertex's distance is its shortest-path length from the source.",
+      role: "found",
+      variables: { reached: Object.keys(dist).length },
+    });
+    return frames;
+  },
+};
+
+const dfs = {
+  id: "dfs",
+  name: "DFS",
+  description:
+    "Depth-first search dives along one path until it dead-ends, then backtracks. A LIFO call stack records the path; non-tree edges to ancestors are back edges, revealing cycles.",
+  explanation: {
+    no: "DFS-visualiseringen viser anropsstakken voksne nedover, oppdagelsestid/ferdigtid på hver node, og klassifiserer kanter som tre- eller tilbake-kanter.",
+    en: "The DFS visualization shows the recursion stack growing downward, discovery / finish times on each node, and classifies edges as tree or back edges.",
+  },
+  courseRefs: ["l08"],
+  conceptIds: ["graph-traversal", "dfs"],
+  learningGoalIds: ["H2", "H3", "H7", "H8", "H9"],
+  viewKind: "dfs",
+  filename: "graphs/dfs.py",
+  complexities: { best: "Θ(V+E)", avg: "Θ(V+E)", worst: "Θ(V+E)", space: "Θ(V)" },
+  code:
+`def dfs(adj: dict[str, list[str]], source: str) -> tuple[dict, dict]:
+    d: dict[str, int] = {}   # discovery time
+    f: dict[str, int] = {}   # finish time
+    parent: dict[str, str | None] = {source: None}
+    time = 0
+
+    def visit(u: str) -> None:
+        nonlocal time
+        time += 1
+        d[u] = time
+        for v in adj[u]:
+            if v not in d:
+                parent[v] = u
+                visit(v)
+        time += 1
+        f[u] = time
+
+    visit(source)
+    return d, f`,
+  defaultData() { return range(10); },
+  run() {
+    const G = traversalGraph();
+    const source = "s";
+    const d = {};
+    const f = {};
+    const parent = { [source]: null };
+    const stack = []; // each frame: { u, iter }
+    const treeEdges = new Set();
+    const backEdges = new Set();
+    let time = 0;
+    const frames = [];
+
+    function pathOnStack() {
+      return stack.map((fr) => fr.u);
+    }
+
+    function snapshot({ line, desc, role = "pivot", activeEdge = null, edgeKind = null, variables = {} }) {
+      const onStack = new Set(pathOnStack());
+      const activeNode = stack.length ? stack[stack.length - 1].u : null;
+      frames.push({
+        line,
+        desc,
+        data: [],
+        viewKind: "dfs",
+        highlights: { [role]: [0] },
+        pointers: {},
+        variables,
+        visual: {
+          type: "dfs",
+          nodes: G.nodes.map((n) => ({
+            id: n.id,
+            x: n.x,
+            y: n.y,
+            d: n.id in d ? d[n.id] : null,
+            f: n.id in f ? f[n.id] : null,
+            state:
+              n.id === activeNode
+                ? "active"
+                : onStack.has(n.id)
+                ? "onstack"
+                : n.id in f
+                ? "finished"
+                : n.id in d
+                ? "discovered"
+                : "undiscovered",
+          })),
+          edges: G.edges.map(([u, v]) => {
+            const k = edgeKey(u, v);
+            const isActive =
+              activeEdge && edgeKey(activeEdge[0], activeEdge[1]) === k;
+            let cls = "default";
+            if (treeEdges.has(k)) cls = "tree";
+            else if (backEdges.has(k)) cls = "back";
+            if (isActive) cls = edgeKind || "active";
+            return { from: u, to: v, role: cls };
+          }),
+          source,
+          stack: stack.map((fr) => ({
+            u: fr.u,
+            d: d[fr.u],
+            iter: fr.iter,
+            adj: G.adj[fr.u],
+          })),
+          path: pathOnStack(),
+          d: { ...d },
+          f: { ...f },
+          parent: { ...parent },
+          time,
+          activeEdge,
+        },
+      });
+    }
+
+    function visit(u) {
+      time += 1;
+      d[u] = time;
+      stack.push({ u, iter: -1 });
+      snapshot({
+        line: 9,
+        desc: `Enter visit(${u}). Set d[${u}] = ${time}; push ${u} onto the recursion stack.`,
+        role: "pivot",
+        variables: { u, [`d[${u}]`]: d[u], time, "|stack|": stack.length },
+      });
+      for (let i = 0; i < G.adj[u].length; i++) {
+        const v = G.adj[u][i];
+        const k = edgeKey(u, v);
+        stack[stack.length - 1].iter = i;
+        if (!(v in d)) {
+          treeEdges.add(k);
+          parent[v] = u;
+          snapshot({
+            line: 11,
+            desc: `Edge ${u}→${v}: ${v} is white. Tree edge — recurse.`,
+            role: "found",
+            activeEdge: [u, v],
+            edgeKind: "tree",
+            variables: { u, v, "edge": "tree" },
+          });
+          visit(v);
+          snapshot({
+            line: 12,
+            desc: `Returned from visit(${v}). Continue scanning ${u}'s neighbours.`,
+            role: "pivot",
+            variables: { u, "back at": u },
+          });
+        } else if (!(v in f)) {
+          // v is on stack → back edge (cycle)
+          backEdges.add(k);
+          snapshot({
+            line: 11,
+            desc: `Edge ${u}→${v}: ${v} is on the stack — back edge. Reveals a cycle through the recursion path.`,
+            role: "swap",
+            activeEdge: [u, v],
+            edgeKind: "back",
+            variables: { u, v, "edge": "back" },
+          });
+        } else {
+          // Already finished (in undirected DFS this is just the parent edge already accounted for)
+          snapshot({
+            line: 11,
+            desc: `Edge ${u}→${v}: ${v} is already finished — skip (already in the DFS tree).`,
+            role: "eliminated",
+            activeEdge: [u, v],
+            edgeKind: "tree",
+            variables: { u, v, "edge": "skip" },
+          });
+        }
+      }
+      time += 1;
+      f[u] = time;
+      stack.pop();
+      snapshot({
+        line: 14,
+        desc: `Finish ${u}. Set f[${u}] = ${time}; pop the stack frame and backtrack.`,
+        role: "found",
+        variables: { u, [`f[${u}]`]: f[u], time, "|stack|": stack.length },
+      });
+    }
+
+    visit(source);
+    snapshot({
+      line: 17,
+      desc: "All vertices reachable from the source have been discovered and finished. Tree edges form the DFS tree.",
+      role: "found",
+      variables: { reached: Object.keys(d).length, time },
+    });
+    return frames;
   },
 };
 
@@ -1790,68 +2130,10 @@ function graphFromValues(input, maxNodes = 8) {
   return { values, n, edges };
 }
 
-const liveBfsDfs = {
-  ...bfsDfs,
-  code:
-`from collections import deque
-
-def bfs(adj: list[list[int]], source: int) -> list[int]:
-    seen = [False] * len(adj)
-    order: list[int] = []
-    q: deque[int] = deque([source])
-    seen[source] = True
-    while q:
-        u = q.popleft()
-        order.append(u)
-        for v in adj[u]:
-            if not seen[v]:
-                seen[v] = True
-                q.append(v)
-    return order
-
-def dfs(adj: list[list[int]], source: int) -> list[int]:
-    seen = [False] * len(adj)
-    order: list[int] = []
-    def visit(u: int) -> None:
-        seen[u] = True
-        order.append(u)
-        for v in adj[u]:
-            if not seen[v]:
-                visit(v)
-    visit(source)
-    return order`,
-  defaultData() { return shuffledRange(8, 61); },
-  run(input) {
-    const { n, edges } = graphFromValues(input, 8);
-    const adj = Array.from({ length: n }, () => []);
-    edges.forEach(({ u, v }) => { adj[u].push(v); adj[v].push(u); });
-    const graphEdges = edges.map(({ u, v }) => edge(`v${u}`, `v${v}`));
-    const bfsOrder = [];
-    const seen = new Set([0]);
-    const q = [0];
-    while (q.length) {
-      const u = q.shift();
-      bfsOrder.push(u);
-      adj[u].forEach((v) => {
-        if (!seen.has(v)) { seen.add(v); q.push(v); }
-      });
-    }
-    const dfsOrder = [];
-    const dfsSeen = new Set();
-    function visit(u) {
-      dfsSeen.add(u);
-      dfsOrder.push(u);
-      adj[u].forEach((v) => { if (!dfsSeen.has(v)) visit(v); });
-    }
-    visit(0);
-    return [
-      liveTopicFrame(3, "Start from source 0. Shuffle changes the generated edges.", graphVisual("graph", circleNodes(n, { v0: "focus" }), graphEdges, { frontier: ["0"] }), { vertices: n, edges: edges.length }),
-      liveTopicFrame(7, "BFS uses a queue, so it discovers vertices by distance layers.", graphVisual("graph", circleNodes(n, roleMap(bfsOrder.slice(0, Math.min(4, bfsOrder.length)).map((i) => `v${i}`), "found")), graphEdges, { frontier: bfsOrder.slice(1, 4).map(String), mode: "BFS" }), { order: bfsOrder.join(" ") }, "found"),
-      liveTopicFrame(26, "DFS uses recursion, so it follows one branch before backtracking.", graphVisual("graph", circleNodes(n, roleMap(dfsOrder.slice(0, Math.min(4, dfsOrder.length)).map((i) => `v${i}`), "pivot")), graphEdges, { frontier: dfsOrder.slice(0, 4).map(String), mode: "DFS" }), { order: dfsOrder.join(" ") }, "pivot"),
-      liveTopicFrame(15, "Both traversals finish in Θ(V+E), but their trees differ.", graphVisual("graph", circleNodes(n, roleMap(bfsOrder.map((i) => `v${i}`), "found")), graphEdges.map((e) => ({ ...e, role: "found" })), { mode: "complete" }), { time: `Theta(${n}+${edges.length})` }, "found"),
-    ];
-  },
-};
+// (BFS / DFS are now top-level interactive algorithms with their own
+//  specialized views — see `bfs` and `dfs` declarations above. No "live"
+//  wrapper is needed since the trace is generated step-by-step from a
+//  fixed pedagogical graph.)
 
 const liveMST = {
   ...mst,
@@ -2087,7 +2369,7 @@ def answer_preserved(nums: list[int], target: int, chosen: list[int]) -> bool:
 const ALL = [
   bubble, insertion, selection, quick, binary,
   liveMergeSort, liveRecursionTree, liveCountingRadix, liveHeapPQ, liveBST,
-  liveDPTable, liveActivitySelection, liveBfsDfs, liveMST, liveShortestPaths,
+  liveDPTable, liveActivitySelection, bfs, dfs, liveMST, liveShortestPaths,
   liveFloydWarshall, liveMaxFlow, liveNPReductions,
 ];
 

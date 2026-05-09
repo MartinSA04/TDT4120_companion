@@ -1291,3 +1291,333 @@ button, input { border-radius: 0; }
     white-space: normal;
   }
 }
+
+/* ============================================================
+   BFS view  (graph + FIFO queue + distance map)
+   ============================================================ */
+
+.bfs-view,
+.dfs-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.bfs-stage,
+.dfs-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.bfs-svg,
+.dfs-svg {
+  width: 100%;
+  min-height: 280px;
+  height: 100%;
+  overflow: visible;
+}
+
+.bfs-distance,
+.dfs-stack {
+  background: var(--bg-tint);
+  border: 1px solid var(--rule-faint);
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bfs-distance-head,
+.dfs-stack-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule-faint);
+  color: var(--ink-3);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.dfs-stack-head .eyebrow,
+.bfs-distance-head .eyebrow,
+.dfs-timeline-head .eyebrow {
+  font-weight: 600;
+}
+
+.dfs-stack-meta,
+.bfs-fifo-meta,
+.dfs-timeline-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.dfs-stack-meta strong,
+.bfs-fifo-meta strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.bfs-distance-row {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 2px 0;
+}
+
+.bfs-distance-label {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.bfs-distance-vertices {
+  color: var(--ink);
+  letter-spacing: 0.1em;
+}
+
+.bfs-distance-empty,
+.dfs-stack-empty,
+.dfs-timeline-empty {
+  color: var(--ink-4);
+  font-style: italic;
+  padding: 6px 0;
+}
+
+/* ---------- BFS FIFO queue strip ---------- */
+.bfs-fifo {
+  background: var(--surface);
+  border: 1px solid var(--rule-soft);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bfs-fifo-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bfs-fifo-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bfs-fifo-end {
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.bfs-fifo-cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1 1 auto;
+}
+
+.bfs-fifo-cell {
+  min-width: 26px;
+  padding: 4px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: center;
+}
+
+.bfs-fifo-cell.front {
+  background: var(--role-compare);
+  color: var(--surface-2);
+  box-shadow: -2px 0 0 var(--accent);
+}
+
+.bfs-fifo-empty {
+  color: var(--ink-4);
+  font-style: italic;
+}
+
+/* ============================================================
+   DFS view  (graph + recursion stack + d/f timeline)
+   ============================================================ */
+
+.dfs-stack-cells {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+
+.dfs-stack-arrow {
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.dfs-stack-arrow.base {
+  color: var(--ink-4);
+  margin-top: 2px;
+}
+
+.dfs-stack-cell {
+  background: var(--surface-2);
+  border: 1px solid var(--ink);
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dfs-stack-cell.top {
+  border-color: var(--role-pivot);
+  box-shadow: -3px 3px 0 var(--role-pivot);
+}
+
+.dfs-stack-cell-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.dfs-stack-cell-vertex {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.dfs-stack-cell-d {
+  color: var(--ink-3);
+  font-size: 10px;
+}
+
+.dfs-stack-cell-iter {
+  color: var(--ink-3);
+  font-size: 10px;
+}
+
+.dfs-iter {
+  display: inline-block;
+  padding: 0 3px;
+  margin: 0 1px;
+  color: var(--ink-2);
+}
+
+.dfs-iter.cur {
+  background: var(--accent);
+  color: var(--surface-2);
+  font-weight: 700;
+}
+
+/* ---------- DFS d/f timeline ---------- */
+.dfs-timeline {
+  background: var(--surface);
+  border: 1px solid var(--rule-soft);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dfs-timeline-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 4px;
+}
+
+.dfs-timeline-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dfs-timeline-row {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.dfs-timeline-vertex {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+}
+
+.dfs-timeline-track {
+  position: relative;
+  height: 14px;
+  background: var(--bg-tint);
+  border: 1px solid var(--rule-faint);
+}
+
+.dfs-timeline-bar {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  background: var(--role-sorted);
+  opacity: 0.85;
+}
+
+.dfs-timeline-bar.open {
+  background: var(--role-compare);
+}
+
+.dfs-timeline-tick {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--ink);
+}
+
+.dfs-timeline-tick.discover {
+  border-color: var(--role-compare);
+  color: var(--role-compare);
+}
+
+.dfs-timeline-tick.finish {
+  border-color: var(--role-sorted);
+  color: var(--role-sorted);
+}
+
+@media (max-width: 1100px) {
+  .bfs-stage,
+  .dfs-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
