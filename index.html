@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Algorithm Visualizer · Field Notes</title>
+  <title>Algorithm Visualizer · Field Notes Edition</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles/tokens.css" />
-  <link rel="stylesheet" href="styles/app.css" />
+  <link rel="stylesheet" href="styles/tokens.css?v=2" />
+  <link rel="stylesheet" href="styles/app.css?v=2" />
+  <link rel="stylesheet" href="styles/field-notes.css?v=2" />
 
   <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
@@ -17,10 +18,41 @@
 <body>
   <div id="root"></div>
 
-  <script type="text/babel" data-presets="react" src="js/algorithms.js"></script>
-  <script type="text/babel" data-presets="react" src="js/courseData.js"></script>
-  <script type="text/babel" data-presets="react" src="js/views.js"></script>
-  <script type="text/babel" data-presets="react" src="js/components.js"></script>
+  <!-- Bootstrap helpers (must run before any IIFE that destructures window.AlgViz) -->
+  <script>
+    window.AlgViz = window.AlgViz || {};
+    window.AlgViz.VIEWS = ["study", "glossary", "practice", "visualizer", "progress"];
+    window.AlgViz.txt = function (loc, lang) {
+      if (typeof loc === "string") return loc;
+      if (!loc) return "";
+      return loc[lang] || loc.no || loc.en || "";
+    };
+    window.AlgViz.go = function (view, detail) {
+      var next = detail ? "#/" + view + "/" + detail : "#/" + view;
+      if (window.location.hash !== next) window.location.hash = next;
+    };
+  </script>
+
+  <!-- Data layer -->
+  <script type="text/babel" data-presets="react" src="js/algorithms.js?v=2"></script>
+  <script type="text/babel" data-presets="react" src="js/courseData.js?v=2"></script>
+
+  <!-- Visualizer internals (legacy) -->
+  <script type="text/babel" data-presets="react" src="js/views.js?v=2"></script>
+  <script type="text/babel" data-presets="react" src="js/components.js?v=2"></script>
+
+  <!-- Field-notes shell + views -->
+  <script type="text/babel" data-presets="react" src="js/shell.js"></script>
+  <script type="text/babel" data-presets="react" src="js/study-view.js"></script>
+  <script type="text/babel" data-presets="react" src="js/glossary-view.js"></script>
+  <script type="text/babel" data-presets="react" src="js/practice-view.js"></script>
+  <script type="text/babel" data-presets="react" src="js/progress-view.js"></script>
+  <script type="text/babel" data-presets="react" src="js/visualizer-page.js"></script>
+
+  <!-- App shell + boot -->
   <script type="text/babel" data-presets="react" src="js/app.js"></script>
+  <script type="text/babel" data-presets="react">
+    window.AlgViz.boot();
+  </script>
 </body>
 </html>
