@@ -2097,3 +2097,263 @@ button, input { border-radius: 0; }
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ============================================================
+   Unified TreeView (heap, BST, merge-sort recursion, recursion tree)
+   ============================================================ */
+
+.tree-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.tree-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.tree-svg {
+  width: 100%;
+  min-height: 280px;
+  height: 100%;
+  overflow: visible;
+}
+
+.tree-side {
+  background: var(--bg-tint);
+  border: 1px solid var(--rule-faint);
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tree-side-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule-faint);
+}
+
+.tree-side-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.tree-side-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tree-side-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 8px;
+  padding: 3px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.tree-side-label {
+  color: var(--ink-3);
+}
+
+.tree-side-value {
+  color: var(--ink);
+  font-weight: 600;
+  text-align: right;
+}
+
+.tree-side-value.active {
+  color: var(--accent);
+}
+
+.tree-side-note {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* Node badge above a tree node */
+.node-badge {
+  font-family: var(--font-mono);
+  font-size: 2.6px;
+  font-weight: 700;
+  fill: var(--surface-2);
+  dominant-baseline: middle;
+  pointer-events: none;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Array strip below a tree ---------- */
+.tree-array {
+  background: var(--surface);
+  border: 1px solid var(--rule-soft);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tree-array-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.tree-array-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.tree-array-cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tree-array-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 30px;
+  padding: 4px 6px 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+}
+
+.tree-array-cell.role-active {
+  background: var(--role-pivot);
+  color: var(--surface-2);
+}
+
+.tree-array-cell.role-active .tree-array-index,
+.tree-array-cell.role-swap .tree-array-index,
+.tree-array-cell.role-compare .tree-array-index,
+.tree-array-cell.role-found .tree-array-index {
+  color: var(--surface-2);
+  opacity: 0.85;
+}
+
+.tree-array-cell.role-swap {
+  background: var(--role-swap);
+  color: var(--surface-2);
+}
+
+.tree-array-cell.role-compare {
+  background: var(--role-compare);
+  color: var(--surface-2);
+}
+
+.tree-array-cell.role-found {
+  background: var(--role-sorted);
+  color: var(--surface-2);
+}
+
+.tree-array-value {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tree-array-index {
+  font-size: 9px;
+  color: var(--ink-4);
+  margin-top: 2px;
+}
+
+/* ---------- Merge buffer panel (merge sort) ---------- */
+.merge-panel {
+  background: var(--surface);
+  border: 1px solid var(--rule-soft);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.merge-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.merge-panel-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.merge-panel-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.merge-row {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.merge-row-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.merge-row-cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.merge-cell {
+  min-width: 22px;
+  padding: 3px 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+  text-align: center;
+}
+
+.merge-cell.cur {
+  background: var(--accent);
+  color: var(--surface-2);
+  border-color: var(--accent);
+}
+
+.merge-cell.out {
+  background: var(--role-sorted);
+  color: var(--surface-2);
+  border-color: var(--role-sorted);
+}
+
+.merge-cell.empty {
+  font-style: italic;
+  color: var(--ink-4);
+  background: transparent;
+  border-style: dashed;
+}
+
+@media (max-width: 1100px) {
+  .tree-stage { grid-template-columns: minmax(0, 1fr); }
+}

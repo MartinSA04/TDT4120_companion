@@ -722,124 +722,447 @@ function tableVisual(rows, cols, values, meta = {}) {
   return { type: "table", rows, cols, values, ...meta };
 }
 
+// ============================================================
+// Merge Sort — full step-by-step trace
+//
+//  Visual: the recursion tree of all subproblems is shown as a TreeView with
+//  each node labelled with its subarray slice (and its current contents
+//  shown as a sublabel). At each step we highlight the "active" call and
+//  optionally show a merge buffer panel underneath when two halves are
+//  being interleaved into the output.
+// ============================================================
 const mergeSort = {
   id: "merge-sort",
   name: "Merge Sort",
   description:
-    "Split the array in half, sort both halves recursively, then merge two sorted halves into one sorted array.",
+    "Merge Sort divides the array in half, recursively sorts each half, then merges the two sorted halves with a linear two-finger pass. The recursion tree has Θ(log n) levels and Θ(n) work per level, giving Θ(n log n) total.",
   explanation: {
-    no: "Merge Sort viser splitt og hersk i ren form: del i to, sorter delene rekursivt, og flett sorterte delresultater.",
-    en: "Merge Sort shows divide and conquer in a clean form: split in two, sort the parts recursively, and merge sorted subresults.",
+    no: "Merge Sort-visualiseringen viser hele rekursjonstreet: hvert kall vises som en node med tilhørende delarray. Aktivt kall lyser opp, og når to sorterte halvdeler flettes vises merge-bufferen med to fingre i og j.",
+    en: "The Merge Sort visualization shows the entire recursion tree: each call is a node labelled with its subarray. The active call lights up, and when two sorted halves merge the merge buffer is shown with two-finger pointers i and j.",
   },
   courseRefs: ["l03"],
   conceptIds: ["divide-and-conquer", "recurrence"],
   learningGoalIds: ["C1", "C3", "C5", "Z3", "Z4", "Z6"],
-  viewKind: "tree",
+  viewKind: "tree-view",
   filename: "algorithms/merge_sort.py",
-  complexities: { best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(n)" },
+  complexities: { best: "Θ(n log n)", avg: "Θ(n log n)", worst: "Θ(n log n)", space: "Θ(n)" },
   code:
-`def merge_sort(a):
+`def merge(left: list[int], right: list[int]) -> list[int]:
+    out: list[int] = []
+    i = j = 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            out.append(left[i])
+            i += 1
+        else:
+            out.append(right[j])
+            j += 1
+    out.extend(left[i:])
+    out.extend(right[j:])
+    return out
+
+def merge_sort(a: list[int]) -> list[int]:
     if len(a) <= 1:
-        return a
-    mid = len(a) // 2
-    left = merge_sort(a[:mid])
+        return a.copy()
+    mid   = len(a) // 2
+    left  = merge_sort(a[:mid])
     right = merge_sort(a[mid:])
     return merge(left, right)`,
   defaultData() { return range(8); },
   run() {
-    const nodes = [
-      node("a", "A[0..7]", 50, 8, "focus", "8 3 7 4 9 2 6 5"),
-      node("l", "A[0..3]", 28, 30, "default", "8 3 7 4"),
-      node("r", "A[4..7]", 72, 30, "default", "9 2 6 5"),
-      node("ll", "A[0..1]", 16, 52, "default", "8 3"),
-      node("lr", "A[2..3]", 40, 52, "default", "7 4"),
-      node("rl", "A[4..5]", 60, 52, "default", "9 2"),
-      node("rr", "A[6..7]", 84, 52, "default", "6 5"),
-      node("m1", "3 8", 16, 76, "sorted"),
-      node("m2", "4 7", 40, 76, "sorted"),
-      node("m3", "2 9", 60, 76, "sorted"),
-      node("m4", "5 6", 84, 76, "sorted"),
-    ];
-    const edges = [
-      edge("a", "l", "split"), edge("a", "r", "split"),
-      edge("l", "ll"), edge("l", "lr"), edge("r", "rl"), edge("r", "rr"),
-      edge("ll", "m1", "merge"), edge("lr", "m2", "merge"),
-      edge("rl", "m3", "merge"), edge("rr", "m4", "merge"),
-    ];
-    const splitSkeleton = {
-      nodes: nodes.slice(0, 7).map((item) =>
-        item.id === "a" ? item : { ...item, role: "eliminated" }
-      ),
-      edges: edges.slice(0, 6).map((item) => ({ ...item, role: "eliminated" })),
-    };
-    return [
-      topicFrame(1, "Start with one unsorted instance. The dimmed nodes show the subproblems we are about to create.", graphVisual("tree", splitSkeleton.nodes, splitSkeleton.edges, { array: [8, 3, 7, 4, 9, 2, 6, 5] }), { n: 8 }),
-      topicFrame(4, "Split at the midpoint. The two recursive calls are independent subinstances.", graphVisual("tree", nodes.slice(0, 3), edges.slice(0, 2)), { mid: 4 }),
-      topicFrame(5, "Keep splitting until the base cases are single elements.", graphVisual("tree", nodes.slice(0, 7), edges.slice(0, 6)), { depth: 2 }),
-      topicFrame(7, "Merge sorted pairs while returning from recursion.", graphVisual("tree", nodes, edges), { mergeWidth: 2 }, "sorted"),
-      topicFrame(7, "Final merge combines [3,4,7,8] and [2,5,6,9] into a sorted array.", graphVisual("tree", [
-        ...nodes,
-        node("lm", "3 4 7 8", 28, 92, "sorted"),
-        node("rm", "2 5 6 9", 72, 92, "sorted"),
-        node("done", "sorted", 50, 108, "found", "2 3 4 5 6 7 8 9"),
-      ], [...edges, edge("m1", "lm"), edge("m2", "lm"), edge("m3", "rm"), edge("m4", "rm"), edge("lm", "done"), edge("rm", "done")]), { T: "2T(n/2)+Theta(n)" }, "found"),
-    ];
+    const original = [5, 2, 4, 7, 1, 3, 2, 6];
+    const tree = _GLIB.mergeRecursionTree(original.length);
+    // Each node carries its own slice contents over time. Initially it
+    // mirrors the input; once the call returns, contents become sorted.
+    const slices = {};
+    const sortedFlag = {};
+    tree.nodes.forEach((n) => {
+      slices[n.id] = original.slice(n.lo, n.hi + 1);
+      sortedFlag[n.id] = n.lo === n.hi;   // singletons start sorted
+    });
+
+    const activeStack = [];   // call stack of node ids
+    const frames = [];
+
+    function buildNodes(activeId, mergingPair = null, justFinishedId = null) {
+      return tree.nodes.map((n) => {
+        const p = tree.positions[n.id];
+        let state = "default";
+        if (n.id === justFinishedId) state = "found";
+        else if (n.id === activeId) state = "active";
+        else if (mergingPair && (mergingPair[0] === n.id || mergingPair[1] === n.id)) state = "compare";
+        else if (sortedFlag[n.id] && (n.hi - n.lo + 1) > 1) state = "visited";
+        else if (sortedFlag[n.id]) state = "visited";
+        else if (activeStack.includes(n.id)) state = "frontier";
+        else if (!activeStack.length && !sortedFlag[n.id] && activeStack.length === 0 && frames.length > 0) {
+          state = "default";
+        }
+        return {
+          id: n.id,
+          label: `[${n.lo}..${n.hi}]`,
+          x: p.x,
+          y: p.y,
+          state,
+          sublabel: slices[n.id].join(" "),
+          shape: "rect",
+        };
+      });
+    }
+    function buildEdges() {
+      return tree.edges.map((e) => {
+        const role = activeStack.includes(e.from) && activeStack.includes(e.to) ? "active"
+          : sortedFlag[e.to] ? "found"
+          : "default";
+        return { from: e.from, to: e.to, role };
+      });
+    }
+    function pushFrame({ line, desc, role, activeId, mergingPair = null, justFinishedId = null, side = null, merge = null, arrayHi = null }) {
+      const cur = activeId || (activeStack.length ? activeStack[activeStack.length - 1] : null);
+      // Compute the current overall array snapshot by writing each "sorted"
+      // slice's contents back into the shared array.
+      const arr = [...original];
+      tree.nodes.forEach((n) => {
+        if (sortedFlag[n.id]) {
+          for (let k = 0; k < slices[n.id].length; k++) arr[n.lo + k] = slices[n.id][k];
+        }
+      });
+      // Highlight the active call's range in the array view.
+      const hi = arrayHi || {};
+      if (cur) {
+        const node = tree.nodes.find((n) => n.id === cur);
+        if (node) {
+          for (let k = node.lo; k <= node.hi; k++) {
+            if (!(k in hi)) hi[k] = "active";
+          }
+        }
+      }
+      frames.push({
+        line,
+        desc,
+        data: [],
+        viewKind: "tree-view",
+        highlights: { [role]: [0] },
+        pointers: {},
+        variables: {},
+        visual: {
+          type: "tree-view",
+          nodes: buildNodes(cur, mergingPair, justFinishedId),
+          edges: buildEdges(),
+          array: { values: arr, highlights: hi, title: "current array a (sorted ranges in green, active in pivot)" },
+          merge,
+          side,
+        },
+      });
+    }
+
+    function callMergeSort(nodeId) {
+      activeStack.push(nodeId);
+      const n = tree.nodes.find((x) => x.id === nodeId);
+      if (n.lo === n.hi) {
+        // Base case
+        pushFrame({
+          line: 16,
+          desc: `merge_sort(a[${n.lo}..${n.hi}]): single element [${slices[n.id][0]}] is trivially sorted. Return.`,
+          role: "found",
+          activeId: nodeId,
+          side: { title: "call stack (top = current)", rows: activeStack.map((id, i) => ({
+            label: `${i}`,
+            value: id === nodeId ? `▶ merge_sort([${id}])` : `merge_sort([${id}])`,
+            role: id === nodeId ? "active" : "",
+          }))},
+        });
+        sortedFlag[nodeId] = true;
+        activeStack.pop();
+        return slices[nodeId];
+      }
+      pushFrame({
+        line: 17,
+        desc: `merge_sort(a[${n.lo}..${n.hi}]): more than one element. Split at mid = ${Math.floor((n.lo + n.hi) / 2) - n.lo + 1} relative to slice start.`,
+        role: "pivot",
+        activeId: nodeId,
+        side: { title: "call stack", rows: activeStack.map((id, i) => ({
+          label: `${i}`,
+          value: id === nodeId ? `▶ merge_sort([${id}])` : `merge_sort([${id}])`,
+          role: id === nodeId ? "active" : "",
+        }))},
+      });
+
+      // Find left & right child node ids
+      const childIds = tree.edges.filter((e) => e.from === nodeId).map((e) => e.to);
+      const [leftId, rightId] = childIds;
+      const leftSorted = callMergeSort(leftId);
+      const rightSorted = callMergeSort(rightId);
+
+      // Merge step
+      activeStack.push(nodeId);   // re-push for clarity (not popped between recursive calls)
+      const out = [];
+      let i = 0, j = 0;
+      // Pre-merge frame
+      pushFrame({
+        line: 4,
+        desc: `Merge two sorted halves: left = [${leftSorted.join(", ")}], right = [${rightSorted.join(", ")}]. Two fingers i=0, j=0; output buffer is empty.`,
+        role: "compare",
+        activeId: nodeId,
+        mergingPair: [leftId, rightId],
+        merge: { left: [...leftSorted], right: [...rightSorted], output: [...out], i, j, role: `merging into a[${n.lo}..${n.hi}]` },
+        side: { title: "merge", rows: [
+          { label: "left",  value: `[${leftSorted.join(", ")}]` },
+          { label: "right", value: `[${rightSorted.join(", ")}]` },
+        ]},
+      });
+      while (i < leftSorted.length && j < rightSorted.length) {
+        if (leftSorted[i] <= rightSorted[j]) {
+          out.push(leftSorted[i]);
+          pushFrame({
+            line: 6,
+            desc: `left[${i}] = ${leftSorted[i]} ≤ right[${j}] = ${rightSorted[j]} → take from left. Output ← ${leftSorted[i]}.`,
+            role: "found",
+            activeId: nodeId,
+            mergingPair: [leftId, rightId],
+            merge: { left: [...leftSorted], right: [...rightSorted], output: [...out], i, j, role: `step ${out.length}` },
+          });
+          i++;
+        } else {
+          out.push(rightSorted[j]);
+          pushFrame({
+            line: 9,
+            desc: `right[${j}] = ${rightSorted[j]} < left[${i}] = ${leftSorted[i]} → take from right. Output ← ${rightSorted[j]}.`,
+            role: "found",
+            activeId: nodeId,
+            mergingPair: [leftId, rightId],
+            merge: { left: [...leftSorted], right: [...rightSorted], output: [...out], i, j, role: `step ${out.length}` },
+          });
+          j++;
+        }
+      }
+      while (i < leftSorted.length) { out.push(leftSorted[i]); i++; }
+      while (j < rightSorted.length) { out.push(rightSorted[j]); j++; }
+      slices[nodeId] = out;
+      sortedFlag[nodeId] = true;
+      pushFrame({
+        line: 11,
+        desc: `Drain any leftover. Merged result = [${out.join(", ")}]. Write back to a[${n.lo}..${n.hi}] and return.`,
+        role: "found",
+        activeId: nodeId,
+        justFinishedId: nodeId,
+        merge: { left: [], right: [], output: [...out], i, j, role: "result" },
+      });
+      activeStack.pop();
+      activeStack.pop();   // pop the duplicate we pushed before merging
+      return out;
+    }
+
+    // Initial frame
+    pushFrame({
+      line: 14,
+      desc: `merge_sort(a) on a = [${original.join(", ")}]. The recursion tree below shows every subproblem; we walk it depth-first.`,
+      role: "pivot",
+      activeId: tree.nodes[0].id,
+      side: { title: "input", rows: [
+        { label: "n", value: original.length },
+        { label: "depth", value: Math.ceil(Math.log2(original.length)) },
+        { label: "leaves", value: original.length },
+      ]},
+    });
+    callMergeSort(tree.nodes[0].id);
+    pushFrame({
+      line: 19,
+      desc: `merge_sort returns. The array is sorted in Θ(n log n) total work.`,
+      role: "found",
+      side: { title: "complexity", rows: [
+        { label: "T(n)",  value: "2T(n/2) + Θ(n)" },
+        { label: "solved", value: "Θ(n log n)" },
+      ]},
+    });
+    return frames;
   },
 };
 
+// ============================================================
+// Recursion Tree — full step-by-step expansion using TreeView
+//
+// We expand T(n) = 2 T(n/2) + n level by level, accumulating per-level
+// totals on the side panel until we sum to T(n) = Θ(n lg n).
+// Each level adds a row of nodes carrying their cost.
+// ============================================================
 const recursionTree = {
   id: "recursion-tree",
   name: "Recursion Tree",
   description:
-    "Expand a recurrence into levels. Sum the cost across each level, then sum the levels.",
+    "Expand the recurrence T(n) = 2T(n/2) + n into a tree. Each node's cost is the non-recursive work it does. Sum the costs at each level, then sum across levels to get T(n).",
   explanation: {
-    no: "Rekursjonstrær gjør rekurrenser visuelle: hver node er et rekursivt kall, og hvert nivå viser samlet arbeid.",
-    en: "Recursion trees make recurrences visual: each node is a recursive call, and each level shows total work.",
+    no: "Rekursjonstre-visualiseringen avslører nivåene én etter én: vis nodene på neste nivå, beregn totalen for det nivået, og legg til totalsummen.",
+    en: "The recursion-tree visualization reveals levels one at a time: show the nodes on the next level, compute that level's total, and add it to the running grand total.",
   },
   courseRefs: ["l03"],
   conceptIds: ["recurrence", "divide-and-conquer"],
   learningGoalIds: ["C5", "C6"],
-  viewKind: "tree",
+  viewKind: "tree-view",
   filename: "analysis/recursion_tree.py",
-  complexities: { best: "—", avg: "T(n)", worst: "Θ(n log n)", space: "stack" },
+  complexities: { best: "Θ(n log n)", avg: "Θ(n log n)", worst: "Θ(n log n)", space: "stack" },
   code:
-`T(n) = 2T(n/2) + n
+`# Recurrence:    T(n) = 2 * T(n/2) + n
+# Per node cost: f(n) = n  (the non-recursive work)
+# Branching:     a = 2,  b = 2
 
-level 0: n
-level 1: 2 * n/2 = n
-level 2: 4 * n/4 = n
-...
-lg n levels
-total = n lg n`,
+def level_cost(n: int, level: int, a: int = 2, b: int = 2) -> int:
+    nodes = a ** level                 # nodes on this level
+    sub   = n / (b ** level)           # size of each subproblem
+    return nodes * sub                 # total non-recursive work
+
+def total_work(n: int, a: int = 2, b: int = 2) -> int:
+    levels = math.ceil(math.log(n, b)) + 1
+    return sum(level_cost(n, k, a, b) for k in range(levels))`,
   defaultData() { return range(8); },
   run() {
-    const nodes = [
-      node("n", "n", 50, 8, "focus", "cost n"),
-      node("n2a", "n/2", 30, 30, "compare", "cost n/2"),
-      node("n2b", "n/2", 70, 30, "compare", "cost n/2"),
-      node("n4a", "n/4", 18, 52, "pivot", "cost n/4"),
-      node("n4b", "n/4", 42, 52, "pivot", "cost n/4"),
-      node("n4c", "n/4", 58, 52, "pivot", "cost n/4"),
-      node("n4d", "n/4", 82, 52, "pivot", "cost n/4"),
-      node("leaf", "1 ... 1", 50, 78, "sorted", "n leaves"),
-    ];
-    const edges = [
-      edge("n", "n2a"), edge("n", "n2b"),
-      edge("n2a", "n4a"), edge("n2a", "n4b"),
-      edge("n2b", "n4c"), edge("n2b", "n4d"),
-      edge("n4a", "leaf"), edge("n4b", "leaf"), edge("n4c", "leaf"), edge("n4d", "leaf"),
-    ];
-    const skeletonNodes = nodes.map((item) =>
-      item.id === "n" ? item : { ...item, role: "eliminated" }
-    );
-    const skeletonEdges = edges.map((item) => ({ ...item, role: "eliminated" }));
-    return [
-      topicFrame(1, "Start from the recurrence. The full dimmed skeleton shows the expansion we will reveal level by level.", graphVisual("tree", skeletonNodes, skeletonEdges, { levelCosts: ["n"] }), { recurrence: "2T(n/2)+n" }),
-      topicFrame(1, "Expand the two T(n/2) terms. Together, level 1 also costs n.", graphVisual("tree", nodes.slice(0, 3), edges.slice(0, 2), { levelCosts: ["n", "n"] }), { level: 1 }),
-      topicFrame(1, "Expand again. Four calls each cost n/4, so the level total is still n.", graphVisual("tree", nodes.slice(0, 7), edges.slice(0, 6), { levelCosts: ["n", "n", "n"] }), { level: 2 }),
-      topicFrame(6, "There are lg n levels before the subproblem size reaches 1.", graphVisual("tree", nodes, edges, { levelCosts: ["n", "n", "n", "...", "n"] }), { height: "lg n" }),
-      topicFrame(7, "Sum level cost n over lg n levels: T(n) = Θ(n lg n).", graphVisual("tree", nodes, edges, { levelCosts: ["n repeated lg n times", "total Θ(n lg n)"] }), { total: "Theta(n lg n)" }, "found"),
-    ];
+    // T(n) = 2T(n/2) + n with n = 16 → depth = log2(16) = 4
+    const N = 16;
+    const branches = 2;
+    const depth = Math.floor(Math.log2(N));   // 4 levels of internal expansion + leaves at level 4
+    const totalLevels = depth + 1;             // include leaf row
+
+    // Pre-compute layout positions for every node we will ever reveal.
+    // Identify each node by (level, indexInLevel).
+    const nodes = [];
+    const edges = [];
+    for (let lvl = 0; lvl <= depth; lvl++) {
+      const count = branches ** lvl;
+      const subSize = N / count;
+      for (let i = 0; i < count; i++) {
+        const id = `L${lvl}-${i}`;
+        const x = count === 1 ? 50 : 6 + (i / (count - 1)) * 88;
+        const y = 12 + (lvl / Math.max(1, totalLevels - 1)) * 76;
+        const isLeaf = lvl === depth;
+        const label = isLeaf ? "1" : `T(${subSize})`;
+        const sublabel = isLeaf ? "leaf" : `cost ${subSize}`;
+        nodes.push({ id, level: lvl, index: i, label, sublabel, x, y, subSize });
+        if (lvl > 0) {
+          const parentIdx = Math.floor(i / branches);
+          edges.push({ from: `L${lvl - 1}-${parentIdx}`, to: id });
+        }
+      }
+    }
+
+    // levelCost[k] for k = 0..depth-1 is n  (each internal level contributes n).
+    // For leaves (level = depth), there are n leaves of cost 1 → total n.
+    const levelCost = (lvl) => N;       // for this recurrence every level totals n
+
+    const revealed = new Set();         // which (lvl, idx) ids exist yet
+    const finalLvls = new Set();        // levels that have been "summed"
+    const frames = [];
+
+    function buildNodes(activeLevel, finishedSum = false) {
+      return nodes.map((n) => {
+        const inTree = revealed.has(n.id);
+        let state;
+        if (!inTree) state = "eliminated";
+        else if (finishedSum) state = "found";
+        else if (n.level === activeLevel) state = "active";
+        else state = "visited";
+        return {
+          id: n.id,
+          label: n.label,
+          x: n.x,
+          y: n.y,
+          state,
+          sublabel: n.sublabel,
+          shape: "rect",
+        };
+      });
+    }
+    function buildEdges() {
+      return edges.map((e) => ({
+        from: e.from,
+        to: e.to,
+        role: revealed.has(e.from) && revealed.has(e.to) ? "tree" : "eliminated",
+      }));
+    }
+    function levelRows(currentLvl, runningTotal, finished = false) {
+      const rows = [];
+      for (let k = 0; k <= currentLvl; k++) {
+        const nodesK = branches ** k;
+        const subSize = k === depth ? 1 : N / nodesK;
+        rows.push({
+          label: `level ${k}`,
+          value: `${nodesK} × ${subSize} = ${nodesK * subSize}`,
+          role: k === currentLvl && !finished ? "active" : "",
+        });
+      }
+      rows.push({
+        label: "running Σ",
+        value: `${runningTotal}${finished ? "  ✓" : ""}`,
+        role: finished ? "active" : "",
+      });
+      return rows;
+    }
+    function pushFrame({ line, desc, role, activeLevel, finishedSum = false, runningTotal = 0, sideTitle = "level analysis", note = null }) {
+      frames.push({
+        line,
+        desc,
+        data: [],
+        viewKind: "tree-view",
+        highlights: { [role]: [0] },
+        pointers: {},
+        variables: {},
+        visual: {
+          type: "tree-view",
+          nodes: buildNodes(activeLevel, finishedSum),
+          edges: buildEdges(),
+          side: {
+            title: sideTitle,
+            meta: `n = ${N}, recurrence T(n) = 2T(n/2) + n`,
+            rows: levelRows(activeLevel, runningTotal, finishedSum),
+            note,
+          },
+        },
+      });
+    }
+
+    // Level 0 (root)
+    revealed.add("L0-0");
+    let runningTotal = levelCost(0);
+    pushFrame({
+      line: 4,
+      desc: `Start with the root T(${N}). It does ${N} units of non-recursive work itself before recursing.`,
+      role: "pivot",
+      activeLevel: 0,
+      runningTotal,
+      sideTitle: "expand level 0",
+    });
+
+    for (let lvl = 1; lvl <= depth; lvl++) {
+      // Reveal all nodes at this level
+      for (let i = 0; i < branches ** lvl; i++) {
+        revealed.add(`L${lvl}-${i}`);
+      }
+      const nodesK = branches ** lvl;
+      const subSize = lvl === depth ? 1 : N / nodesK;
+      const total = nodesK * subSize;
+      runningTotal += total;
+      const desc = lvl === depth
+        ? `Reveal level ${lvl} — the leaves. There are ${nodesK} leaves of cost 1, totalling ${total}.`
+        : `Each node at level ${lvl - 1} branches into ${branches} subproblems of size ${subSize}. Total work at level ${lvl}: ${nodesK} × ${subSize} = ${total}.`;
+      pushFrame({
+        line: 4,
+        desc,
+        role: lvl === depth ? "found" : "compare",
+        activeLevel: lvl,
+        runningTotal,
+        sideTitle: `expand level ${lvl}`,
+      });
+    }
+
+    pushFrame({
+      line: 9,
+      desc: `Sum across all ${totalLevels} levels: each contributes ${N}, so T(${N}) = ${totalLevels} × ${N} = ${totalLevels * N}. With n = ${N} this is Θ(n lg n).`,
+      role: "found",
+      activeLevel: depth,
+      finishedSum: true,
+      runningTotal,
+      sideTitle: "total work",
+      note: `T(n) = (lg n + 1) × n  →  Θ(n lg n)`,
+    });
+    return frames;
   },
 };
 
@@ -875,108 +1198,375 @@ const countingRadix = {
   },
 };
 
+// ============================================================
+// Heap / Build-max-heap — full step-by-step trace using TreeView
+// ============================================================
 const heapPQ = {
   id: "heap-priority-queue",
   name: "Heap / Priority Queue",
   description:
-    "A heap stores a nearly complete tree in an array and restores the heap property with local swaps.",
+    "A max-heap is an array interpreted as a complete binary tree where every parent dominates its children. Build-Max-Heap repeatedly calls Max-Heapify on each internal node from the bottom up; Max-Heapify pushes a violation downward by swapping with the larger child.",
   explanation: {
-    no: "Haugen viser hvordan en tabell kan tolkes som et tre, og hvordan Max-Heapify flytter et brudd nedover.",
-    en: "The heap shows how an array can be interpreted as a tree, and how Max-Heapify moves a violation downward.",
+    no: "Haug-visualiseringen viser hvordan en tabell tolkes som et tre. Build-Max-Heap kjører Max-Heapify nedenfra og opp, og hver Max-Heapify-sammenligning vises trinn for trinn med både treet og tabellen synkronisert.",
+    en: "The heap visualization shows how an array becomes a tree. Build-Max-Heap runs Max-Heapify bottom-up; each Max-Heapify comparison is shown step-by-step with the tree and the array kept in sync.",
   },
   courseRefs: ["l05"],
   conceptIds: ["heap"],
   learningGoalIds: ["E1", "E2", "Z7", "Z8"],
-  viewKind: "tree",
+  viewKind: "tree-view",
   filename: "structures/heap.py",
-  complexities: { best: "O(1)", avg: "O(log n)", worst: "O(log n)", space: "O(1)" },
+  complexities: { best: "O(n)", avg: "O(n)", worst: "O(n)", space: "O(1)" },
   code:
-`def max_heapify(a, i, heap_size):
-    l, r = left(i), right(i)
+`def max_heapify(a: list[int], i: int, heap_size: int) -> None:
+    l = 2 * i + 1
+    r = 2 * i + 2
     largest = i
     if l < heap_size and a[l] > a[largest]:
         largest = l
     if r < heap_size and a[r] > a[largest]:
         largest = r
     if largest != i:
-        swap(a[i], a[largest])
-        max_heapify(a, largest, heap_size)`,
-  defaultData() { return range(8); },
+        a[i], a[largest] = a[largest], a[i]
+        max_heapify(a, largest, heap_size)
+
+def build_max_heap(a: list[int]) -> None:
+    for i in range(len(a) // 2 - 1, -1, -1):
+        max_heapify(a, i, len(a))`,
+  defaultData() { return range(10); },
   run() {
-    const base = [
-      node("16", "16", 50, 8, "sorted", "a[0]"),
-      node("14", "14", 30, 30, "sorted", "a[1]"),
-      node("10", "10", 70, 30, "sorted", "a[2]"),
-      node("8", "8", 20, 52, "sorted", "a[3]"),
-      node("7", "7", 40, 52, "sorted", "a[4]"),
-      node("9", "9", 60, 52, "sorted", "a[5]"),
-      node("3", "3", 80, 52, "sorted", "a[6]"),
-    ];
-    const broken = [node("4", "4", 50, 8, "swap", "a[0]"), ...base.slice(1)];
-    const edges = [edge("16", "14"), edge("16", "10"), edge("14", "8"), edge("14", "7"), edge("10", "9"), edge("10", "3")];
-    const brokenEdges = [edge("4", "14"), edge("4", "10"), ...edges.slice(2)];
-    return [
-      topicFrame(1, "A max-heap is a complete tree represented as an array. Parent values dominate children.", graphVisual("tree", base, edges, { array: [16, 14, 10, 8, 7, 9, 3] }), { heapSize: 7 }, "sorted"),
-      topicFrame(1, "After extracting the max, the last value moves to the root and may violate the heap property.", graphVisual("tree", broken, brokenEdges, { array: [4, 14, 10, 8, 7, 9, 3] }), { i: 0 }, "swap"),
-      topicFrame(4, "Compare the root with its children. The largest child is 14.", graphVisual("tree", broken.map((n) => n.id === "14" ? { ...n, role: "pivot" } : n), brokenEdges, { array: [4, 14, 10, 8, 7, 9, 3] }), { largest: 1 }, "compare"),
-      topicFrame(9, "Swap 4 with 14 and continue heapifying at the child position.", graphVisual("tree", [
-        node("14", "14", 50, 8, "sorted", "a[0]"),
-        node("4", "4", 30, 30, "swap", "a[1]"),
-        ...base.slice(2),
-      ], [edge("14", "4"), edge("14", "10"), ...edges.slice(2)], { array: [14, 4, 10, 8, 7, 9, 3] }), { i: 1 }, "swap"),
-      topicFrame(10, "One more local swap restores the max-heap property.", graphVisual("tree", [
-        node("14", "14", 50, 8, "sorted", "a[0]"),
-        node("8", "8", 30, 30, "sorted", "a[1]"),
-        node("10", "10", 70, 30, "sorted", "a[2]"),
-        node("4", "4", 20, 52, "found", "a[3]"),
-        ...base.slice(4),
-      ], [edge("14", "8"), edge("14", "10"), edge("8", "4"), edge("8", "7"), edge("10", "9"), edge("10", "3")], { array: [14, 8, 10, 4, 7, 9, 3] }), { property: "restored" }, "found"),
-    ];
+    const heap = [4, 1, 3, 2, 16, 9, 10, 14, 8, 7];   // CLRS Fig. 6.4
+    const positions = _GLIB.heapTreePositions(heap.length);
+    const frames = [];
+
+    function buildNodes(rolesMap = {}) {
+      return positions.map((p) => ({
+        id: String(p.index),
+        label: String(heap[p.index]),
+        x: p.x,
+        y: p.y,
+        state: rolesMap[p.index] || "default",
+        sublabel: `a[${p.index}]`,
+      }));
+    }
+    function buildEdges() {
+      return positions
+        .filter((p) => p.parent != null)
+        .map((p) => ({ from: String(p.parent), to: String(p.index), role: "default" }));
+    }
+    function arraySnapshot(highlights = {}) {
+      return { values: [...heap], highlights, title: "array a (heap-as-array)" };
+    }
+    function pushFrame({ line, desc, role, rolesMap = {}, arrayHi = {}, side = null }) {
+      frames.push({
+        line,
+        desc,
+        data: [],
+        viewKind: "tree-view",
+        highlights: { [role]: [0] },
+        pointers: {},
+        variables: {},
+        visual: {
+          type: "tree-view",
+          nodes: buildNodes(rolesMap),
+          edges: buildEdges(),
+          array: arraySnapshot(arrayHi),
+          side,
+        },
+      });
+    }
+
+    pushFrame({
+      line: 14,
+      desc: `Read the array as a complete binary tree of n = ${heap.length} nodes. Internal nodes are indices 0..${Math.floor(heap.length / 2) - 1}. Build-Max-Heap calls Max-Heapify on each, from the bottom up.`,
+      role: "pivot",
+      side: { title: "build-max-heap", rows: [
+        { label: "n", value: heap.length },
+        { label: "internals", value: `[0..${Math.floor(heap.length / 2) - 1}]` },
+        { label: "start at", value: Math.floor(heap.length / 2) - 1 },
+      ]},
+    });
+
+    function heapifyDown(i, heapSize) {
+      while (true) {
+        const l = 2 * i + 1;
+        const r = 2 * i + 2;
+        let largest = i;
+        const compareIds = { [i]: "active" };
+        if (l < heapSize) compareIds[l] = "compare";
+        if (r < heapSize) compareIds[r] = "compare";
+        const compareHi = { [i]: "active" };
+        if (l < heapSize) compareHi[l] = "compare";
+        if (r < heapSize) compareHi[r] = "compare";
+        pushFrame({
+          line: 5,
+          desc: `Max-Heapify(i=${i}): compare a[${i}] = ${heap[i]} with ${l < heapSize ? `a[${l}] = ${heap[l]}` : "—"}${r < heapSize ? ` and a[${r}] = ${heap[r]}` : ""}.`,
+          role: "compare",
+          rolesMap: compareIds,
+          arrayHi: compareHi,
+          side: { title: "max-heapify", rows: [
+            { label: "i", value: i },
+            { label: "l, r", value: `${l}, ${r < heapSize ? r : "—"}` },
+            { label: "heap_size", value: heapSize },
+          ]},
+        });
+        if (l < heapSize && heap[l] > heap[largest]) largest = l;
+        if (r < heapSize && heap[r] > heap[largest]) largest = r;
+        if (largest === i) {
+          pushFrame({
+            line: 9,
+            desc: `a[${i}] is already ≥ both children. Heap property holds at index ${i}; Max-Heapify returns.`,
+            role: "found",
+            rolesMap: { [i]: "found" },
+            arrayHi: { [i]: "found" },
+            side: { title: "max-heapify", rows: [
+              { label: "i", value: i },
+              { label: "largest", value: i },
+              { label: "result", value: "no swap" },
+            ]},
+          });
+          return;
+        }
+        pushFrame({
+          line: 9,
+          desc: `Largest of the three is a[${largest}] = ${heap[largest]}. Swap a[${i}] ↔ a[${largest}] and recurse on index ${largest}.`,
+          role: "swap",
+          rolesMap: { [i]: "swap", [largest]: "swap" },
+          arrayHi: { [i]: "swap", [largest]: "swap" },
+          side: { title: "max-heapify", rows: [
+            { label: "swap", value: `a[${i}] ↔ a[${largest}]` },
+            { label: "values", value: `${heap[i]} ↔ ${heap[largest]}` },
+            { label: "recurse on", value: largest },
+          ]},
+        });
+        [heap[i], heap[largest]] = [heap[largest], heap[i]];
+        i = largest;
+      }
+    }
+
+    for (let i = Math.floor(heap.length / 2) - 1; i >= 0; i--) {
+      pushFrame({
+        line: 13,
+        desc: `Outer loop: i = ${i}. Call Max-Heapify(a, ${i}, ${heap.length}).`,
+        role: "pivot",
+        rolesMap: { [i]: "active" },
+        arrayHi: { [i]: "active" },
+        side: { title: "build-max-heap", rows: [
+          { label: "i", value: i },
+          { label: "subtree", value: `rooted at ${i}` },
+        ]},
+      });
+      heapifyDown(i, heap.length);
+    }
+
+    pushFrame({
+      line: 14,
+      desc: `Build-Max-Heap complete. Every parent dominates its children; a[0] = ${heap[0]} is the maximum.`,
+      role: "found",
+      rolesMap: Object.fromEntries(positions.map((p) => [p.index, "found"])),
+      arrayHi: Object.fromEntries(heap.map((_, i) => [i, "found"])),
+      side: { title: "result", rows: [
+        { label: "max", value: heap[0] },
+        { label: "heap", value: `[${heap.join(", ")}]` },
+      ]},
+    });
+    return frames;
   },
 };
 
+// ============================================================
+// Binary Search Tree — full step-by-step search trace using TreeView
+// ============================================================
 const bst = {
   id: "binary-search-tree",
   name: "Binary Search Tree",
   description:
-    "A binary search tree keeps all smaller keys left of a node and all larger keys right of it, recursively.",
+    "A BST keeps every key smaller than a node in its left subtree and every larger key in its right. Search descends one branch and prunes the rest, so each comparison eliminates roughly half the remaining keys.",
   explanation: {
-    no: "BST-visualiseringen viser hvordan søk og innsetting følger søketre-egenskapen nedover treet.",
-    en: "The BST visualization shows how search and insertion follow the search-tree property down the tree.",
+    no: "BST-visualiseringen viser hvordan tre-search velger en gren og hvilket undertre som blir eliminert ved hvert sammenligningstrinn.",
+    en: "The BST visualization shows how tree-search picks a branch and which subtree gets eliminated at each comparison step.",
   },
   courseRefs: ["l05"],
   conceptIds: ["bst"],
   learningGoalIds: ["E4", "Z7", "Z8"],
-  viewKind: "tree",
+  viewKind: "tree-view",
   filename: "structures/bst.py",
   complexities: { best: "O(log n)", avg: "O(log n)", worst: "O(n)", space: "O(1)" },
   code:
-`def tree_search(x, k):
+`class Node:
+    def __init__(self, key: int) -> None:
+        self.key   = key
+        self.left:  Node | None = None
+        self.right: Node | None = None
+
+def tree_search(x: Node | None, k: int) -> Node | None:
     if x is None or k == x.key:
         return x
     if k < x.key:
-        return tree_search(x.left, k)
-    return tree_search(x.right, k)`,
+        return tree_search(x.left,  k)
+    else:
+        return tree_search(x.right, k)`,
   defaultData() { return range(8); },
   run() {
-    const nodes = [
-      node("15", "15", 50, 8),
-      node("6", "6", 28, 30),
-      node("18", "18", 72, 30),
-      node("3", "3", 16, 52),
-      node("7", "7", 40, 52),
-      node("17", "17", 62, 52),
-      node("20", "20", 84, 52),
-      node("13", "13", 45, 74),
-    ];
-    const edges = [edge("15", "6", "<"), edge("15", "18", ">"), edge("6", "3"), edge("6", "7"), edge("18", "17"), edge("18", "20"), edge("7", "13")];
-    return [
-      topicFrame(1, "Search for 13. Start at the root and compare keys.", graphVisual("tree", nodes.map((n) => n.id === "15" ? { ...n, role: "focus" } : n), edges), { k: 13, x: 15 }),
-      topicFrame(4, "13 < 15, so the right subtree cannot contain the key. Go left.", graphVisual("tree", nodes.map((n) => n.id === "6" ? { ...n, role: "focus" } : n.id === "18" || n.id === "20" || n.id === "17" ? { ...n, role: "eliminated" } : n), edges), { k: 13, x: 6 }, "eliminated"),
-      topicFrame(6, "13 > 6, so go right.", graphVisual("tree", nodes.map((n) => n.id === "7" ? { ...n, role: "focus" } : n), edges), { k: 13, x: 7 }),
-      topicFrame(6, "13 > 7, so go right again.", graphVisual("tree", nodes.map((n) => n.id === "13" ? { ...n, role: "focus" } : n), edges), { k: 13, x: 13 }),
-      topicFrame(2, "The key matches. The path length is the tree height along this branch.", graphVisual("tree", nodes.map((n) => ["15", "6", "7", "13"].includes(n.id) ? { ...n, role: "found" } : n), edges), { result: "found" }, "found"),
-    ];
+    // Build the CLRS-style demo tree:
+    //               15
+    //             /    \
+    //            6     18
+    //           / \   /  \
+    //          3   7 17  20
+    //               \
+    //               13
+    const insertOrder = [15, 6, 18, 3, 7, 17, 20, 13];
+    const root = _GLIB.buildBST(insertOrder);
+    const layout = _GLIB.bstPositions(root);
+    const target = 13;
+
+    // Helpers to find node ids in left/right subtrees of any node, used to
+    // mark eliminated branches.
+    function nodeById(t, id) {
+      if (!t) return null;
+      if (t.id === id) return t;
+      return nodeById(t.left, id) || nodeById(t.right, id);
+    }
+    function subtreeIds(t) {
+      if (!t) return [];
+      return [t.id, ...subtreeIds(t.left), ...subtreeIds(t.right)];
+    }
+
+    const eliminated = new Set();
+    const visitedPath = [];
+    const frames = [];
+
+    function buildNodes(activeId, foundId = null) {
+      return layout.flat.map((n) => {
+        const p = layout.positions[n.id];
+        let state = "default";
+        if (n.id === foundId) state = "found";
+        else if (n.id === activeId) state = "active";
+        else if (visitedPath.includes(n.id)) state = "visited";
+        else if (eliminated.has(n.id)) state = "eliminated";
+        return {
+          id: String(n.id),
+          label: String(n.key),
+          x: p.x,
+          y: p.y,
+          state,
+        };
+      });
+    }
+    function buildEdges() {
+      return layout.flat
+        .filter((n) => n.parent != null)
+        .map((n) => {
+          const parentNode = layout.flat.find((x) => x.id === n.parent);
+          const role =
+            visitedPath.includes(n.id) && visitedPath.includes(parentNode.id)
+              ? "found"
+              : eliminated.has(n.id)
+              ? "eliminated"
+              : "default";
+          return {
+            from: String(n.parent),
+            to: String(n.id),
+            label: n.key < parentNode.key ? "<" : ">",
+            role,
+          };
+        });
+    }
+    function pushFrame({ line, desc, role, activeId = null, foundId = null, side }) {
+      frames.push({
+        line,
+        desc,
+        data: [],
+        viewKind: "tree-view",
+        highlights: { [role]: [0] },
+        pointers: {},
+        variables: {},
+        visual: {
+          type: "tree-view",
+          nodes: buildNodes(activeId, foundId),
+          edges: buildEdges(),
+          side,
+        },
+      });
+    }
+
+    pushFrame({
+      line: 7,
+      desc: `tree_search(root, k = ${target}). Start at the root, x = 15.`,
+      role: "pivot",
+      activeId: root.id,
+      side: { title: "tree-search", rows: [
+        { label: "k", value: target },
+        { label: "x", value: 15 },
+        { label: "depth", value: 0 },
+      ]},
+    });
+
+    let cur = root;
+    let depth = 0;
+    while (cur) {
+      visitedPath.push(cur.id);
+      if (target === cur.key) {
+        pushFrame({
+          line: 8,
+          desc: `k = ${target} matches x.key = ${cur.key}. Return x. Path length = ${depth}.`,
+          role: "found",
+          foundId: cur.id,
+          side: { title: "tree-search", rows: [
+            { label: "result", value: "found" },
+            { label: "x", value: cur.key },
+            { label: "depth", value: depth },
+          ]},
+        });
+        break;
+      }
+      const goLeft = target < cur.key;
+      // Mark the OTHER subtree eliminated.
+      const eliminatedRoot = goLeft ? cur.right : cur.left;
+      if (eliminatedRoot) {
+        subtreeIds(eliminatedRoot).forEach((id) => eliminated.add(id));
+      }
+      pushFrame({
+        line: goLeft ? 11 : 13,
+        desc: goLeft
+          ? `${target} < ${cur.key}: the right subtree of ${cur.key} can't contain ${target}. Recurse on the left child.`
+          : `${target} > ${cur.key}: the left subtree of ${cur.key} can't contain ${target}. Recurse on the right child.`,
+        role: "eliminated",
+        activeId: cur.id,
+        side: { title: "tree-search", rows: [
+          { label: "k vs x", value: `${target} ${goLeft ? "<" : ">"} ${cur.key}` },
+          { label: "go", value: goLeft ? "left" : "right" },
+          { label: "pruned", value: eliminatedRoot ? `subtree at ${eliminatedRoot.key}` : "(empty)" },
+        ]},
+      });
+      cur = goLeft ? cur.left : cur.right;
+      depth++;
+      if (cur) {
+        pushFrame({
+          line: 7,
+          desc: `Now x = ${cur.key} (depth ${depth}). Compare to k = ${target}.`,
+          role: "pivot",
+          activeId: cur.id,
+          side: { title: "tree-search", rows: [
+            { label: "k", value: target },
+            { label: "x", value: cur.key },
+            { label: "depth", value: depth },
+          ]},
+        });
+      } else {
+        pushFrame({
+          line: 8,
+          desc: `Reached a NIL child. ${target} is not in the tree. Return None.`,
+          role: "eliminated",
+          side: { title: "tree-search", rows: [
+            { label: "result", value: "not found" },
+            { label: "depth", value: depth },
+          ]},
+        });
+        break;
+      }
+    }
+    return frames;
   },
 };
 
@@ -2286,78 +2876,9 @@ function liveTopicFrame(line, desc, visual, variables = {}, role = "pivot") {
   };
 }
 
-const liveMergeSort = {
-  ...mergeSort,
-  code:
-`def merge(left: list[int], right: list[int]) -> list[int]:
-    out: list[int] = []
-    i = j = 0
-    while i < len(left) and j < len(right):
-        if left[i] <= right[j]:
-            out.append(left[i])
-            i += 1
-        else:
-            out.append(right[j])
-            j += 1
-    return out + left[i:] + right[j:]
+// (liveMergeSort removed: superseded by step-traced mergeSort.)
 
-def merge_sort(a: list[int]) -> list[int]:
-    if len(a) <= 1:
-        return a.copy()
-    mid = len(a) // 2
-    left = merge_sort(a[:mid])
-    right = merge_sort(a[mid:])
-    return merge(left, right)`,
-  defaultData() { return shuffledRange(8, 31); },
-  run(input) {
-    const values = demoValues(input, 8, 4);
-    const sorted = [...values].sort((a, b) => a - b);
-    const tree = makeIntervalTree(values);
-    const rootId = `0-${values.length - 1}`;
-    const firstSplitIds = tree.nodes.filter((n) => n.id !== rootId && n.id.split("-").some(Boolean)).slice(0, 2).map((n) => n.id);
-    const dimmed = tree.nodes.map((n) => n.id === rootId ? { ...n, role: "focus" } : { ...n, role: "eliminated" });
-    return [
-      liveTopicFrame(13, "Start with the current shuffled input. The full split tree is shown dimmed so the first frame is not a placeholder.", graphVisual("tree", dimmed, tree.edges.map((e) => ({ ...e, role: "eliminated" })), { array: values }), { n: values.length, shown: `${values.length}/${input.length}` }),
-      liveTopicFrame(16, "Split into left and right halves, then recurse on each half.", graphVisual("tree", tree.nodes.map((n) => firstSplitIds.includes(n.id) || n.id === rootId ? { ...n, role: "pivot" } : { ...n, role: "eliminated" }), tree.edges), { mid: Math.floor(values.length / 2) }),
-      liveTopicFrame(16, "Continue splitting until every visible leaf is a base case.", graphVisual("tree", tree.nodes.map((n) => n.id.includes("-") && n.id.split("-")[0] === n.id.split("-")[1] ? { ...n, role: "found" } : n), tree.edges), { depth: Math.ceil(Math.log2(values.length)) }, "found"),
-      liveTopicFrame(17, "Merge calls rebuild sorted runs while returning from recursion.", graphVisual("tree", tree.nodes.map((n) => ({ ...n, role: "sorted" })), tree.edges.map((e) => ({ ...e, role: "sorted" })), { array: sorted }), { result: `[${sorted.join(", ")}]` }, "sorted"),
-    ];
-  },
-};
-
-const liveRecursionTree = {
-  ...recursionTree,
-  code:
-`def level_costs(n: int, branches: int = 2) -> list[int]:
-    costs: list[int] = []
-    size = n
-    width = 1
-    while size >= 1:
-        costs.append(width * size)
-        size //= branches
-        width *= branches
-    return costs`,
-  defaultData() { return shuffledRange(8, 37); },
-  run(input) {
-    const n = Math.max(4, input.length || 8);
-    const branches = 2 + ((input[0] || n) % 3);
-    const childCount = branches;
-    const root = node("n", `n=${n}`, 50, 10, "focus", `first=${input[0] || n}`);
-    const children = Array.from({ length: childCount }, (_, i) =>
-      node(`c${i}`, `n/${branches}`, 24 + i * (52 / Math.max(1, childCount - 1)), 42, "compare", `cost ${Math.floor(n / branches)}`)
-    );
-    const leaves = Array.from({ length: childCount }, (_, i) =>
-      node(`l${i}`, "...", 24 + i * (52 / Math.max(1, childCount - 1)), 76, "sorted", "base cases")
-    );
-    const edges = [...children.map((c) => edge("n", c.id)), ...children.map((c, i) => edge(c.id, leaves[i].id))];
-    return [
-      liveTopicFrame(1, `Use the current size n=${n}. The first shuffled value selects a ${branches}-way recurrence for this demo.`, graphVisual("tree", [root, ...children.map((c) => ({ ...c, role: "eliminated" })), ...leaves.map((l) => ({ ...l, role: "eliminated" }))], edges.map((e) => ({ ...e, role: "eliminated" })), { levelCosts: [`${n}`] }), { n, branches }),
-      liveTopicFrame(4, `Expand into ${branches} subproblems. The total work on this level is still about n.`, graphVisual("tree", [root, ...children], children.map((c) => edge("n", c.id)), { levelCosts: [`${n}`, `${branches} * ${Math.floor(n / branches)} ≈ ${n}`] }), { level: 1 }, "compare"),
-      liveTopicFrame(6, "Keep expanding until the subproblem size reaches 1.", graphVisual("tree", [root, ...children, ...leaves], edges, { levelCosts: [`${n}`, `≈ ${n}`, "..."] }), { height: `log_${branches} n` }, "sorted"),
-      liveTopicFrame(7, "The total is level cost times number of levels.", graphVisual("tree", [root, ...children, ...leaves].map((x) => ({ ...x, role: "found" })), edges.map((e) => ({ ...e, role: "found" })), { levelCosts: [`Θ(${n} log ${n})`] }), { total: `Theta(n log_${branches} n)` }, "found"),
-    ];
-  },
-};
+// (liveRecursionTree removed: superseded by step-traced recursionTree.)
 
 const liveCountingRadix = {
   ...countingRadix,
@@ -2404,128 +2925,9 @@ def radix_sort(a: list[int]) -> list[int]:
   },
 };
 
-const liveHeapPQ = {
-  ...heapPQ,
-  code:
-`def max_heapify(a: list[int], i: int, heap_size: int) -> None:
-    left = 2 * i + 1
-    right = 2 * i + 2
-    largest = i
-    if left < heap_size and a[left] > a[largest]:
-        largest = left
-    if right < heap_size and a[right] > a[largest]:
-        largest = right
-    if largest != i:
-        a[i], a[largest] = a[largest], a[i]
-        max_heapify(a, largest, heap_size)
+// (liveHeapPQ removed: superseded by step-traced heapPQ.)
 
-def build_max_heap(a: list[int]) -> None:
-    for i in range(len(a) // 2 - 1, -1, -1):
-        max_heapify(a, i, len(a))`,
-  defaultData() { return shuffledRange(10, 43); },
-  run(input) {
-    const original = demoValues(input, 15, 4);
-    const heap = [...original];
-    const frames = [
-      liveTopicFrame(14, "Read the current array as a complete binary tree.", graphVisual("tree", completeTreeNodes(heap), completeTreeEdges(heap.length), { array: heap }), { heapSize: heap.length }),
-    ];
-    const heapify = (i, size, collect = false) => {
-      while (true) {
-        const l = 2 * i + 1;
-        const r = 2 * i + 2;
-        let largest = i;
-        if (l < size && heap[l] > heap[largest]) largest = l;
-        if (r < size && heap[r] > heap[largest]) largest = r;
-        if (collect) {
-          frames.push(liveTopicFrame(5, `Compare index ${i} with children ${l < size ? l : "-"} and ${r < size ? r : "-"}.`, graphVisual("tree", completeTreeNodes(heap, roleMap([i, l, r].filter((x) => x < size), "compare")), completeTreeEdges(heap.length), { array: heap }), { i, largest }, "compare"));
-        }
-        if (largest === i) break;
-        [heap[i], heap[largest]] = [heap[largest], heap[i]];
-        if (collect) {
-          frames.push(liveTopicFrame(10, `Swap with the larger child at index ${largest}.`, graphVisual("tree", completeTreeNodes(heap, roleMap([i, largest], "swap")), completeTreeEdges(heap.length), { array: heap }), { i, largest }, "swap"));
-        }
-        i = largest;
-      }
-    };
-    for (let i = Math.floor(heap.length / 2) - 1; i >= 0; i--) heapify(i, heap.length);
-    frames.push(liveTopicFrame(15, "After build_max_heap, every parent dominates its children.", graphVisual("tree", completeTreeNodes(heap, roleMap(range(heap.length), "sorted")), completeTreeEdges(heap.length), { array: heap }), { max: heap[0] }, "sorted"));
-    if (heap.length > 1) {
-      [heap[0], heap[heap.length - 1]] = [heap[heap.length - 1], heap[0]];
-      frames.push(liveTopicFrame(10, "Extract max by swapping the root with the last heap element.", graphVisual("tree", completeTreeNodes(heap, { 0: "swap", [heap.length - 1]: "found" }), completeTreeEdges(heap.length), { array: heap }), { extracted: heap[heap.length - 1] }, "swap"));
-      heapify(0, heap.length - 1, true);
-      frames.push(liveTopicFrame(11, "Heapify restores the heap property on the remaining heap.", graphVisual("tree", completeTreeNodes(heap, roleMap(range(heap.length - 1), "sorted")), completeTreeEdges(heap.length), { array: heap }), { heapSize: heap.length - 1 }, "found"));
-    }
-    return frames;
-  },
-};
-
-const liveBST = {
-  ...bst,
-  code:
-`class Node:
-    def __init__(self, key: int) -> None:
-        self.key = key
-        self.left: Node | None = None
-        self.right: Node | None = None
-
-def insert(root: Node | None, key: int) -> Node:
-    if root is None:
-        return Node(key)
-    if key < root.key:
-        root.left = insert(root.left, key)
-    elif key > root.key:
-        root.right = insert(root.right, key)
-    return root
-
-def tree_search(root: Node | None, key: int) -> Node | None:
-    if root is None or root.key == key:
-        return root
-    if key < root.key:
-        return tree_search(root.left, key)
-    return tree_search(root.right, key)`,
-  defaultData() { return shuffledRange(10, 47); },
-  run(input) {
-    const values = [...new Set(demoValues(input, 15, 4))];
-    const tree = { key: values[0], left: null, right: null, id: "0" };
-    let nextId = 1;
-    function insertNode(root, key) {
-      if (key < root.key) {
-        if (root.left) insertNode(root.left, key);
-        else root.left = { key, left: null, right: null, id: String(nextId++) };
-      } else if (key > root.key) {
-        if (root.right) insertNode(root.right, key);
-        else root.right = { key, left: null, right: null, id: String(nextId++) };
-      }
-    }
-    values.slice(1).forEach((v) => insertNode(tree, v));
-    const ordered = [];
-    function inorder(t, depth = 0, parent = null, edges = []) {
-      if (!t) return edges;
-      inorder(t.left, depth + 1, t.id, edges);
-      ordered.push({ ...t, depth, parent });
-      inorder(t.right, depth + 1, t.id, edges);
-      return edges;
-    }
-    inorder(tree);
-    const maxDepth = Math.max(...ordered.map((x) => x.depth), 1);
-    const pos = {};
-    ordered.forEach((item, i) => { pos[item.id] = { x: 8 + (i * 84) / Math.max(1, ordered.length - 1), y: 10 + (item.depth * 88) / maxDepth }; });
-    const makeVisual = (roles = {}) => {
-      const nodes = ordered.map((item) => node(item.id, String(item.key), pos[item.id].x, pos[item.id].y, roles[item.id] || "default"));
-      const edges = ordered.filter((item) => item.parent).map((item) => edge(item.parent, item.id, item.key < ordered.find((x) => x.id === item.parent).key ? "<" : ">"));
-      return graphVisual("tree", nodes, edges, { array: values });
-    };
-    const key = values[values.length - 1];
-    const frames = [liveTopicFrame(1, `Build a BST from the shuffled insertion order, then search for ${key}.`, makeVisual({ [tree.id]: "focus" }), { key, root: tree.key })];
-    let cur = tree;
-    while (cur) {
-      frames.push(liveTopicFrame(cur.key === key ? 18 : key < cur.key ? 20 : 21, `Compare ${key} with ${cur.key}.`, makeVisual({ [cur.id]: cur.key === key ? "found" : "pivot" }), { key, x: cur.key }, cur.key === key ? "found" : "pivot"));
-      if (cur.key === key) break;
-      cur = key < cur.key ? cur.left : cur.right;
-    }
-    return frames;
-  },
-};
+// (liveBST removed: superseded by step-traced bst.)
 
 const liveDPTable = {
   ...dpTable,
@@ -2711,7 +3113,7 @@ def answer_preserved(nums: list[int], target: int, chosen: list[int]) -> bool:
 // ============================================================
 const ALL = [
   bubble, insertion, selection, quick, binary,
-  liveMergeSort, liveRecursionTree, liveCountingRadix, liveHeapPQ, liveBST,
+  mergeSort, recursionTree, liveCountingRadix, heapPQ, bst,
   liveDPTable, liveActivitySelection, bfs, dfs, mst, shortestPaths,
   liveFloydWarshall, maxFlow, liveNPReductions,
 ];

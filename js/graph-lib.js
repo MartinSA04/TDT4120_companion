@@ -365,6 +365,119 @@
     return map;
   }
 
+  // -------------------- Tree layouts --------------------
+  //
+  // Heap, BST, and merge-sort recursion trees all want the same look-and-feel
+  // — circles + lines + an optional array sidecar. These helpers compute
+  // {id, x, y, depth, …} positions in the 0–100 viewBox so a single TreeView
+  // can render any of them.
+
+  function heapTreePositions(n) {
+    // Complete-binary-tree positions for an array of length n laid out
+    // level-by-level. Returns an array indexed by heap index.
+    const positions = [];
+    const levels = Math.max(1, Math.ceil(Math.log2(n + 1)));
+    for (let i = 0; i < n; i++) {
+      const level = Math.floor(Math.log2(i + 1));
+      const first = 2 ** level - 1;
+      const slot = i - first;
+      const slots = 2 ** level;
+      const x = ((slot + 1) * 100) / (slots + 1);
+      const y = 14 + (level / Math.max(1, levels - 1)) * 70;
+      positions.push({ index: i, x, y, level, parent: i === 0 ? null : Math.floor((i - 1) / 2) });
+    }
+    return positions;
+  }
+
+  function buildBST(keys) {
+    // Insert `keys` in order, return root with .id, .key, .left, .right
+    let nextId = 0;
+    const make = (key) => ({ id: nextId++, key, left: null, right: null });
+    if (!keys.length) return null;
+    const root = make(keys[0]);
+    function insert(node, key) {
+      if (key < node.key) {
+        if (node.left) insert(node.left, key);
+        else node.left = make(key);
+      } else if (key > node.key) {
+        if (node.right) insert(node.right, key);
+        else node.right = make(key);
+      }
+    }
+    for (let i = 1; i < keys.length; i++) insert(root, keys[i]);
+    return root;
+  }
+
+  function bstPositions(root) {
+    // In-order traversal lays nodes out left-to-right; depth gives y.
+    const flat = [];
+    function inorder(node, depth, parent) {
+      if (!node) return;
+      inorder(node.left, depth + 1, node);
+      flat.push({ id: node.id, key: node.key, depth, parent: parent ? parent.id : null });
+      inorder(node.right, depth + 1, node);
+    }
+    inorder(root, 0, null);
+    const maxDepth = Math.max(1, ...flat.map((n) => n.depth));
+    const positions = {};
+    flat.forEach((n, i) => {
+      positions[n.id] = {
+        id: n.id,
+        x: 8 + (i / Math.max(1, flat.length - 1)) * 84,
+        y: 12 + (n.depth / Math.max(1, maxDepth)) * 76,
+        depth: n.depth,
+        key: n.key,
+        parent: n.parent,
+      };
+    });
+    return { flat, positions, maxDepth };
+  }
+
+  function mergeRecursionTree(n) {
+    // Build the recursion tree of merge_sort(0..n-1).
+    const nodes = [];
+    const edges = [];
+    function visit(lo, hi, depth, parentId) {
+      const id = `${lo}-${hi}`;
+      nodes.push({ id, lo, hi, depth, slots: hi - lo + 1 });
+      if (parentId != null) edges.push({ from: parentId, to: id });
+      if (lo < hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        visit(lo, mid, depth + 1, id);
+        visit(mid + 1, hi, depth + 1, id);
+      }
+    }
+    visit(0, n - 1, 0, null);
+
+    // Position: leaves spread evenly along x; internal nodes at avg of children.
+    const maxDepth = Math.max(0, ...nodes.map((n) => n.depth));
+    const leaves = nodes.filter((n) => n.lo === n.hi).sort((a, b) => a.lo - b.lo);
+    const xMap = {};
+    leaves.forEach((leaf, i) => {
+      xMap[leaf.id] = 6 + (i / Math.max(1, leaves.length - 1)) * 88;
+    });
+    function assignX(nodeId) {
+      if (xMap[nodeId] != null) return xMap[nodeId];
+      const childIds = edges.filter((e) => e.from === nodeId).map((e) => e.to);
+      const xs = childIds.map(assignX);
+      xMap[nodeId] = xs.reduce((s, x) => s + x, 0) / xs.length;
+      return xMap[nodeId];
+    }
+    nodes.forEach((n) => assignX(n.id));
+    const positions = {};
+    nodes.forEach((n) => {
+      positions[n.id] = {
+        id: n.id,
+        x: xMap[n.id],
+        y: 12 + (n.depth / Math.max(1, maxDepth)) * 74,
+        depth: n.depth,
+        lo: n.lo,
+        hi: n.hi,
+      };
+    });
+    return { nodes, edges, positions, maxDepth };
+  }
+
   // -------------------- Public surface --------------------
 
   const lib = {
@@ -383,6 +496,11 @@
     circularPositions,
     layeredPositions,
     sourceSinkPositions,
+    // Tree layouts
+    heapTreePositions,
+    buildBST,
+    bstPositions,
+    mergeRecursionTree,
     // Data structures
     makeDSU,
     makeMinPQ,
