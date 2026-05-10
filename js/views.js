@@ -1403,6 +1403,512 @@ function ReductionView({ frame, height = 300 }) {
   );
 }
 
+// =============================================================
+// Helpers shared by graph-lib-driven views
+// =============================================================
+
+// Resolve the directed/undirected edge endpoint pair from a graph spec.
+function edgeEndpoints(graph) {
+  return Object.fromEntries((graph?.nodes || []).map((n) => [n.id, n]));
+}
+
+// Wrapper that handles directed edges (drawn with arrowhead via SVG marker)
+// + the now-richer set of role colours used by MST/Dijkstra/Flow.
+function GraphEdgeLine({ edge, byId, directed = false, label = null, weight = null }) {
+  const a = byId[edge.u || edge.from];
+  const b = byId[edge.v || edge.to];
+  if (!a || !b) return null;
+  const role = edge.role || "default";
+  let stroke = "var(--rule-soft)";
+  let width = 0.5;
+  let dash = "";
+  let opacity = 0.9;
+  switch (role) {
+    case "tree":
+      stroke = "var(--role-sorted)"; width = 1.6; opacity = 0.95; break;
+    case "back":
+      stroke = "var(--role-swap)"; width = 1.1; dash = "1.5 1.5"; break;
+    case "cross":
+      stroke = "var(--ink-4)"; width = 0.5; dash = "1 1.5"; opacity = 0.55; break;
+    case "active":
+      stroke = "var(--accent)"; width = 1.8; break;
+    case "examined":
+      stroke = "var(--role-compare)"; width = 0.8; opacity = 0.6; break;
+    case "augmenting":
+      stroke = "var(--accent)"; width = 2; break;
+    case "saturated":
+      stroke = "var(--role-swap)"; width = 1.4; opacity = 0.95; break;
+    case "reject":
+      stroke = "var(--role-swap)"; width = 0.9; dash = "1.5 1.5"; opacity = 0.7; break;
+    default: break;
+  }
+
+  // Shrink endpoints so arrowheads don't overlap node circles
+  const r = 4.6;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  const x1 = a.x + ux * r;
+  const y1 = a.y + uy * r;
+  const x2 = b.x - ux * (r + (directed ? 1.4 : 0));
+  const y2 = b.y - uy * (r + (directed ? 1.4 : 0));
+
+  const labelText = label != null ? label : weight;
+  // Slight offset to keep label off the line
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  return (
+    <g>
+      <line
+        x1={x1}
+        y1={y1}
+        x2={x2}
+        y2={y2}
+        stroke={stroke}
+        strokeWidth={width}
+        strokeDasharray={dash}
+        opacity={opacity}
+        markerEnd={directed ? `url(#arrow-${role})` : undefined}
+      />
+      {labelText != null && (
+        <text x={mx} y={my - 1.3} textAnchor="middle" className="edge-label">
+          {labelText}
+        </text>
+      )}
+    </g>
+  );
+}
+
+// SVG <defs> with arrowhead markers in every role colour we use.
+function ArrowMarkers() {
+  const markers = [
+    ["default", "var(--rule-soft)"],
+    ["active", "var(--accent)"],
+    ["tree", "var(--role-sorted)"],
+    ["augmenting", "var(--accent)"],
+    ["saturated", "var(--role-swap)"],
+    ["examined", "var(--role-compare)"],
+  ];
+  return (
+    <defs>
+      {markers.map(([role, color]) => (
+        <marker
+          key={role}
+          id={`arrow-${role}`}
+          viewBox="0 0 10 10"
+          refX="9"
+          refY="5"
+          markerWidth="3"
+          markerHeight="3"
+          orient="auto-start-reverse"
+        >
+          <path d="M 0 0 L 10 5 L 0 10 z" fill={color} />
+        </marker>
+      ))}
+    </defs>
+  );
+}
+
+// =============================================================
+// MST (Kruskal) view
+// =============================================================
+function MstView({ frame, height = 320 }) {
+  const v = frame.visual || {};
+  const graph = v.graph;
+  const nodes = graph?.nodes || [];
+  const edges = graph?.edges || [];
+  const vState = v.vertices || {};
+  const eState = v.edges || {};
+  const sortedEdges = v.containers?.sortedEdges || [];
+  const dsu = v.containers?.dsu || { components: [] };
+  const mst = v.containers?.mst || { chosen: [], totalWeight: 0, target: 0, progress: 0 };
+  const byId = edgeEndpoints(graph);
+
+  // Per-component tint cycle so vertices in the same set share an outline
+  // colour while DSU is still partitioned.
+  const compColors = ["var(--accent)", "var(--role-sorted)", "var(--role-pivot)", "var(--role-compare)", "var(--ink-3)", "var(--role-swap)"];
+
+  return (
+    <div className="mst-view" style={{ minHeight: height }}>
+      <div className="mst-stage">
+        <svg viewBox="0 0 100 100" className="mst-svg" role="img">
+          <ArrowMarkers />
+          {edges.map((e, i) => {
+            const k = window.AlgViz.graph.edgeKey(e.u, e.v, false);
+            const merged = { ...e, role: eState[k]?.role || "default" };
+            return (
+              <GraphEdgeLine
+                key={`${e.u}-${e.v}-${i}`}
+                edge={merged}
+                byId={byId}
+                weight={e.weight}
+              />
+            );
+          })}
+          {nodes.map((n) => {
+            const s = vState[n.id] || {};
+            const compIdx = s.component != null ? s.component : 0;
+            const tint = compColors[compIdx % compColors.length];
+            const stroke = s.state === "active" ? "var(--accent)" : tint;
+            return (
+              <g key={n.id}>
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r={4.6}
+                  fill="var(--surface-2)"
+                  stroke={stroke}
+                  strokeWidth={s.state === "active" ? 1.6 : 1}
+                />
+                <text x={n.x} y={n.y + 1.4} textAnchor="middle" className="node-label">
+                  {n.id}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+        <DsuPanel components={dsu.components} compColors={compColors} />
+      </div>
+      <SortedEdgeList edges={sortedEdges} mst={mst} />
+    </div>
+  );
+}
+
+function DsuPanel({ components, compColors }) {
+  return (
+    <aside className="mst-dsu">
+      <div className="mst-dsu-head">
+        <span className="eyebrow">disjoint-set forest</span>
+        <span className="mst-dsu-meta">{components.length} component{components.length === 1 ? "" : "s"}</span>
+      </div>
+      <div className="mst-dsu-list">
+        {components.map((group, i) => (
+          <div
+            key={group.join(",")}
+            className="mst-dsu-row"
+            style={{ borderLeft: `3px solid ${compColors[i % compColors.length]}` }}
+          >
+            <span className="mst-dsu-rep">root: <strong>{group[0]}</strong></span>
+            <span className="mst-dsu-members">{`{${group.join(", ")}}`}</span>
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function SortedEdgeList({ edges, mst }) {
+  return (
+    <div className="mst-edges">
+      <div className="mst-edges-head">
+        <span className="eyebrow">edges sorted by weight</span>
+        <span className="mst-edges-meta">
+          MST: <strong>{mst.progress}</strong> / {mst.target} edges &nbsp;·&nbsp; total weight = <strong>{mst.totalWeight}</strong>
+        </span>
+      </div>
+      <div className="mst-edges-list">
+        {edges.map((e) => (
+          <div key={e.key} className={`mst-edge mst-edge-${e.status}`}>
+            <span className="mst-edge-w">{String(e.weight).padStart(2, "0")}</span>
+            <span className="mst-edge-pair">{e.u}–{e.v}</span>
+            <span className="mst-edge-mark">
+              {e.status === "accepted" ? "✓ accepted"
+                : e.status === "rejected" ? "✗ cycle"
+                : e.status === "active" ? "← examining"
+                : "pending"}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// =============================================================
+// Dijkstra view
+// =============================================================
+function DijkstraView({ frame, height = 320 }) {
+  const v = frame.visual || {};
+  const graph = v.graph;
+  const nodes = graph?.nodes || [];
+  const edges = graph?.edges || [];
+  const directed = !!graph?.directed;
+  const vState = v.vertices || {};
+  const eState = v.edges || {};
+  const pq = v.containers?.pq || [];
+  const distRows = v.containers?.dist || [];
+  const source = v.containers?.source;
+  const byId = edgeEndpoints(graph);
+
+  return (
+    <div className="dijkstra-view" style={{ minHeight: height }}>
+      <div className="dijkstra-stage">
+        <svg viewBox="0 0 100 100" className="dijkstra-svg" role="img">
+          <ArrowMarkers />
+          {edges.map((e, i) => {
+            const k = window.AlgViz.graph.edgeKey(e.u, e.v, true);
+            const merged = { ...e, role: eState[k]?.role || "default" };
+            return (
+              <GraphEdgeLine
+                key={`${e.u}-${e.v}-${i}`}
+                edge={merged}
+                byId={byId}
+                directed={directed}
+                weight={e.weight}
+              />
+            );
+          })}
+          {nodes.map((n) => {
+            const s = vState[n.id] || {};
+            const fill = (() => {
+              if (s.state === "active") return "var(--role-pivot)";
+              if (s.state === "settled") return "var(--role-sorted)";
+              if (s.state === "frontier") return "var(--role-compare)";
+              return "var(--surface-2)";
+            })();
+            const stroke = s.state === "undiscovered" ? "var(--rule-soft)" : "var(--ink)";
+            const textColor = s.state === "undiscovered" ? "var(--ink-3)" : "var(--surface-2)";
+            const dist = s.dist;
+            const dStr = dist === Infinity || dist == null ? "∞" : dist;
+            return (
+              <g key={n.id}>
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r={4.7}
+                  fill={fill}
+                  stroke={stroke}
+                  strokeWidth={s.state === "active" ? 1.6 : 0.9}
+                />
+                <text x={n.x} y={n.y + 1.4} textAnchor="middle" className="node-label" fill={textColor}>
+                  {n.id}
+                </text>
+                <text x={n.x} y={n.y + 9.5} textAnchor="middle" className="node-sublabel">
+                  d={dStr}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+        <DijkstraPQ items={pq} />
+      </div>
+      <DijkstraDistTable rows={distRows} source={source} />
+    </div>
+  );
+}
+
+function DijkstraPQ({ items }) {
+  return (
+    <aside className="dijkstra-pq">
+      <div className="dijkstra-pq-head">
+        <span className="eyebrow">min-priority queue</span>
+        <span className="dijkstra-pq-meta">|PQ| = {items.length}</span>
+      </div>
+      <div className="dijkstra-pq-arrow">▼ extract-min (lowest d)</div>
+      {items.length === 0 ? (
+        <div className="dijkstra-pq-empty">empty</div>
+      ) : (
+        <div className="dijkstra-pq-list">
+          {items.map((it, i) => (
+            <div
+              key={`${it.v}-${it.d}-${i}`}
+              className={it.isTop ? "dijkstra-pq-cell top" : "dijkstra-pq-cell"}
+            >
+              <span className="dijkstra-pq-d">d = {it.d === Infinity ? "∞" : it.d}</span>
+              <span className="dijkstra-pq-v">{it.v}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </aside>
+  );
+}
+
+function DijkstraDistTable({ rows, source }) {
+  return (
+    <div className="dijkstra-dist">
+      <div className="dijkstra-dist-head">
+        <span className="eyebrow">distance &amp; predecessor</span>
+        <span className="dijkstra-dist-meta">
+          source = <strong>{source}</strong>
+        </span>
+      </div>
+      <div className="dijkstra-dist-grid">
+        <div className="dijkstra-dist-col-head">v</div>
+        <div className="dijkstra-dist-col-head">d[v]</div>
+        <div className="dijkstra-dist-col-head">π[v]</div>
+        <div className="dijkstra-dist-col-head">state</div>
+        {rows.map((r) => (
+          <React.Fragment key={r.v}>
+            <div className="dijkstra-dist-cell vertex">{r.v}</div>
+            <div className="dijkstra-dist-cell value">
+              {r.d === Infinity ? "∞" : r.d}
+            </div>
+            <div className="dijkstra-dist-cell value">{r.parent ?? "—"}</div>
+            <div className={`dijkstra-dist-cell tag ${r.settled ? "settled" : "open"}`}>
+              {r.settled ? "settled" : (r.d === Infinity ? "—" : "in PQ")}
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// =============================================================
+// Max Flow view
+// =============================================================
+function FlowView({ frame, height = 320 }) {
+  const v = frame.visual || {};
+  const graph = v.graph;
+  const nodes = graph?.nodes || [];
+  const edges = graph?.edges || [];
+  const vState = v.vertices || {};
+  const eState = v.edges || {};
+  const flow = v.containers?.flow || { value: 0, edges: [], source: "s", sink: "t" };
+  const residual = v.containers?.residual || [];
+  const byId = edgeEndpoints(graph);
+
+  // Find total source-out capacity (so the gauge has a sensible max)
+  const sourceOutCap = edges
+    .filter((e) => e.u === flow.source)
+    .reduce((s, e) => s + (e.capacity || 0), 0);
+
+  return (
+    <div className="flow-view" style={{ minHeight: height }}>
+      <div className="flow-stage">
+        <svg viewBox="0 0 100 100" className="flow-svg" role="img">
+          <ArrowMarkers />
+          {edges.map((e, i) => {
+            const k = window.AlgViz.graph.edgeKey(e.u, e.v, true);
+            const eDisp = { ...e, role: eState[k]?.role || "default" };
+            const label = eState[k]?.label || `${flow.edges[i]?.flow ?? 0}/${e.capacity}`;
+            return (
+              <GraphEdgeLine
+                key={`${e.u}-${e.v}-${i}`}
+                edge={eDisp}
+                byId={byId}
+                directed
+                label={label}
+              />
+            );
+          })}
+          {nodes.map((n) => {
+            const s = vState[n.id] || {};
+            const isSource = n.id === flow.source;
+            const isSink = n.id === flow.sink;
+            const fill = (() => {
+              if (s.state === "active") return "var(--role-pivot)";
+              if (s.state === "frontier") return "var(--accent)";
+              if (s.state === "visited") return "var(--role-compare)";
+              if (isSource || isSink) return "var(--ink)";
+              return "var(--surface-2)";
+            })();
+            const textColor =
+              isSource || isSink || s.state === "active" || s.state === "frontier" || s.state === "visited"
+                ? "var(--surface-2)"
+                : "var(--ink)";
+            return (
+              <g key={n.id}>
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r={isSource || isSink ? 5.6 : 4.7}
+                  fill={fill}
+                  stroke="var(--ink)"
+                  strokeWidth={isSource || isSink ? 1.4 : 0.9}
+                />
+                <text x={n.x} y={n.y + 1.4} textAnchor="middle" className="node-label" fill={textColor}>
+                  {n.id}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+        <ResidualPanel residual={residual} source={flow.source} sink={flow.sink} />
+      </div>
+      <FlowGauge value={flow.value} cap={sourceOutCap} source={flow.source} sink={flow.sink} edges={flow.edges} />
+    </div>
+  );
+}
+
+function ResidualPanel({ residual, source, sink }) {
+  const forward = residual.filter((r) => !r.isBack);
+  const backward = residual.filter((r) => r.isBack);
+  return (
+    <aside className="flow-residual">
+      <div className="flow-residual-head">
+        <span className="eyebrow">residual graph</span>
+        <span className="flow-residual-meta">
+          {residual.length} edge{residual.length === 1 ? "" : "s"} with capacity &gt; 0
+        </span>
+      </div>
+      <div className="flow-residual-section">
+        <div className="flow-residual-label">forward (cap − flow)</div>
+        {forward.length === 0 ? (
+          <div className="flow-residual-empty">all forward edges saturated</div>
+        ) : (
+          <div className="flow-residual-list">
+            {forward.map((r) => (
+              <div key={`${r.u}->${r.v}`} className="flow-residual-row">
+                <span className="flow-residual-pair">{r.u} → {r.v}</span>
+                <span className="flow-residual-cap">{r.residual}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flow-residual-section">
+        <div className="flow-residual-label">backward (cancellable flow)</div>
+        {backward.length === 0 ? (
+          <div className="flow-residual-empty">no flow to cancel</div>
+        ) : (
+          <div className="flow-residual-list">
+            {backward.map((r) => (
+              <div key={`${r.u}->${r.v}`} className="flow-residual-row back">
+                <span className="flow-residual-pair">{r.u} ↩ {r.v}</span>
+                <span className="flow-residual-cap">{r.residual}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+function FlowGauge({ value, cap, source, sink, edges }) {
+  const pct = cap > 0 ? Math.min(100, (value / cap) * 100) : 0;
+  return (
+    <div className="flow-gauge">
+      <div className="flow-gauge-head">
+        <span className="eyebrow">value of flow</span>
+        <span className="flow-gauge-meta">|f| from {source} → {sink} = <strong>{value}</strong> / max source out-cap = {cap}</span>
+      </div>
+      <div className="flow-gauge-bar">
+        <div className="flow-gauge-fill" style={{ width: `${pct}%` }} />
+        <div className="flow-gauge-marker" style={{ left: `${pct}%` }} />
+      </div>
+      <div className="flow-gauge-edges">
+        {edges.map((e) => {
+          const fp = e.capacity > 0 ? (e.flow / e.capacity) * 100 : 0;
+          const sat = e.flow === e.capacity && e.capacity > 0;
+          return (
+            <div key={`${e.u}-${e.v}`} className={sat ? "flow-edge-row sat" : "flow-edge-row"}>
+              <span className="flow-edge-pair">{e.u} → {e.v}</span>
+              <div className="flow-edge-bar">
+                <div className="flow-edge-fill" style={{ width: `${fp}%` }} />
+              </div>
+              <span className="flow-edge-num">{e.flow}/{e.capacity}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function StructuredVisualization({ frame, viewKind, height }) {
   const kind = frame.visual?.type || frame.viewKind || viewKind;
   if (kind === "table") return <TableView frame={frame} height={height} />;
@@ -1422,6 +1928,9 @@ function Visualization({ frame, viewKind, maxValue, height }) {
   }
   if (kind === "bfs") return <BfsView frame={frame} height={height} />;
   if (kind === "dfs") return <DfsView frame={frame} height={height} />;
+  if (kind === "mst-kruskal") return <MstView frame={frame} height={height} />;
+  if (kind === "dijkstra") return <DijkstraView frame={frame} height={height} />;
+  if (kind === "max-flow") return <FlowView frame={frame} height={height} />;
   if (["tree", "graph", "flow", "table", "buckets", "timeline", "reduction"].includes(kind)) {
     return <StructuredVisualization frame={frame} viewKind={kind} height={height} />;
   }
@@ -1440,5 +1949,8 @@ window.AlgViz.Bars = Bars;
 window.AlgViz.SearchView = SearchView;
 window.AlgViz.BfsView = BfsView;
 window.AlgViz.DfsView = DfsView;
+window.AlgViz.MstView = MstView;
+window.AlgViz.DijkstraView = DijkstraView;
+window.AlgViz.FlowView = FlowView;
 window.AlgViz.Visualization = Visualization;
 })();

@@ -1621,3 +1621,479 @@ button, input { border-radius: 0; }
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ============================================================
+   MST (Kruskal) view
+   ============================================================ */
+
+.mst-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.mst-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.mst-svg {
+  width: 100%;
+  min-height: 280px;
+  height: 100%;
+  overflow: visible;
+}
+
+.mst-dsu,
+.dijkstra-pq,
+.flow-residual {
+  background: var(--bg-tint);
+  border: 1px solid var(--rule-faint);
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mst-dsu-head,
+.dijkstra-pq-head,
+.flow-residual-head,
+.dijkstra-dist-head,
+.flow-gauge-head,
+.mst-edges-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule-faint);
+}
+
+.mst-dsu-meta,
+.dijkstra-pq-meta,
+.flow-residual-meta,
+.dijkstra-dist-meta,
+.flow-gauge-meta,
+.mst-edges-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.mst-dsu-meta strong,
+.dijkstra-pq-meta strong,
+.flow-residual-meta strong,
+.dijkstra-dist-meta strong,
+.flow-gauge-meta strong,
+.mst-edges-meta strong {
+  color: var(--accent);
+}
+
+.mst-dsu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mst-dsu-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--rule-faint);
+}
+
+.mst-dsu-rep {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.mst-dsu-rep strong {
+  color: var(--ink);
+}
+
+.mst-dsu-members {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.mst-edges {
+  background: var(--surface);
+  border: 1px solid var(--rule-soft);
+  padding: 10px 14px;
+}
+
+.mst-edges-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.mst-edge {
+  display: grid;
+  grid-template-columns: 32px 60px 1fr;
+  gap: 12px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  border-left: 2px solid transparent;
+}
+
+.mst-edge-w {
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.mst-edge-pair {
+  color: var(--ink);
+}
+
+.mst-edge-mark {
+  color: var(--ink-4);
+  text-align: right;
+}
+
+.mst-edge-active {
+  background: var(--bg-tint);
+  border-left-color: var(--accent);
+  color: var(--ink);
+}
+
+.mst-edge-active .mst-edge-mark {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.mst-edge-accepted {
+  border-left-color: var(--role-sorted);
+}
+
+.mst-edge-accepted .mst-edge-mark {
+  color: var(--role-sorted);
+  font-weight: 700;
+}
+
+.mst-edge-rejected .mst-edge-mark {
+  color: var(--role-swap);
+  text-decoration: line-through;
+}
+
+.mst-edge-rejected .mst-edge-pair {
+  text-decoration: line-through;
+  color: var(--ink-4);
+}
+
+/* ============================================================
+   Dijkstra view
+   ============================================================ */
+
+.dijkstra-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.dijkstra-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 200px);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.dijkstra-svg {
+  width: 100%;
+  min-height: 280px;
+  height: 100%;
+  overflow: visible;
+}
+
+.dijkstra-pq-arrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.dijkstra-pq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dijkstra-pq-cell {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.dijkstra-pq-cell.top {
+  background: var(--role-pivot);
+  color: var(--surface-2);
+  border-color: var(--role-pivot);
+  box-shadow: -3px 3px 0 var(--accent);
+}
+
+.dijkstra-pq-cell.top .dijkstra-pq-d {
+  color: var(--surface-2);
+}
+
+.dijkstra-pq-d {
+  color: var(--ink-3);
+}
+
+.dijkstra-pq-v {
+  font-weight: 700;
+}
+
+.dijkstra-pq-empty {
+  color: var(--ink-4);
+  font-style: italic;
+}
+
+.dijkstra-dist {
+  background: var(--surface);
+  border: 1px solid var(--rule-soft);
+  padding: 10px 14px;
+}
+
+.dijkstra-dist-grid {
+  display: grid;
+  grid-template-columns: 32px 60px 60px 1fr;
+  gap: 0;
+  margin-top: 6px;
+  border: 1px solid var(--rule-faint);
+}
+
+.dijkstra-dist-col-head {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  background: var(--bg-tint);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--rule-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dijkstra-dist-cell {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--rule-faint);
+}
+
+.dijkstra-dist-cell.vertex {
+  font-weight: 700;
+  background: var(--bg-tint);
+}
+
+.dijkstra-dist-cell.value {
+  text-align: right;
+}
+
+.dijkstra-dist-cell.tag {
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.dijkstra-dist-cell.tag.settled {
+  color: var(--role-sorted);
+  font-weight: 700;
+}
+
+.dijkstra-dist-cell.tag.open {
+  color: var(--role-compare);
+}
+
+/* ============================================================
+   Max Flow view
+   ============================================================ */
+
+.flow-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.flow-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 230px);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.flow-svg {
+  width: 100%;
+  min-height: 300px;
+  height: 100%;
+  overflow: visible;
+}
+
+.flow-residual-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flow-residual-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.flow-residual-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.flow-residual-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 3px 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--rule-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.flow-residual-row.back {
+  border-left: 2px solid var(--role-swap);
+  color: var(--role-swap);
+}
+
+.flow-residual-cap {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.flow-residual-row.back .flow-residual-cap {
+  color: var(--role-swap);
+}
+
+.flow-residual-empty {
+  color: var(--ink-4);
+  font-style: italic;
+  font-size: 11px;
+}
+
+.flow-gauge {
+  background: var(--surface);
+  border: 1px solid var(--rule-soft);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flow-gauge-bar {
+  position: relative;
+  height: 12px;
+  background: var(--bg-tint);
+  border: 1px solid var(--rule-faint);
+}
+
+.flow-gauge-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--accent);
+  transition: width 200ms var(--ease-out);
+}
+
+.flow-gauge-marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--ink);
+  transform: translateX(-1px);
+  transition: left 200ms var(--ease-out);
+}
+
+.flow-gauge-edges {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.flow-edge-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 60px;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-2);
+}
+
+.flow-edge-row.sat .flow-edge-num {
+  color: var(--role-swap);
+  font-weight: 700;
+}
+
+.flow-edge-pair {
+  color: var(--ink);
+}
+
+.flow-edge-bar {
+  position: relative;
+  height: 6px;
+  background: var(--bg-tint);
+  border: 1px solid var(--rule-faint);
+}
+
+.flow-edge-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--role-sorted);
+  transition: width 200ms var(--ease-out);
+}
+
+.flow-edge-row.sat .flow-edge-fill {
+  background: var(--role-swap);
+}
+
+.flow-edge-num {
+  text-align: right;
+  font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+  .mst-stage,
+  .dijkstra-stage,
+  .flow-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
