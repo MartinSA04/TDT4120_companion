@@ -76,8 +76,9 @@ const bubble = {
             if a[j] > a[j + 1]:
                 a[j], a[j + 1] = a[j + 1], a[j]
     return a`,
-  defaultData() {
-    return shuffledRange(20, 7);
+  sizeRange: { min: 4, max: 40, default: 20 },
+  defaultData(size = 20) {
+    return shuffledRange(size, 7);
   },
   run(input) {
     const a = [...input];
@@ -166,8 +167,9 @@ const insertion = {
             j -= 1
         a[j + 1] = key
     return a`,
-  defaultData() {
-    return shuffledRange(20, 7);
+  sizeRange: { min: 4, max: 40, default: 20 },
+  defaultData(size = 20) {
+    return shuffledRange(size, 7);
   },
   run(input) {
     const a = [...input];
@@ -282,8 +284,9 @@ const selection = {
                 m = j
         a[i], a[m] = a[m], a[i]
     return a`,
-  defaultData() {
-    return shuffledRange(20, 7);
+  sizeRange: { min: 4, max: 40, default: 20 },
+  defaultData(size = 20) {
+    return shuffledRange(size, 7);
   },
   run(input) {
     const a = [...input];
@@ -409,8 +412,9 @@ const quick = {
     a[i + 1], a[hi] = a[hi], a[i + 1]
     quick_sort(a, lo, i)
     quick_sort(a, i + 2, hi)`,
-  defaultData() {
-    return shuffledRange(20, 11);
+  sizeRange: { min: 4, max: 40, default: 20 },
+  defaultData(size = 20) {
+    return shuffledRange(size, 11);
   },
   run(input) {
     const a = [...input];
@@ -568,9 +572,10 @@ const binary = {
         else:
             hi = mid - 1
     return -1`,
-  defaultData() {
-    // Sorted even numbers 2..40
-    return Array.from({ length: 20 }, (_, i) => (i + 1) * 2);
+  sizeRange: { min: 4, max: 40, default: 20 },
+  defaultData(size = 20) {
+    // Sorted even numbers 2, 4, 6, …
+    return Array.from({ length: size }, (_, i) => (i + 1) * 2);
   },
   run(input) {
     const a = [...input];
@@ -768,9 +773,15 @@ def merge_sort(a: list[int]) -> list[int]:
     left  = merge_sort(a[:mid])
     right = merge_sort(a[mid:])
     return merge(left, right)`,
-  defaultData() { return range(8); },
-  run() {
-    const original = [5, 2, 4, 7, 1, 3, 2, 6];
+  sizeRange: { min: 4, max: 16, default: 8 },
+  defaultData(size = 8) {
+    // Use the canonical CLRS-style demo at default size for clean teaching;
+    // fall back to a deterministic shuffle at any other size.
+    if (size === 8) return [5, 2, 4, 7, 1, 3, 2, 6];
+    return shuffledRange(size, 31);
+  },
+  run(input) {
+    const original = input && input.length ? [...input] : [5, 2, 4, 7, 1, 3, 2, 6];
     const tree = _GLIB.mergeRecursionTree(original.length);
     // Each node carries its own slice contents over time. Initially it
     // mirrors the input; once the call returns, contents become sorted.
@@ -1013,12 +1024,19 @@ def level_cost(n: int, level: int, a: int = 2, b: int = 2) -> int:
 def total_work(n: int, a: int = 2, b: int = 2) -> int:
     levels = math.ceil(math.log(n, b)) + 1
     return sum(level_cost(n, k, a, b) for k in range(levels))`,
-  defaultData() { return range(8); },
-  run() {
-    // T(n) = 2T(n/2) + n with n = 16 → depth = log2(16) = 4
-    const N = 16;
+  // n must be a power of 2 for clean depths; the slider snaps to {4, 8, 16, 32}.
+  sizeRange: { min: 2, max: 5, default: 4 },   // log₂(n): 2→4, 3→8, 4→16, 5→32
+  defaultData(size = 4) {
+    const n = 2 ** Math.max(1, size);
+    return Array.from({ length: n }, (_, i) => i + 1);
+  },
+  run(input) {
+    // T(n) = 2T(n/2) + n  with n derived from the input length (rounded down
+    // to the nearest power of 2 so the recursion tree stays balanced).
+    const requested = input && input.length ? input.length : 16;
+    const N = 2 ** Math.max(1, Math.floor(Math.log2(requested)));
     const branches = 2;
-    const depth = Math.floor(Math.log2(N));   // 4 levels of internal expansion + leaves at level 4
+    const depth = Math.floor(Math.log2(N));   // log₂(N) levels of internal expansion + leaves at the bottom
     const totalLevels = depth + 1;             // include leaf row
 
     // Pre-compute layout positions for every node we will ever reveal.
@@ -1232,9 +1250,16 @@ const heapPQ = {
 def build_max_heap(a: list[int]) -> None:
     for i in range(len(a) // 2 - 1, -1, -1):
         max_heapify(a, i, len(a))`,
-  defaultData() { return range(10); },
-  run() {
-    const heap = [4, 1, 3, 2, 16, 9, 10, 14, 8, 7];   // CLRS Fig. 6.4
+  sizeRange: { min: 4, max: 16, default: 10 },
+  defaultData(size = 10) {
+    // CLRS Fig. 6.4 at default size; shuffle for other sizes.
+    if (size === 10) return [4, 1, 3, 2, 16, 9, 10, 14, 8, 7];
+    return shuffledRange(size, 43);
+  },
+  run(input) {
+    const heap = input && input.length
+      ? [...input]
+      : [4, 1, 3, 2, 16, 9, 10, 14, 8, 7];
     const positions = _GLIB.heapTreePositions(heap.length);
     const frames = [];
 
@@ -1405,20 +1430,32 @@ def tree_search(x: Node | None, k: int) -> Node | None:
         return tree_search(x.left,  k)
     else:
         return tree_search(x.right, k)`,
-  defaultData() { return range(8); },
-  run() {
-    // Build the CLRS-style demo tree:
-    //               15
-    //             /    \
-    //            6     18
-    //           / \   /  \
-    //          3   7 17  20
-    //               \
-    //               13
-    const insertOrder = [15, 6, 18, 3, 7, 17, 20, 13];
+  sizeRange: { min: 4, max: 15, default: 8 },
+  defaultData(size = 8) {
+    // CLRS-style 8-key tree at the default size, otherwise generate a
+    // pseudo-random insertion order over [1..40] of the requested size.
+    if (size === 8) return [15, 6, 18, 3, 7, 17, 20, 13];
+    const pool = Array.from({ length: 40 }, (_, i) => i + 1);
+    const rng = (function () {
+      let s = 47;
+      return () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    })();
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, size);
+  },
+  run(input) {
+    // Build the CLRS-style demo tree by default, or whatever insertion order
+    // was passed in.
+    const insertOrder = input && input.length ? [...input] : [15, 6, 18, 3, 7, 17, 20, 13];
     const root = _GLIB.buildBST(insertOrder);
     const layout = _GLIB.bstPositions(root);
-    const target = 13;
+    // Target = an existing key roughly 3/4 of the way through the in-order
+    // sequence so the search descends a non-trivial path.
+    const sortedKeys = [...new Set(insertOrder)].sort((a, b) => a - b);
+    const target = sortedKeys[Math.floor(sortedKeys.length * 0.7)] || sortedKeys[0];
 
     // Helpers to find node ids in left/right subtrees of any node, used to
     // mark eliminated branches.
@@ -2903,7 +2940,8 @@ def radix_sort(a: list[int]) -> list[int]:
         out = counting_sort_by_digit(out, exp)
         exp *= 10
     return out`,
-  defaultData() { return shuffledRange(10, 41); },
+  sizeRange: { min: 6, max: 24, default: 10 },
+  defaultData(size = 10) { return shuffledRange(size, 41); },
   run(input) {
     const values = demoValues(input, 12, 4).map((v, i) => 10 + ((v * 7 + i * 3) % 90));
     const bucketBy = (arr, exp) => arr.reduce((acc, x) => {
@@ -2942,7 +2980,8 @@ const liveDPTable = {
                 take = table[i - 1][w - weights[i - 1]] + values[i - 1]
                 table[i][w] = max(table[i][w], take)
     return table[n][capacity]`,
-  defaultData() { return shuffledRange(8, 53); },
+  sizeRange: { min: 4, max: 14, default: 8 },
+  defaultData(size = 8) { return shuffledRange(size, 53); },
   run(input) {
     const raw = demoValues(input, 18, 6);
     const itemCount = clamp(Math.floor(raw.length / 2), 3, 6);
@@ -2988,7 +3027,8 @@ def activity_selection(activities: list[Activity]) -> list[Activity]:
             chosen.append((start, finish))
             last_finish = finish
     return chosen`,
-  defaultData() { return shuffledRange(9, 59); },
+  sizeRange: { min: 4, max: 14, default: 9 },
+  defaultData(size = 9) { return shuffledRange(size, 59); },
   run(input) {
     const values = demoValues(input, 10, 5);
     const activities = values.map((v, i) => {
@@ -3045,7 +3085,8 @@ const liveFloydWarshall = {
             for j in range(n):
                 dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
     return dist`,
-  defaultData() { return shuffledRange(6, 73); },
+  sizeRange: { min: 3, max: 7, default: 6 },
+  defaultData(size = 6) { return shuffledRange(size, 73); },
   run(input) {
     const values = demoValues(input, 6, 4);
     const n = values.length;
@@ -3085,7 +3126,8 @@ def answer_preserved(nums: list[int], target: int, chosen: list[int]) -> bool:
     weights, values, capacity, required_value = subset_sum_to_knapsack(nums, target)
     knapsack_yes = sum(chosen) <= capacity and sum(chosen) >= required_value
     return subset_yes == knapsack_yes`,
-  defaultData() { return shuffledRange(8, 83); },
+  sizeRange: { min: 4, max: 12, default: 8 },
+  defaultData(size = 8) { return shuffledRange(size, 83); },
   run(input) {
     const nums = demoValues(input, 8, 4).map((v) => 1 + (v % 12));
     const target = Math.max(3, Math.floor(nums.reduce((a, b) => a + b, 0) / 2));

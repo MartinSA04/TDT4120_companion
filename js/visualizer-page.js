@@ -18,16 +18,23 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
   const [algoIdx, setAlgoIdx] = useState(initialIdx >= 0 ? initialIdx : 0);
   const algo = algorithms[algoIdx];
   const [seed, setSeed] = useState(0);
+  const [size, setSize] = useState(() => algo.sizeRange?.default ?? 0);
 
   useEffect(() => {
     const idx = algorithms.findIndex((a) => a.id === requestedAlgoId);
     if (idx >= 0) setAlgoIdx(idx);
   }, [requestedAlgoId, algorithms]);
 
+  // When the algorithm changes, reset the size to its default (or 0 if the
+  // algorithm doesn't expose a size range).
+  useEffect(() => {
+    setSize(algo.sizeRange?.default ?? 0);
+  }, [algoIdx, algo]);
+
   const input = useMemo(() => {
-    try { return algo.defaultData ? algo.defaultData() : []; }
+    try { return algo.defaultData ? algo.defaultData(size) : []; }
     catch (e) { return []; }
-  }, [algo, seed]);
+  }, [algo, seed, size]);
 
   const frames = useMemo(() => {
     try {
@@ -43,7 +50,7 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
   const [speed, setSpeed] = useState(60);
   const timerRef = useRef(null);
 
-  useEffect(() => { setIdx(0); setPlaying(false); }, [algoIdx, seed]);
+  useEffect(() => { setIdx(0); setPlaying(false); }, [algoIdx, seed, size]);
 
   useEffect(() => {
     if (!playing || frames.length === 0) return;
@@ -95,6 +102,7 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
       {A.CatalogueBar && (
         <A.CatalogueBar
           algorithms={algorithms} activeIdx={algoIdx} onSelect={setAlgoIdx}
+          size={size} onSize={setSize} sizeRange={algo.sizeRange}
           onShuffle={() => setSeed((s) => s + 1)}
         />
       )}

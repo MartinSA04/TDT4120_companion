@@ -681,7 +681,7 @@ function Masthead({ algo, n, idx, total, line, doing, theme, onTheme }) {
 // =============================================================
 // Catalogue bar — algorithm tabs + size slider + shuffle
 // =============================================================
-function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, onShuffle }) {
+function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, sizeRange, onShuffle }) {
   return (
     <div
       className="catalogue-bar"
@@ -739,27 +739,31 @@ function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, onShuffle
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span className="eyebrow">Size n =</span>
-        <input
-          type="range"
-          min={4}
-          max={40}
-          value={size}
-          onChange={(e) => onSize(parseInt(e.target.value, 10))}
-          style={{ width: 110 }}
-        />
-        <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 12,
-            color: "var(--ink-2)",
-            fontWeight: 600,
-            minWidth: 24,
-            textAlign: "right",
-          }}
-        >
-          {size}
-        </span>
+        {sizeRange && (
+          <>
+            <span className="eyebrow">Size n =</span>
+            <input
+              type="range"
+              min={sizeRange.min}
+              max={sizeRange.max}
+              value={size}
+              onChange={(e) => onSize(parseInt(e.target.value, 10))}
+              style={{ width: 110 }}
+            />
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 12,
+                color: "var(--ink-2)",
+                fontWeight: 600,
+                minWidth: 24,
+                textAlign: "right",
+              }}
+            >
+              {size}
+            </span>
+          </>
+        )}
         <button
           onClick={onShuffle}
           style={{
