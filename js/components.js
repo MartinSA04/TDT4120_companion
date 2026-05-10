@@ -561,44 +561,12 @@ function StatCell({ label, value, accent }) {
   );
 }
 
-function ThemeSwitch({ value, onChange }) {
-  return (
-    <div
-      style={{
-        display: "inline-flex",
-        border: "1px solid var(--ink)",
-        fontFamily: "var(--font-mono)",
-        fontSize: 11,
-      }}
-    >
-      {["paper", "night"].map((m) => (
-        <button
-          key={m}
-          onClick={() => onChange(m)}
-          style={{
-            padding: "6px 12px",
-            background: value === m ? "var(--ink)" : "transparent",
-            color: value === m ? "var(--bg)" : "var(--ink)",
-            border: 0,
-            cursor: "pointer",
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-          }}
-        >
-          {m}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function Masthead({ algo, n, idx, total, line, doing, theme, onTheme }) {
+function Masthead({ algo, n, idx, total, line, doing }) {
   return (
     <header
       style={{
         display: "grid",
-        gridTemplateColumns: "auto 1fr auto",
+        gridTemplateColumns: "auto 1fr",
         alignItems: "end",
         gap: 32,
         padding: "28px 36px 18px",
@@ -639,7 +607,7 @@ function Masthead({ algo, n, idx, total, line, doing, theme, onTheme }) {
       <div
         style={{
           display: "flex",
-          justifyContent: "center",
+          justifyContent: "flex-end",
           gap: 28,
           fontFamily: "var(--font-mono)",
           fontSize: 11,
@@ -654,25 +622,6 @@ function Masthead({ algo, n, idx, total, line, doing, theme, onTheme }) {
         />
         <StatCell label="LINE" value={String(line).padStart(2, "0")} />
         <StatCell label="DOING" value={doing.toUpperCase()} accent />
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <ThemeSwitch value={theme} onChange={onTheme} />
-        <a
-          href="https://github.com/"
-          target="_blank"
-          rel="noreferrer noopener"
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            padding: "6px 12px",
-            color: "var(--ink-2)",
-            border: "1px solid var(--rule-soft)",
-            textDecoration: "none",
-          }}
-        >
-          ↗ docs
-        </a>
       </div>
     </header>
   );

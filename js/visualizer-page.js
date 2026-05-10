@@ -95,7 +95,7 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
       {A.Masthead && (
         <A.Masthead
           algo={algo.name} n={data.length} idx={idx} total={frames.length}
-          line={frame.line} doing={doing} theme={theme} onTheme={onTheme}
+          line={frame.line} doing={doing}
         />
       )}
 

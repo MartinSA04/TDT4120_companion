@@ -56,8 +56,16 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
     pointerByIdx[idx].push(name);
   }
 
-  // Headroom above the bar grid: pointer rail + (optional) floating-box
-  // band + (optional) ★ min badge band.
+  // Headroom above the bar grid is carved into three vertical rows so
+  // labels and markers never sit at the same y:
+  //
+  //   chips           ← topmost (j, j+1, i, …)
+  //   pair bracket    ← above the focus-value labels
+  //   focus values    ← just above tall bars (15, 17, …)
+  //   bars
+  //
+  // CHIP_TO_BARS reserves the space for the bracket + focus labels rows
+  // BETWEEN the chip rail and the bar tops.
   const hasFloating = floatingIndices.size > 0;
   const pointerStack = Math.max(
     1,
@@ -66,7 +74,10 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
   const pointerH = 6 + pointerStack * 18 + 8;
   const floatingH = hasFloating ? 60 : 0;
   const minBadgeH = viewKind === "selection" ? 22 : 0;
-  const topBand = pointerH + floatingH + minBadgeH;
+  const FOCUS_LABEL_GAP = 22;   // top: -22 of bars-row for the value labels
+  const BRACKET_GAP = 14;        // pair-bracket lives above the focus labels
+  const CHIP_TO_BARS = FOCUS_LABEL_GAP + BRACKET_GAP + 4;
+  const topBand = pointerH + CHIP_TO_BARS + floatingH + minBadgeH;
 
   // ---- Sorted-region tint band ----
   let sortedBand = null;
@@ -143,7 +154,7 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
             position: "absolute",
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: CHIP_TO_BARS,
             height: pointerH,
             display: "grid",
             gridTemplateColumns: cols,
@@ -184,7 +195,7 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
                 style={{
                   position: "absolute",
                   left,
-                  bottom: pointerH + 6,
+                  bottom: pointerH + CHIP_TO_BARS + 6,
                   transform: "translateX(-50%)",
                   pointerEvents: "none",
                 }}
@@ -213,7 +224,7 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
             style={{
               position: "absolute",
               left: columnLeftPct(selectionMin.idx, n),
-              bottom: pointerH + floatingH + 4,
+              bottom: pointerH + CHIP_TO_BARS + floatingH + 4,
               transform: "translateX(-50%)",
               fontFamily: "var(--font-mono)",
               fontSize: 10,
@@ -378,12 +389,13 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
 
         {/* === Above-bars overlays === */}
 
-        {/* Bubble pair bracket (sits at top of bars area) */}
+        {/* Bubble pair bracket — sits ABOVE the focus value labels so the
+            two never share a row. */}
         {pairBracket && (
           <div
             style={{
               position: "absolute",
-              top: -10,
+              top: -(FOCUS_LABEL_GAP + 12),
               ...bandOf(pairBracket.from, pairBracket.to, n),
               borderTop: `2px solid var(--role-${pairBracket.role})`,
               borderLeft: `2px solid var(--role-${pairBracket.role})`,
