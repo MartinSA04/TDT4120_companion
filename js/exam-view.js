@@ -384,18 +384,23 @@ function parseExamBlocks(rawText) {
 
     if (isAlgorithmHeader(line) || isCodeLine(line) || (isCallSignature(line) && isCodeLine(lines[i + 1] || ""))) {
       flushParagraph();
-      const title = isAlgorithmHeader(line) ? trimmed : "Pseudokode";
+      let title = isAlgorithmHeader(line) ? trimmed : "Pseudokode";
       const codeLines = [];
       let lastCodeNumber = null;
+      let firstCodeNumber = null;
       const addCodeLine = (sourceLine) => {
         const number = codeLineNumber(sourceLine);
+        if (number && firstCodeNumber === null) firstCodeNumber = number;
         if (number && lastCodeNumber && number > lastCodeNumber + 1) {
           for (let missing = lastCodeNumber + 1; missing < number; missing += 1) codeLines.push("▮▮▮");
         }
         if (number) lastCodeNumber = number;
         codeLines.push(codeContent(sourceLine));
       };
-      if (!isAlgorithmHeader(line)) addCodeLine(line);
+      if (!isAlgorithmHeader(line)) {
+        if (isCallSignature(line)) title = trimmed;
+        else addCodeLine(line);
+      }
       i += 1;
 
       while (i < lines.length) {
@@ -410,6 +415,11 @@ function parseExamBlocks(rawText) {
           break;
         }
         if (isFigureHeader(current)) break;
+        if (isCallSignature(current) && codeLines.length === 0) {
+          title = title === "Pseudokode" ? currentTrimmed : `${title} · ${currentTrimmed}`;
+          i += 1;
+          continue;
+        }
         if (isCodeLine(current) || isCallSignature(current) || (codeLines.length > 0 && isCodeContinuation(current))) {
           addCodeLine(current);
           i += 1;
@@ -419,7 +429,7 @@ function parseExamBlocks(rawText) {
       }
 
       const code = normalizeCodeBlock(codeLines);
-      if (code.trim() && !/^\.\s*\.\s*\./.test(code.trim())) blocks.push({ type: "code", title, code });
+      if (code.trim() && !/^\.\s*\.\s*\./.test(code.trim())) blocks.push({ type: "code", title, code, startLine: firstCodeNumber || 1 });
       continue;
     }
 
@@ -684,8 +694,7 @@ function FormulaVisual({ kind }) {
 
 function ExamVisual({ kind }) {
   if (kind === "randomized-select-2022-des") {
-    return <AlgorithmCodeVisual title="Algoritme 1 · Lurviks versjon av randomized select" code={`Randomized-Select(A, p, r, i)
-if r <= p
+    return <AlgorithmCodeVisual title="Algoritme 1 · Randomized-Select(A, p, r, i)" code={`if r <= p
   return A[p]
 q = Randomized-Partition(A, p, r)
 k = q - p + 1
@@ -696,15 +705,13 @@ elseif i < k
   Randomized-Select(A, q + 1, r, i - k)`} />;
   }
   if (kind === "fung-sort-2023-aug") {
-    return <AlgorithmCodeVisual title="Algoritme 1 · Fung-Sort" code={`Fung-Sort(A, n)
-for i = 1 to n
+    return <AlgorithmCodeVisual title="Algoritme 1 · Fung-Sort(A, n)" code={`for i = 1 to n
   for j = 1 to n
     if A[i] < A[j]
       swap A[i] and A[j]`} />;
   }
   if (kind === "unzip-2024-aug") {
-    return <AlgorithmCodeVisual title="Algoritme 1 · Inversen av Zip" code={`Unzip(x)
-if x == null
+    return <AlgorithmCodeVisual title="Algoritme 1 · Unzip(x)" code={`if x == null
   let L, R be new lists
 else allocate new nodes y and z
   y.key = x.key[1]
@@ -731,8 +738,7 @@ while Q != empty
       else Insert(Q, v)`} />;
   }
   if (kind === "too-tired-2025-aug") {
-    return <AlgorithmCodeVisual title="Algoritme 1 · Too-Tired-For-This" code={`Too-Tired-For-This(X, n, k)
-for i = 2 to n
+    return <AlgorithmCodeVisual title="Algoritme 1 · Too-Tired-For-This(X, n, k)" code={`for i = 2 to n
   y = X[i]
   j = i - 1
   while j > 0 and X[j] > y and j >= i - k
@@ -999,7 +1005,7 @@ function FormattedExamText({ text, exam, pdf, page, problem, lang, className, sh
           return (
             <div key={index} className="fn-exam-code">
               {CodeView
-                ? <CodeView code={block.code || " "} filename={block.title || `oppgave-${problem.number}.txt`} language="pseudokode" />
+                ? <CodeView code={block.code || " "} filename={block.title || `oppgave-${problem.number}.txt`} language="pseudokode" startLine={block.startLine || 1} />
                 : <pre>{block.code}</pre>}
             </div>
           );

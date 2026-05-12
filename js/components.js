@@ -6,7 +6,7 @@ const { useState, useEffect, useRef, useMemo } = React;
 // CodeView — Python source with syntax highlighting + active line
 // =============================================================
 function tokenize(line) {
-  const kw = /^\b(def|for|if|in|return|else|elif|while|None|True|False|is|not|and|or|class|with)\b/;
+  const kw = /^\b(def|for|if|in|return|else|elseif|elif|while|None|True|False|is|not|and|or|class|with)\b/;
   const num = /^\b\d+\b/;
   const str = /^("[^"]*"|'[^']*')/;
   const builtin = /^\b(len|range|list|int|set|dict|str|float|bool|tuple)\b/;
@@ -41,7 +41,7 @@ function tokenColor(t) {
   }
 }
 
-function CodeView({ code, filename, activeLine, language = "python" }) {
+function CodeView({ code, filename, activeLine, language = "python", startLine = 1 }) {
   const lines = useMemo(() => code.split("\n"), [code]);
   return (
     <div
@@ -75,7 +75,7 @@ function CodeView({ code, filename, activeLine, language = "python" }) {
       </div>
       <div style={{ padding: "16px 18px", overflowX: "auto" }}>
         {lines.map((line, idx) => {
-          const lineNo = idx + 1;
+          const lineNo = startLine + idx;
           const active = lineNo === activeLine;
           return (
             <div key={idx} className={active ? "code-line active" : "code-line"}>
