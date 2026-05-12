@@ -3,7 +3,7 @@ const { useState, useEffect, useMemo } = React;
 
 // Constants & helpers ----------------------------------------------------
 const STORAGE_KEY = "algviz.studyCompanion.v1";
-const VIEWS = ["study", "visualizer", "glossary", "practice", "progress"];
+const VIEWS = ["study", "visualizer", "glossary", "practice", "exam", "progress"];
 
 function txt(value, lang) {
   if (!value || typeof value !== "object") return value || "";
@@ -122,6 +122,8 @@ function App() {
     body = <window.AlgViz.GlossaryView {...common} />;
   } else if (route.view === "practice") {
     body = <window.AlgViz.PracticeView {...common} />;
+  } else if (route.view === "exam") {
+    body = <window.AlgViz.ExamView {...common} selectedExamId={route.detail} />;
   } else if (route.view === "progress") {
     body = <window.AlgViz.ProgressView {...common} />;
   } else {

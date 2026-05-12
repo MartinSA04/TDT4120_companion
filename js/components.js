@@ -41,7 +41,7 @@ function tokenColor(t) {
   }
 }
 
-function CodeView({ code, filename, activeLine }) {
+function CodeView({ code, filename, activeLine, language = "python" }) {
   const lines = useMemo(() => code.split("\n"), [code]);
   return (
     <div
@@ -70,7 +70,7 @@ function CodeView({ code, filename, activeLine }) {
           </span>
         </div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-4)" }}>
-          {lines.length} lines · python
+          {lines.length} lines · {language}
         </span>
       </div>
       <div style={{ padding: "16px 18px", overflowX: "auto" }}>

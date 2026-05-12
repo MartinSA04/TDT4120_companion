@@ -516,6 +516,421 @@
 }
 
 /* =============================================================
+   EXAM VIEW
+   ============================================================= */
+.fn-exam {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: var(--s-7);
+  padding: var(--s-7);
+  align-items: start;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.fn-exam-index {
+  position: sticky; top: var(--s-5);
+  background: var(--surface);
+  border: 1px solid var(--rule-soft);
+}
+.fn-exam-main { min-width: 0; }
+.fn-search.compact { min-width: min(280px, 100%); }
+.fn-search.compact input {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: var(--t-body);
+  padding: 8px 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-soft);
+}
+.fn-exam-controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+.fn-exam-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fn-exam-select select {
+  min-width: 170px;
+  font-family: var(--font-body);
+  font-size: var(--t-body);
+  padding: 8px 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-soft);
+}
+.fn-exam-strip {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px dashed var(--rule-faint);
+}
+.fn-exam-list { display: flex; flex-direction: column; gap: var(--s-4); }
+.fn-exam-card {
+  border: 1px solid var(--rule-soft);
+  background: var(--surface);
+}
+.fn-exam-card.open { border-color: var(--ink); }
+.fn-exam-card-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-4);
+  align-items: start;
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--rule-faint);
+}
+.fn-exam-card-head h3 {
+  margin: var(--s-1) 0 0;
+  font-size: var(--t-xl);
+  font-weight: 500;
+  line-height: 1.25;
+}
+.fn-exam-card-head .fn-mono-meta {
+  display: block;
+  margin-top: var(--s-1);
+}
+.fn-exam-prompt {
+  padding: var(--s-4) var(--s-5);
+  color: var(--ink-2);
+  background: var(--bg-tint);
+  max-height: 360px;
+  overflow: auto;
+}
+.fn-exam-prompt p,
+.fn-exam-solution-text p {
+  margin: 0;
+  font-size: var(--t-body);
+  line-height: 1.65;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.fn-exam-prompt p + p,
+.fn-exam-solution-text p + p,
+.fn-exam-prompt p + .fn-exam-code,
+.fn-exam-solution-text p + .fn-exam-code,
+.fn-exam-code + p,
+.fn-exam-artifact + p,
+.fn-exam-bullets + p {
+  margin-top: var(--s-3);
+}
+.fn-exam-bullets {
+  margin: var(--s-3) 0 0;
+  padding-left: var(--s-5);
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+.fn-exam-code {
+  margin-top: var(--s-3);
+}
+.fn-exam-code > div {
+  max-height: 320px;
+  overflow: auto;
+}
+.fn-exam-artifact {
+  margin-top: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+}
+.fn-exam-artifact p {
+  margin: var(--s-2) 0;
+  color: var(--ink-3);
+}
+.fn-exam-visual {
+  margin: var(--s-3) 0 0;
+  padding: var(--s-3);
+  border: 1px solid var(--rule-soft);
+  background: var(--surface);
+  overflow-x: auto;
+}
+.fn-exam-visual.narrow { max-width: 720px; }
+.fn-exam-visual figcaption { margin-bottom: var(--s-2); }
+.fn-graph-svg {
+  display: block;
+  width: min(100%, 760px);
+  min-width: 260px;
+  height: auto;
+  margin: 0 auto;
+}
+.fn-graph-svg path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+}
+.fn-graph-svg marker path { fill: var(--ink); stroke: none; }
+.fn-graph-svg .strong path {
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.65;
+}
+.fn-graph-svg .dashed {
+  stroke-dasharray: 7 5;
+}
+.fn-graph-svg .node circle {
+  fill: var(--surface);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.fn-graph-svg .node.highlight circle {
+  fill: var(--surface-2);
+  stroke-width: 3;
+}
+.fn-graph-svg text {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-anchor: middle;
+  fill: var(--ink);
+}
+.fn-graph-svg .edge-label {
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+.fn-graph-svg .node-note {
+  font-size: 11px;
+  fill: var(--ink-4);
+}
+.fn-visual-split {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: var(--s-4);
+  align-items: center;
+}
+.fn-visual-split .fn-exam-visual {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+.fn-matrix-wrap {
+  display: flex;
+  justify-content: center;
+}
+.fn-matrix {
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--ink);
+}
+.fn-matrix caption {
+  caption-side: bottom;
+  padding-top: var(--s-2);
+  font-family: var(--font-serif);
+  font-size: var(--t-body);
+}
+.fn-matrix th,
+.fn-matrix td {
+  min-width: 34px;
+  height: 30px;
+  padding: 4px 8px;
+  text-align: center;
+}
+.fn-matrix tbody td {
+  border: 1px solid var(--rule);
+  background: var(--surface-2);
+}
+.fn-matrix td.blank {
+  background: var(--surface);
+}
+.fn-choice-list {
+  margin: 0;
+  padding-left: var(--s-5);
+  font-family: var(--font-serif);
+  font-size: var(--t-lg);
+  line-height: 1.8;
+}
+.fn-formula {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: center;
+  font-family: var(--font-serif);
+  font-size: var(--t-lg);
+}
+.fn-formula.single {
+  display: block;
+  text-align: center;
+}
+.fn-formula .lhs { white-space: nowrap; }
+.fn-formula .brace {
+  font-size: 4rem;
+  line-height: 1;
+  transform: scaleX(0.65);
+}
+.fn-formula .cases {
+  display: grid;
+  grid-template-columns: minmax(110px, auto) minmax(0, 1fr);
+  gap: 6px var(--s-4);
+  align-items: center;
+}
+.fn-formula .redacted {
+  display: inline-block;
+  width: 150px;
+  height: 18px;
+  background: var(--ink);
+}
+.fn-formula .redacted.short { width: 70px; }
+.fn-huffman-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s-3);
+}
+.fn-mini-tree {
+  width: 100%;
+  max-width: 180px;
+  margin: 0 auto;
+  display: block;
+}
+.fn-mini-tree line {
+  stroke: var(--ink);
+  stroke-width: 1.4;
+}
+.fn-mini-tree circle,
+.fn-mini-tree rect {
+  fill: var(--surface);
+  stroke: var(--ink);
+  stroke-width: 1.3;
+}
+.fn-mini-tree text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-anchor: middle;
+  fill: var(--ink);
+}
+.fn-mini-tree .tree-label {
+  font-family: var(--font-serif);
+  font-size: 15px;
+}
+.fn-matching-visual {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--s-4);
+}
+.fn-matching-visual svg {
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+}
+.fn-matching-visual circle {
+  fill: var(--surface);
+  stroke: var(--ink);
+  stroke-width: 1.4;
+}
+.fn-matching-visual .match {
+  stroke: var(--ink-3);
+  stroke-width: 3.5;
+  fill: none;
+}
+.fn-matching-visual .blocking {
+  stroke: var(--accent);
+  stroke-width: 5;
+  fill: none;
+  opacity: 0.65;
+}
+.fn-matching-visual text {
+  font-family: var(--font-serif);
+  fill: var(--ink);
+}
+.fn-matching-visual .caption {
+  text-anchor: middle;
+}
+.fn-matching-visual .small {
+  font-size: 13px;
+}
+.fn-raw-visual {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+}
+.fn-exam-solution {
+  border-top: 1.5px solid var(--ink);
+  background: var(--surface-2);
+}
+.fn-exam-solution-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5) 0;
+}
+.fn-exam-solution-text {
+  padding: var(--s-3) var(--s-5) var(--s-4);
+  color: var(--ink);
+  max-height: 420px;
+  overflow: auto;
+}
+.fn-exam-solution-text p { color: var(--ink); }
+.fn-exam-prep {
+  padding: var(--s-4) var(--s-5) var(--s-5);
+  border-top: 1px dashed var(--rule-faint);
+}
+.fn-exam-link-row {
+  display: flex; flex-wrap: wrap; gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+.fn-exam-prep-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr) minmax(0, 0.8fr);
+  gap: var(--s-5);
+}
+.fn-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+.fn-chip.action {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  border-color: var(--rule-soft);
+  text-decoration: none;
+}
+.fn-chip.action:hover {
+  color: var(--surface-2);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.fn-exam-terms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-top: var(--s-2);
+}
+.fn-exam-term {
+  padding: var(--s-3);
+  border-left: 2px solid var(--accent);
+  background: var(--bg-tint);
+}
+.fn-exam-term.compact { padding: var(--s-2) var(--s-3); }
+.fn-exam-term strong {
+  display: block;
+  font-size: var(--t-lg);
+  font-weight: 500;
+}
+.fn-exam-term .mono {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-4);
+  font-size: var(--t-micro);
+  letter-spacing: 0.04em;
+}
+.fn-exam-term p {
+  margin: var(--s-2) 0 0;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.fn-exam-empty { padding: var(--s-6) 0; text-align: center; }
+
+/* =============================================================
    PROGRESS VIEW
    ============================================================= */
 .fn-progress { padding: var(--s-7); max-width: 1100px; margin: 0 auto; }
@@ -604,8 +1019,11 @@
 /* ── Tablet / small laptop ───────────────────────────────────── */
 @media (max-width: 960px) {
   .fn-study { grid-template-columns: 1fr; }
+  .fn-exam { grid-template-columns: 1fr; }
   .fn-index { position: static; }
+  .fn-exam-index { position: static; }
   .fn-row.two { grid-template-columns: 1fr; }
+  .fn-exam-prep-grid { grid-template-columns: 1fr; }
   .fn-vis-grid { grid-template-columns: 1fr; }
   .fn-masthead { grid-template-columns: 1fr; }
   .fn-mast-controls { grid-column: 1; grid-row: auto; }
@@ -616,7 +1034,7 @@
   /* Never let anything push the page sideways — keep sections centred */
   html, body { overflow-x: hidden; }
   .app-shell, .fn-section, .fn-section-body, .fn-section-head,
-  .fn-row, .fn-study, .fn-lecture-detail, .fn-lecture-hero { min-width: 0; max-width: 100%; }
+  .fn-row, .fn-study, .fn-exam, .fn-lecture-detail, .fn-lecture-hero { min-width: 0; max-width: 100%; }
   /* Auto-fit grids with a fixed min track (e.g. minmax(300px,1fr)) overflow
      on phones narrower than that track — drop them to one column. */
   .fn-quiz-grid { grid-template-columns: 1fr; }
@@ -625,8 +1043,8 @@
   .fn-italic, .fn-tagline, .fn-mono-meta { overflow-wrap: break-word; }
 
   /* Page wrappers — phone-sized gutters (were var(--s-7) = 32px each side) */
-  .fn-study, .fn-glossary, .fn-practice, .fn-progress { padding: var(--s-4) var(--s-3); }
-  .fn-study { gap: var(--s-4); }
+  .fn-study, .fn-glossary, .fn-practice, .fn-exam, .fn-progress { padding: var(--s-4) var(--s-3); }
+  .fn-study, .fn-exam { gap: var(--s-4); }
   .fn-glossary-empty { padding: var(--s-6) 0; }
 
   /* Wide content scrolls inside its own box rather than into the page gutter */
@@ -654,9 +1072,25 @@
   .fn-section-actions { flex-wrap: wrap; }
 
   /* Lecture list → dropdown (the full list ate too much vertical space) */
-  .fn-index { position: static; border: 0; margin-bottom: var(--s-4); }
+  .fn-index, .fn-exam-index { position: static; border: 0; margin-bottom: var(--s-4); }
   .fn-index-head, .fn-index-list { display: none; }
   .fn-index-select { display: flex; border: 1px solid var(--rule-soft); }
+
+  /* Exam cards */
+  .fn-exam-strip { flex-direction: column; align-items: flex-start; }
+  .fn-exam-controls { width: 100%; justify-content: stretch; }
+  .fn-exam-controls > * { flex: 1 1 100%; }
+  .fn-exam-select select { width: 100%; }
+  .fn-exam-card-head { grid-template-columns: 1fr; padding: var(--s-4); }
+  .fn-exam-card-head .fn-btn { justify-content: center; }
+  .fn-exam-prompt,
+  .fn-exam-solution-text,
+  .fn-exam-prep,
+  .fn-exam-solution-head { padding-left: var(--s-4); padding-right: var(--s-4); }
+  .fn-visual-split { grid-template-columns: 1fr; }
+  .fn-formula { grid-template-columns: 1fr; gap: var(--s-2); }
+  .fn-formula .brace { display: none; }
+  .fn-formula .cases { grid-template-columns: 1fr; }
 
   /* Lecture hero: stack title and the "mark complete" button (was 1fr auto,
      which pushed the button off-screen on narrow viewports) */

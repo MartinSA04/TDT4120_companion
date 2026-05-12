@@ -8,6 +8,7 @@ function AppHeader({ course, lang, theme, view, onLang, onTheme }) {
     visualizer: txt({ no: "Visualisering", en: "Visualizer" }, lang),
     glossary: txt({ no: "Begreper", en: "Glossary" }, lang),
     practice: txt({ no: "Øving", en: "Practice" }, lang),
+    exam: txt({ no: "Eksamen", en: "Exam" }, lang),
     progress: txt({ no: "Progresjon", en: "Progress" }, lang),
   };
   return (

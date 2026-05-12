@@ -21,7 +21,7 @@
   <!-- Bootstrap helpers (must run before any IIFE that destructures window.AlgViz) -->
   <script>
     window.AlgViz = window.AlgViz || {};
-    window.AlgViz.VIEWS = ["study", "glossary", "practice", "visualizer", "progress"];
+    window.AlgViz.VIEWS = ["study", "glossary", "practice", "exam", "visualizer", "progress"];
     window.AlgViz.txt = function (loc, lang) {
       if (typeof loc === "string") return loc;
       if (!loc) return "";
@@ -46,6 +46,7 @@
   <script type="text/babel" data-presets="react" src="js/algorithms/np-reductions.js?v=2"></script>
   <script type="text/babel" data-presets="react" src="js/algorithms/index.js?v=2"></script>
   <script type="text/babel" data-presets="react" src="js/courseData.js?v=2"></script>
+  <script type="text/babel" data-presets="react" src="js/examData.js?v=2"></script>
 
   <!-- Visualization views: bars + per-algorithm-family views; graph-common
        before the graph views that use it; index.js (the dispatcher) last -->
@@ -67,6 +68,7 @@
   <script type="text/babel" data-presets="react" src="js/study-view.js"></script>
   <script type="text/babel" data-presets="react" src="js/glossary-view.js"></script>
   <script type="text/babel" data-presets="react" src="js/practice-view.js"></script>
+  <script type="text/babel" data-presets="react" src="js/exam-view.js"></script>
   <script type="text/babel" data-presets="react" src="js/progress-view.js"></script>
   <script type="text/babel" data-presets="react" src="js/visualizer-page.js"></script>
 
