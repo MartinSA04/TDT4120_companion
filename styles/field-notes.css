@@ -613,6 +613,27 @@
 
 /* ── Phones ──────────────────────────────────────────────────── */
 @media (max-width: 720px) {
+  /* Never let anything push the page sideways — keep sections centred */
+  html, body { overflow-x: hidden; }
+  .app-shell, .fn-section, .fn-section-body, .fn-section-head,
+  .fn-row, .fn-study, .fn-lecture-detail, .fn-lecture-hero { min-width: 0; max-width: 100%; }
+  /* Auto-fit grids with a fixed min track (e.g. minmax(300px,1fr)) overflow
+     on phones narrower than that track — drop them to one column. */
+  .fn-quiz-grid { grid-template-columns: 1fr; }
+  /* Break genuinely-too-long words / code tokens instead of overflowing */
+  .fn-section :where(h1, h2, h3, p, li, td, code, pre),
+  .fn-italic, .fn-tagline, .fn-mono-meta { overflow-wrap: break-word; }
+
+  /* Page wrappers — phone-sized gutters (were var(--s-7) = 32px each side) */
+  .fn-study, .fn-glossary, .fn-practice, .fn-progress { padding: var(--s-4) var(--s-3); }
+  .fn-study { gap: var(--s-4); }
+  .fn-glossary-empty { padding: var(--s-6) 0; }
+
+  /* Wide content scrolls inside its own box rather than into the page gutter */
+  .fn-table, .fn-section-body table { display: block; width: 100%; overflow-x: auto; }
+  .fn-section-body > *, .fn-section-head > *, .fn-vis-side > * { min-width: 0; }
+  .fn-search { min-width: 0; flex-basis: 100%; }
+
   /* App shell header: tabs scroll horizontally instead of overflowing */
   .fn-masthead { padding: var(--s-4) var(--s-4) 0; gap: var(--s-2) var(--s-4); }
   .fn-mast-title h1 { font-size: var(--t-2xl); }
