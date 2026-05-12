@@ -29,11 +29,29 @@ const HTML_FILE = "index.html";
 
 const serve = process.argv.includes("--serve");
 
+// Every .js under js/ (recursively) is transformed independently — load order
+// is governed by the <script> tags in index.html, not by this list.
 function entryPoints() {
-  return readdirSync(JS_DIR)
-    .filter((f) => f.endsWith(".js"))
-    .map((f) => join(JS_DIR, f));
+  const out = [];
+  const walk = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith(".js")) out.push(p);
+    }
+  };
+  walk(JS_DIR);
+  return out;
 }
+
+const ESBUILD_COMMON = {
+  outdir: join(DIST, JS_DIR),
+  outbase: JS_DIR,            // preserve js/algorithms/… directory structure
+  loader: { ".js": "jsx" },
+  jsx: "transform",
+  target: "es2020",
+  logLevel: "warning",
+};
 
 function transformIndexHtml() {
   let html = readFileSync(HTML_FILE, "utf-8");
@@ -55,14 +73,10 @@ async function buildOnce() {
   cpSync(STYLES_DIR, join(DIST, STYLES_DIR), { recursive: true });
 
   await esbuild.build({
+    ...ESBUILD_COMMON,
     entryPoints: entryPoints(),
-    outdir: join(DIST, JS_DIR),
-    loader: { ".js": "jsx" },
-    jsx: "transform",
-    target: "es2020",
     minify: !serve,
     sourcemap: serve ? "inline" : false,
-    logLevel: "warning",
   });
 
   transformIndexHtml();
@@ -73,13 +87,9 @@ if (serve) {
   await buildOnce();
 
   const ctx = await esbuild.context({
+    ...ESBUILD_COMMON,
     entryPoints: entryPoints(),
-    outdir: join(DIST, JS_DIR),
-    loader: { ".js": "jsx" },
-    jsx: "transform",
-    target: "es2020",
     sourcemap: "inline",
-    logLevel: "warning",
   });
   await ctx.watch();
 
