@@ -808,14 +808,31 @@ def merge_sort(a: list[int]) -> list[int]:
         else if (!activeStack.length && !sortedFlag[n.id] && activeStack.length === 0 && frames.length > 0) {
           state = "default";
         }
+        // Per-level slot width = 88 / max(siblings - 1). Beyond the leaf row
+        // we'd have so little room that rects with `[lo..hi]` overlap each
+        // other; switch to a circle with a compact label there.
+        const siblings = 2 ** n.depth;
+        const slotW = 88 / Math.max(1, siblings);
+        const isLeaf = n.lo === n.hi;
+        const sliceText = slices[n.id].join(" ");
+        const useRect = slotW >= 14 && !isLeaf;
+        const labelText = useRect
+          ? `[${n.lo}..${n.hi}]`
+          : isLeaf
+          ? String(slices[n.id][0])              // leaf — just the value
+          : `${n.hi - n.lo + 1}`;                // dense internal — slice size
+        const sublabelText = useRect
+          ? sliceText
+          : (slotW >= 8 && !isLeaf ? sliceText : null);
         return {
           id: n.id,
-          label: `[${n.lo}..${n.hi}]`,
+          label: labelText,
           x: p.x,
           y: p.y,
           state,
-          sublabel: slices[n.id].join(" "),
-          shape: "rect",
+          sublabel: sublabelText,
+          shape: useRect ? "rect" : "circle",
+          maxWidth: Math.max(8, slotW - 2),
         };
       });
     }
@@ -1027,7 +1044,8 @@ def total_work(n: int, a: int = 2, b: int = 2) -> int:
   // n must be a power of 2 for clean depths; the slider snaps to {4, 8, 16, 32}.
   sizeRange: { min: 2, max: 5, default: 4 },   // log₂(n): 2→4, 3→8, 4→16, 5→32
   defaultData(size = 4) {
-    const n = 2 ** Math.max(1, size);
+    const slider = Math.min(5, Math.max(1, size));
+    const n = 2 ** slider;
     return Array.from({ length: n }, (_, i) => i + 1);
   },
   run(input) {
@@ -1077,14 +1095,30 @@ def total_work(n: int, a: int = 2, b: int = 2) -> int:
         else if (finishedSum) state = "found";
         else if (n.level === activeLevel) state = "active";
         else state = "visited";
+        // Same compaction strategy as merge sort: when a level has many
+        // siblings, the per-node slot shrinks below what a `T(n)` rect can
+        // legibly fill. Drop to a circle and shorten the label.
+        const siblings = branches ** n.level;
+        const slotW = 88 / Math.max(1, siblings);
+        const isLeaf = n.level === depth;
+        const useRect = slotW >= 16 && !isLeaf;
+        const labelText = useRect
+          ? `T(${n.subSize})`
+          : isLeaf
+          ? "1"
+          : `${n.subSize}`;             // dense internal — just the size
+        const sublabelText = useRect
+          ? `cost ${n.subSize}`
+          : (slotW >= 8 && !isLeaf ? `n=${n.subSize}` : null);
         return {
           id: n.id,
-          label: n.label,
+          label: labelText,
           x: n.x,
           y: n.y,
           state,
-          sublabel: n.sublabel,
-          shape: "rect",
+          sublabel: sublabelText,
+          shape: useRect ? "rect" : "circle",
+          maxWidth: Math.max(7, slotW - 2),
         };
       });
     }

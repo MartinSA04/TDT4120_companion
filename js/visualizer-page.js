@@ -32,8 +32,11 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
   }, [algoIdx, algo]);
 
   const input = useMemo(() => {
-    try { return algo.defaultData ? algo.defaultData(size) : []; }
-    catch (e) { return []; }
+    try {
+      const sr = algo.sizeRange;
+      const effectiveSize = sr ? Math.min(sr.max, Math.max(sr.min, size)) : size;
+      return algo.defaultData ? algo.defaultData(effectiveSize) : [];
+    } catch (e) { return []; }
   }, [algo, seed, size]);
 
   const frames = useMemo(() => {

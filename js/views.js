@@ -1950,12 +1950,22 @@ function TreeNodeShape({ node }) {
     : "var(--ink)";
   const textColor = state === "default" || state === "eliminated"
     ? "var(--ink)" : "var(--surface-2)";
-  const isWide = node.shape === "rect" || (node.label && String(node.label).length > 3);
-  const w = isWide ? Math.min(38, Math.max(14, String(node.label).length * 2.4 + 4)) : null;
+  // `maxWidth` (in viewBox units) is the algorithm's hint about how much
+  // horizontal room this node has. Rect nodes never grow wider than that,
+  // and circle nodes shrink their radius so adjacent siblings don't overlap.
+  const maxWidth = typeof node.maxWidth === "number" ? node.maxWidth : 38;
+  const isRect = node.shape === "rect";
+  const labelStr = String(node.label ?? "");
+  const naturalRectW = Math.max(14, labelStr.length * 2.4 + 4);
+  const w = isRect ? Math.min(maxWidth, Math.min(38, naturalRectW)) : null;
+  const r = isRect ? null : Math.max(2.2, Math.min(4.7, (maxWidth - 1) / 2));
+  const labelFontPx = isRect
+    ? null
+    : (r >= 4 ? 3.1 : r >= 3 ? 2.6 : r >= 2.4 ? 2.2 : 0);  // 0 = hide label
 
   return (
     <g opacity={state === "eliminated" ? 0.5 : 1}>
-      {isWide ? (
+      {isRect ? (
         <rect
           x={node.x - w / 2}
           y={node.y - 4.6}
@@ -1969,16 +1979,25 @@ function TreeNodeShape({ node }) {
         <circle
           cx={node.x}
           cy={node.y}
-          r={4.7}
+          r={r}
           fill={fill}
           stroke={stroke}
-          strokeWidth={state === "active" ? 1.6 : 0.9}
+          strokeWidth={state === "active" ? 1.4 : 0.8}
         />
       )}
-      <text x={node.x} y={node.y + 1.4} textAnchor="middle" className="node-label" fill={textColor}>
-        {node.label}
-      </text>
-      {node.sublabel && (
+      {(isRect || labelFontPx > 0) && (
+        <text
+          x={node.x}
+          y={node.y + 1.4}
+          textAnchor="middle"
+          className="node-label"
+          fill={textColor}
+          style={!isRect && labelFontPx ? { fontSize: `${labelFontPx}px` } : undefined}
+        >
+          {node.label}
+        </text>
+      )}
+      {node.sublabel && (isRect || (r >= 3.5)) && (
         <text x={node.x} y={node.y + 9.5} textAnchor="middle" className="node-sublabel">
           {node.sublabel}
         </text>
