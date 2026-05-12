@@ -117,6 +117,7 @@ function stripPromptFromSolution(solution, prompt) {
     const boilerplate = index === 0 && /^\s*(?:\d+\s*%\s*)?\d{1,2}\s+/.test(line);
 
     if (!started && (!normalized || promptLike || boilerplate)) return;
+    if (started && promptLike) return;
     started = true;
     output.push(line);
   });
@@ -143,7 +144,7 @@ function isCodeLine(line) {
   if (!/^\d+\s+/.test(trimmed)) return false;
   if (/^\d+\.\s+/.test(trimmed)) return false;
   if (/^\d+\s+\.\s*\./.test(trimmed)) return false;
-  return /(for|if|else|elseif|return|while|let|allocate|swap|insert|decrease|enqueue|dequeue|list-prepend|randomized|partition|untitled|permutations|counting|relax|extract|min|main|init|reverse|unzip|too-tired|fung-sort|Q\.|[A-Z]\[|[a-z]\.[a-z]|[a-z]\s*=)/i.test(trimmed);
+  return /(for|if|else|elseif|return|while|let|allocate|swap|insert|decrease|enqueue|dequeue|list-prepend|randomized|partition|untitled|permutations|counting|relax|extract|min|main|init|reverse|unzip|too-tired|fung-sort|[A-ZÆØÅ][A-Za-zÆØÅæøå-]+\(|Q\.|[A-Z]\[|[a-z]\.[a-z]|[a-z]\s*=)/i.test(trimmed);
 }
 
 function stripCodeLine(line) {
@@ -207,13 +208,38 @@ function shouldSkipArtifact(problem, block) {
   const stray = new Set([
     "2023-des-04",
     "2023-des-08",
+    "2024-aug-06",
     "2024-aug-07",
     "2024-aug-10",
     "2024-des-11",
     "2025-des-12",
+    "2025-des-14",
     "2025-des-16",
   ]);
   return stray.has(problem.id) && block.type === "artifact";
+}
+
+function shouldSkipBlock(problem, block) {
+  if (shouldSkipArtifact(problem, block)) return true;
+  if (block.type === "code") {
+    const misplacedCode = {
+      "2022-des-14": /Randomized-Select|Lurviks versjon/i,
+      "2023-aug-02": /Fung-Sort/i,
+      "2023-aug-07": /Fung-Sort/i,
+      "2023-des-07": /Untitled\(A,\s*p,\s*r,\s*k\)/i,
+      "2024-aug-18": /Unzip|Inversen av Zip/i,
+      "2024-des-17": /Extract-Min|Decrease-Key|for each vertex u/i,
+      "2024-des-19": /Extract-Min|Decrease-Key|for each vertex u/i,
+      "2025-aug-03": /Too-Tired-For-This/i,
+      "2025-aug-04": /Too-Tired-For-This/i,
+    };
+    if (misplacedCode[problem.id]?.test(`${block.title}\n${block.code}`)) return true;
+  }
+  if (problem.id === "2023-aug-07" && block.type === "code" && /Insertion-Sort\(A, n\)\s+1 Merge-Sort/.test(block.code)) return true;
+  if (problem.id === "2024-des-06" && block.type === "paragraph" && /^x\s+y\s+z\s+w$/.test(block.text)) return true;
+  if (problem.id === "2024-des-07" && block.type === "paragraph" && /^u\s+3\/\s*5\s+v$/.test(block.text)) return true;
+  if (problem.id === "2024-des-11" && block.type === "paragraph" && /^Husk at x = x1\/2/.test(block.text)) return true;
+  return false;
 }
 
 function artifactKind(problem, block) {
@@ -242,16 +268,84 @@ function artifactKind(problem, block) {
 
 function leadingVisualKinds(problem) {
   const byProblem = {
+    "2022-des-15": ["randomized-select-2022-des"],
+    "2022-des-16": ["randomized-select-2022-des"],
+    "2023-aug-01": ["fung-sort-2023-aug"],
+    "2023-aug-07": ["sort-comparison-2023-aug"],
     "2023-des-05": ["disjoint-forest-2023"],
     "2023-des-06": ["flow-2023-des"],
     "2024-aug-10": ["adjacency-2024-aug"],
+    "2024-aug-19": ["unzip-2024-aug"],
     "2024-des-06": ["dfs-chain-2024-des"],
+    "2024-des-07": ["residual-edge-2024-des"],
     "2024-des-08": ["huffman-2024-des"],
+    "2024-des-11": ["sqrt-laws-2024-des"],
     "2024-des-12": ["mst-cut-2024-des"],
+    "2024-des-17": ["bellman-queue-2024-des"],
+    "2025-aug-05": ["too-tired-2025-aug"],
     "2025-des-16": ["dag-2025-des"],
     "2025-des-17": ["flow-2025-des"],
   };
   return byProblem[problem.id] || [];
+}
+
+function normalizeMathText(text, problem) {
+  let next = String(text || "");
+  const replacements = {
+    "2022-des-09": [["Hva blir l3,1 ?", "Hva blir l^(2)_(3,1)?"]],
+    "2024-des-15": [["Hva blir l1,5 ?", "Hva blir l^(3)_(1,5)?"]],
+  };
+  (replacements[problem.id] || []).forEach(([from, to]) => {
+    next = next.replace(from, to);
+  });
+  return next
+    .replace(/n2\b/g, "n^2")
+    .replace(/n3\b/g, "n^3")
+    .replace(/n1\/2\b/g, "n^(1/2)")
+    .replace(/\)\s*2\b/g, ")^2")
+    .replace(/\)\s*3\b/g, ")^3")
+    .replace(/lg2\s*n/g, "lg^2 n")
+    .replace(/lg3\s*n/g, "lg^3 n")
+    .replace(/log4\s*2/g, "log_4 2")
+    .replace(/\(n lg n\)2/g, "(n lg n)^2")
+    .replace(/\bXi\b/g, "X_i")
+    .replace(/\bY j\b/g, "Y_j")
+    .replace(/\bxi\b/g, "x_i")
+    .replace(/\by j\b/g, "y_j")
+    .replace(/\bc f\b/g, "c_f")
+    .replace(/\bv\. f\b/g, "v.f")
+    .replace(/\bf \(\s*/g, "f(")
+    .replace(/\bg \(\s*/g, "g(");
+}
+
+function InlineText({ text, problem }) {
+  const normalized = normalizeMathText(text, problem);
+  const token = /([A-Za-z])\^\(([^)]+)\)_\(([^)]+)\)|([A-Za-z])\^\(([^)]+)\)|([A-Za-z])\^([0-9])|([A-Za-z])_([A-Za-z0-9]+)|lg\^([0-9])|log_([0-9]+)|([A-Za-z])\(([^)]*)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = token.exec(normalized)) !== null) {
+    if (match.index > lastIndex) parts.push(normalized.slice(lastIndex, match.index));
+    if (match[1]) {
+      parts.push(<span key={parts.length} className="fn-inline-math">{match[1]}<sup>({match[2]})</sup><sub>{match[3]}</sub></span>);
+    } else if (match[4]) {
+      parts.push(<span key={parts.length} className="fn-inline-math">{match[4]}<sup>({match[5]})</sup></span>);
+    } else if (match[6]) {
+      parts.push(<span key={parts.length} className="fn-inline-math">{match[6]}<sup>{match[7]}</sup></span>);
+    } else if (match[8]) {
+      parts.push(<span key={parts.length} className="fn-inline-math">{match[8]}<sub>{match[9]}</sub></span>);
+    } else if (match[10]) {
+      parts.push(<span key={parts.length} className="fn-inline-math">lg<sup>{match[10]}</sup></span>);
+    } else if (match[11]) {
+      parts.push(<span key={parts.length} className="fn-inline-math">log<sub>{match[11]}</sub></span>);
+    } else {
+      parts.push(<span key={parts.length} className="fn-inline-math">{match[12]}({match[13]})</span>);
+    }
+    lastIndex = token.lastIndex;
+  }
+  if (lastIndex < normalized.length) parts.push(normalized.slice(lastIndex));
+  return <>{parts}</>;
 }
 
 function joinParagraph(lines) {
@@ -417,6 +511,10 @@ function ExamGraph({ title, nodes, edges, width = 520, height = 240, directed = 
     const from = byId[edge.from];
     const to = byId[edge.to];
     if (!from || !to) return "";
+    if (edge.loop) {
+      const r = edge.loopRadius || 14;
+      return `M ${from.x - 2} ${from.y - from.r - 1 || from.y - 17} C ${from.x - r} ${from.y - 42}, ${from.x + r} ${from.y - 42}, ${from.x + 2} ${from.y - from.r - 1 || from.y - 17}`;
+    }
     if (!edge.curve) return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
     const dx = to.x - from.x;
     const dy = to.y - from.y;
@@ -455,6 +553,9 @@ function ExamGraph({ title, nodes, edges, width = 520, height = 240, directed = 
             </g>
           );
         })}
+        {edges.filter((edge) => edge.cutPath).map((edge, index) => (
+          <path key={`cut-${index}`} d={edge.cutPath} className="cut-line" markerEnd={undefined} />
+        ))}
         {nodes.map((node) => (
           <g key={node.id} className={node.highlight ? "node highlight" : "node"}>
             <circle cx={node.x} cy={node.y} r={node.r || 16} />
@@ -494,6 +595,38 @@ function MiniTree({ label, leaves }) {
       ))}
       <text className="tree-label" x="90" y="174">({label})</text>
     </svg>
+  );
+}
+
+function ProcedurePairVisual() {
+  const procedures = [
+    { title: "Lurvik-Sort(A, n)", lines: ["Insertion-Sort(A, n)", "Merge-Sort(A, 1, n)"] },
+    { title: "Smartnes-Sort(A, n)", lines: ["Merge-Sort(A, 1, n)", "Insertion-Sort(A, n)"] },
+  ];
+  return (
+    <VisualFrame title="To sorteringsprosedyrer">
+      <div className="fn-procedure-pair">
+        {procedures.map((procedure) => (
+          <div key={procedure.title} className="fn-procedure-box">
+            <strong>{procedure.title}</strong>
+            {procedure.lines.map((line, index) => (
+              <div key={line} className="fn-procedure-line"><span>{index + 1}</span><code>{line}</code></div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </VisualFrame>
+  );
+}
+
+function AlgorithmCodeVisual({ title, code }) {
+  const CodeView = window.AlgViz.CodeView;
+  return (
+    <div className="fn-exam-code fn-leading-code">
+      {CodeView
+        ? <CodeView code={code} filename={title} language="pseudokode" />
+        : <pre>{code}</pre>}
+    </div>
   );
 }
 
@@ -539,10 +672,78 @@ function FormulaVisual({ kind }) {
       </VisualFrame>
     );
   }
+  if (kind === "sqrt-laws-2024-des") {
+    return (
+      <VisualFrame title="Oppgitte rotregler" narrow>
+        <div className="fn-formula single">√x = x<sup>1/2</sup> og √xy = √x · √y</div>
+      </VisualFrame>
+    );
+  }
   return null;
 }
 
 function ExamVisual({ kind }) {
+  if (kind === "randomized-select-2022-des") {
+    return <AlgorithmCodeVisual title="Algoritme 1 · Lurviks versjon av randomized select" code={`Randomized-Select(A, p, r, i)
+if r <= p
+  return A[p]
+q = Randomized-Partition(A, p, r)
+k = q - p + 1
+if i == k
+  return A[q]
+elseif i < k
+  Randomized-Select(A, p, q - 1, i)
+  Randomized-Select(A, q + 1, r, i - k)`} />;
+  }
+  if (kind === "fung-sort-2023-aug") {
+    return <AlgorithmCodeVisual title="Algoritme 1 · Fung-Sort" code={`Fung-Sort(A, n)
+for i = 1 to n
+  for j = 1 to n
+    if A[i] < A[j]
+      swap A[i] and A[j]`} />;
+  }
+  if (kind === "unzip-2024-aug") {
+    return <AlgorithmCodeVisual title="Algoritme 1 · Inversen av Zip" code={`Unzip(x)
+if x == null
+  let L, R be new lists
+else allocate new nodes y and z
+  y.key = x.key[1]
+  z.key = x.key[2]
+  L = Unzip(x.next)[1]
+  R = Unzip(x.next)[2]
+  List-Prepend(L, y)
+  List-Prepend(R, z)
+return <L, R>`} />;
+  }
+  if (kind === "bellman-queue-2024-des") {
+    return <AlgorithmCodeVisual title="Algoritme 1 · Prioritetskø for avstandsestimater" code={`for each vertex u in G.V - {s}
+  u.d = infinity
+s.d = 0
+Q = empty
+Insert(Q, s)
+while Q != empty
+  u = Extract-Min(Q)
+  for each vertex v in G.Adj[u]
+    if v.d > u.d + w(u, v)
+      v.d = u.d + w(u, v)
+      if v is in Q
+        Decrease-Key(Q, v, v.d)
+      else Insert(Q, v)`} />;
+  }
+  if (kind === "too-tired-2025-aug") {
+    return <AlgorithmCodeVisual title="Algoritme 1 · Too-Tired-For-This" code={`Too-Tired-For-This(X, n, k)
+for i = 2 to n
+  y = X[i]
+  j = i - 1
+  while j > 0 and X[j] > y and j >= i - k
+    X[j + 1] = X[j]
+    j = j - 1
+  X[j + 1] = y
+  if j > 0 and X[j] > y
+    return false
+return true`} />;
+  }
+  if (kind === "sort-comparison-2023-aug") return <ProcedurePairVisual />;
   if (kind === "matrix-2022-w") {
     return (
       <VisualFrame title="Vektmatrise W" narrow>
@@ -574,6 +775,7 @@ function ExamVisual({ kind }) {
       { id: "9", x: 125, y: 200 }, { id: "10", x: 215, y: 200 }, { id: "11", x: 260, y: 200, highlight: true },
       { id: "12", x: 260, y: 245 },
     ]} edges={[
+      { from: "1", to: "1", loop: true }, { from: "2", to: "2", loop: true },
       { from: "3", to: "1" }, { from: "5", to: "3" }, { from: "6", to: "3" }, { from: "9", to: "5" },
       { from: "10", to: "6" }, { from: "11", to: "6" }, { from: "12", to: "11" },
       { from: "4", to: "2" }, { from: "7", to: "4" }, { from: "8", to: "4" },
@@ -625,15 +827,20 @@ function ExamVisual({ kind }) {
       { id: "x", x: 60, y: 55 }, { id: "y", x: 160, y: 55 }, { id: "z", x: 260, y: 55 }, { id: "w", x: 360, y: 55 },
     ]} edges={[{ from: "x", to: "y" }, { from: "y", to: "z" }, { from: "z", to: "w" }]} />;
   }
+  if (kind === "residual-edge-2024-des") {
+    return <ExamGraph title="Kant med flyt og kapasitet" width={260} height={90} nodes={[
+      { id: "u", x: 55, y: 45 }, { id: "v", x: 205, y: 45 },
+    ]} edges={[{ from: "v", to: "u", label: "3/5", labelOffset: [0, -10] }]} />;
+  }
   if (kind === "huffman-2024-des") {
-    const common = {
-      nodes: ["root", "left", "right", "deep"],
-      edges: [["root", "left", "0"], ["root", "right", "1"], ["left", "leftLeft", "0"], ["left", "leftRight", "1"], ["right", "deep", "1"], ["deep", "deepLeft", "0"], ["deep", "deepRight", "1"]],
-    };
     return (
       <VisualFrame title="Huffmankandidater">
         <div className="fn-huffman-grid">
-          <MiniTree label="1" leaves={{ nodes: ["root", "left", "right", "deep"], edges: common.edges, boxes: [["leftLeft", "a"], ["leftRight", "b"], ["right", "d"], ["deep", "c"]] }} />
+          <MiniTree label="1" leaves={{
+            nodes: ["root", "left", "deep"],
+            edges: [["root", "left", "0"], ["root", "right", "1"], ["left", "deep", "0"], ["left", "leftRight", "1"], ["deep", "deepLeft", "0"], ["deep", "deepRight", "1"]],
+            boxes: [["right", "d"], ["leftRight", "c"], ["deepLeft", "a"], ["deepRight", "b"]],
+          }} />
           <MiniTree label="2" leaves={{ nodes: ["root", "left", "right"], edges: [["root", "left", "0"], ["root", "right", "1"], ["left", "leftLeft", "0"], ["left", "leftRight", "1"], ["right", "rightLeft", "0"], ["right", "rightRight", "1"]], boxes: [["leftLeft", "a"], ["leftRight", "b"], ["rightLeft", "c"], ["rightRight", "d"]] }} />
           <MiniTree label="3" leaves={{ nodes: ["root", "right", "deep"], edges: [["root", "left", "0"], ["root", "right", "1"], ["right", "rightLeft", "0"], ["right", "deep", "1"], ["deep", "deepLeft", "0"], ["deep", "deepRight", "1"]], boxes: [["left", "a"], ["rightLeft", "b"], ["deepLeft", "c"], ["deepRight", "d"]] }} />
           <MiniTree label="4" leaves={{ nodes: ["root", "right", "deep"], edges: [["root", "left", "0"], ["root", "right", "1"], ["right", "deep", "0"], ["right", "rightRight", "1"], ["deep", "deepLeft", "0"], ["deep", "deepRight", "1"]], boxes: [["left", "a"], ["rightRight", "d"], ["deepLeft", "b"], ["deepRight", "c"]] }} />
@@ -643,14 +850,31 @@ function ExamVisual({ kind }) {
     );
   }
   if (kind === "mst-cut-2024-des") {
-    return <ExamGraph title="Snitt og foreløpig kantmengde A" width={560} height={210} directed={false} nodes={[
-      { id: "a", x: 55, y: 105 }, { id: "b", x: 130, y: 60 }, { id: "c", x: 200, y: 145 },
-      { id: "d", x: 270, y: 60 }, { id: "e", x: 360, y: 145 }, { id: "f", x: 450, y: 80 }, { id: "g", x: 520, y: 145 },
-    ]} edges={[
-      { from: "a", to: "b" }, { from: "b", to: "c", strong: true }, { from: "c", to: "d" },
-      { from: "c", to: "e", strong: true }, { from: "d", to: "e" }, { from: "d", to: "f" },
-      { from: "e", to: "f" }, { from: "f", to: "g", strong: true },
-    ]} />;
+    const nodes = [
+      [85, 105], [135, 60], [135, 150], [230, 105],
+      [285, 60], [285, 150], [410, 70], [465, 120], [410, 170],
+    ];
+    const edges = [[0, 1], [0, 2], [1, 3], [2, 3], [3, 4], [3, 5], [4, 6], [5, 8], [6, 7], [7, 8], [5, 7]];
+    const strong = new Set(["2-3", "3-5", "6-7"]);
+    return (
+      <VisualFrame title="Snitt og foreløpig kantmengde A">
+        <svg className="fn-graph-svg" viewBox="0 0 560 230" role="img" aria-label="Snitt og foreløpig kantmengde A">
+          <path className="cut-line" d="M 30 115 C 95 80, 130 180, 200 120 S 315 35, 390 110 S 485 175, 535 105" />
+          <text x="35" y="35" className="edge-label">A = markerte kanter</text>
+          <text x="500" y="80" className="edge-label">S</text>
+          <text x="505" y="150" className="edge-label">V - S</text>
+          {edges.map(([a, b]) => {
+            const key = `${Math.min(a, b)}-${Math.max(a, b)}`;
+            return <line key={key} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} className={strong.has(key) ? "strong-line" : ""} />;
+          })}
+          {nodes.map(([x, y], index) => (
+            <g key={index} className="node">
+              <circle cx={x} cy={y} r="15" />
+            </g>
+          ))}
+        </svg>
+      </VisualFrame>
+    );
   }
   if (kind === "apsp-2024-des") {
     return (
@@ -735,10 +959,21 @@ function ExamVisual({ kind }) {
   return <FormulaVisual kind={kind} />;
 }
 
-function RawArtifactVisual({ block }) {
+function EquationBlockVisual({ block, problem }) {
+  const rawLines = (block.lines || [])
+    .map((line) => line.replace(/\u0001/g, "").trimEnd())
+    .filter((line) => line.trim() && !/^Figur\s+\d+$/i.test(line.trim()));
+  const title = rawLines.some((line) => /=|T\(|Θ|Ω|O\(/.test(line)) ? "Utregning" : (block.label || "Figur");
+
   return (
-    <VisualFrame title={block.label || "Figur"}>
-      <pre className="fn-raw-visual">{(block.lines || []).map((line) => line.trimEnd()).join("\n")}</pre>
+    <VisualFrame title={title}>
+      <div className="fn-equation-block">
+        {rawLines.map((line, index) => (
+          <div key={index} className={/^\s*\.\.?$/.test(line.trim()) ? "dots" : ""}>
+            <InlineText text={line.trimStart().replace(/^\.\.$/, "⋮").replace(/^\.$/, "⋮")} problem={problem} />
+          </div>
+        ))}
+      </div>
     </VisualFrame>
   );
 }
@@ -752,13 +987,13 @@ function FormattedExamText({ text, exam, pdf, page, problem, lang, className, sh
     <div className={className}>
       {leadingKinds.map((kind) => <ExamVisual key={`leading-${kind}`} kind={kind} />)}
       {blocks.map((block, index) => {
-        if (shouldSkipArtifact(problem, block)) return null;
+        if (shouldSkipBlock(problem, block)) return null;
         if (block.type === "paragraph") {
-          return <p key={index} className="serif">{block.text}</p>;
+          return <p key={index} className="serif"><InlineText text={block.text} problem={problem} /></p>;
         }
         if (block.type === "list") {
           const Tag = block.ordered ? "ol" : "ul";
-          return <Tag key={index} className="fn-exam-bullets">{block.items.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</Tag>;
+          return <Tag key={index} className="fn-exam-bullets">{block.items.map((item, itemIndex) => <li key={itemIndex}><InlineText text={item} problem={problem} /></li>)}</Tag>;
         }
         if (block.type === "code") {
           return (
@@ -771,7 +1006,7 @@ function FormattedExamText({ text, exam, pdf, page, problem, lang, className, sh
         }
         const kind = artifactKind(problem, block);
         if (kind) return <ExamVisual key={index} kind={kind} />;
-        return <RawArtifactVisual key={index} block={block} />;
+        return <EquationBlockVisual key={index} block={block} problem={problem} />;
       })}
     </div>
   );

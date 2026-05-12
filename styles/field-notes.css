@@ -628,6 +628,9 @@
 .fn-exam-code {
   margin-top: var(--s-3);
 }
+.fn-leading-code {
+  margin: 0 0 var(--s-3);
+}
 .fn-exam-code > div {
   max-height: 320px;
   overflow: auto;
@@ -663,6 +666,16 @@
   stroke: var(--ink);
   stroke-width: 1.6;
 }
+.fn-graph-svg line {
+  stroke: var(--ink);
+  stroke-width: 1.6;
+}
+.fn-graph-svg .strong-line {
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.65;
+}
 .fn-graph-svg marker path { fill: var(--ink); stroke: none; }
 .fn-graph-svg .strong path {
   stroke: var(--accent);
@@ -672,6 +685,12 @@
 }
 .fn-graph-svg .dashed {
   stroke-dasharray: 7 5;
+}
+.fn-graph-svg .cut-line {
+  fill: none;
+  stroke: var(--ink-4);
+  stroke-width: 1.4;
+  stroke-dasharray: 8 6;
 }
 .fn-graph-svg .node circle {
   fill: var(--surface);
@@ -746,6 +765,37 @@
   font-family: var(--font-serif);
   font-size: var(--t-lg);
   line-height: 1.8;
+}
+.fn-procedure-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--s-3);
+}
+.fn-procedure-box {
+  padding: var(--s-3);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.fn-procedure-box strong {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-family: var(--font-serif);
+  font-size: var(--t-body);
+  font-weight: 500;
+}
+.fn-procedure-line {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: var(--s-2);
+  line-height: 1.7;
+}
+.fn-procedure-line span {
+  color: var(--ink-4);
+  text-align: right;
+}
+.fn-procedure-line code {
+  font-family: var(--font-mono);
 }
 .fn-formula {
   display: grid;
@@ -845,13 +895,21 @@
 .fn-matching-visual .small {
   font-size: 13px;
 }
-.fn-raw-visual {
+.fn-equation-block {
+  display: grid;
+  gap: 4px;
   margin: 0;
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.5;
-  white-space: pre;
+}
+.fn-equation-block > div {
+  white-space: pre-wrap;
+}
+.fn-equation-block .dots {
+  color: var(--ink-4);
+  text-align: center;
 }
 .fn-exam-solution {
   border-top: 1.5px solid var(--ink);
@@ -869,6 +927,15 @@
   overflow: auto;
 }
 .fn-exam-solution-text p { color: var(--ink); }
+.fn-inline-math {
+  font-family: var(--font-serif);
+  white-space: nowrap;
+}
+.fn-inline-math sup,
+.fn-inline-math sub {
+  font-size: 0.72em;
+  line-height: 0;
+}
 .fn-exam-prep {
   padding: var(--s-4) var(--s-5) var(--s-5);
   border-top: 1px dashed var(--rule-faint);
