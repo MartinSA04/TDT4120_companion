@@ -728,279 +728,165 @@ function tableVisual(rows, cols, values, meta = {}) {
 }
 
 // ============================================================
-// Merge Sort — full step-by-step trace
+// Merge Sort — step-by-step trace on the bar view.
 //
-//  Visual: the recursion tree of all subproblems is shown as a TreeView with
-//  each node labelled with its subarray slice (and its current contents
-//  shown as a sublabel). At each step we highlight the "active" call and
-//  optionally show a merge buffer panel underneath when two halves are
-//  being interleaved into the output.
+//  Divide & conquer is shown directly on the bars:
+//   - every recursion level currently on the call stack is drawn as a
+//     nested bracket above the array (deepest = closest to the bars);
+//   - finished sorted runs are tinted green;
+//   - a DIVIDE step lights up the left/right halves in two colours;
+//   - a MERGE step grows the green "merged" prefix left-to-right out of the
+//     two coloured halves while the write head k walks the window.
 // ============================================================
 const mergeSort = {
   id: "merge-sort",
   name: "Merge Sort",
   description:
-    "Merge Sort divides the array in half, recursively sorts each half, then merges the two sorted halves with a linear two-finger pass. The recursion tree has Θ(log n) levels and Θ(n) work per level, giving Θ(n log n) total.",
+    "Merge Sort splits the array in half, recursively sorts each half, then merges the two sorted halves with a linear two-finger pass. Θ(log n) recursion levels × Θ(n) work per level ⇒ Θ(n log n).",
   explanation: {
-    no: "Merge Sort-visualiseringen viser hele rekursjonstreet: hvert kall vises som en node med tilhørende delarray. Aktivt kall lyser opp, og når to sorterte halvdeler flettes vises merge-bufferen med to fingre i og j.",
-    en: "The Merge Sort visualization shows the entire recursion tree: each call is a node labelled with its subarray. The active call lights up, and when two sorted halves merge the merge buffer is shown with two-finger pointers i and j.",
+    no: "Merge Sort-visualiseringen viser splitt-og-hersk rett på søylene: hvert aktivt rekursjonsnivå tegnes som en nøstet klamme over arrayet (dypest nederst), ferdig sorterte delsekvenser tones grønne, et DELE-steg lyser opp venstre/høyre halvdel, og et FLETT-steg lar det grønne «flettede» prefikset vokse fra venstre mens skrivehodet k går gjennom vinduet.",
+    en: "The Merge Sort visualization shows divide-and-conquer right on the bars: every active recursion level is a nested bracket above the array (deepest nearest the bars), finished sorted runs are tinted green, a DIVIDE step lights up the left/right halves, and a MERGE step grows the green \"merged\" prefix from the left while the write head k walks the window.",
   },
   courseRefs: ["l03"],
   conceptIds: ["divide-and-conquer", "recurrence"],
   learningGoalIds: ["C1", "C3", "C5", "Z3", "Z4", "Z6"],
-  viewKind: "tree-view",
+  viewKind: "merge",
   filename: "algorithms/merge_sort.py",
   complexities: { best: "Θ(n log n)", avg: "Θ(n log n)", worst: "Θ(n log n)", space: "Θ(n)" },
   code:
-`def merge(left: list[int], right: list[int]) -> list[int]:
-    out: list[int] = []
-    i = j = 0
-    while i < len(left) and j < len(right):
-        if left[i] <= right[j]:
-            out.append(left[i])
-            i += 1
-        else:
-            out.append(right[j])
-            j += 1
-    out.extend(left[i:])
-    out.extend(right[j:])
-    return out
+`def merge_sort(a: list[int], lo: int, hi: int) -> None:
+    if lo >= hi:                        # 0 or 1 elements — already sorted
+        return
+    mid = (lo + hi) // 2
+    merge_sort(a, lo, mid)              # divide: sort left half
+    merge_sort(a, mid + 1, hi)         # divide: sort right half
+    merge(a, lo, mid, hi)              # conquer: combine the halves
 
-def merge_sort(a: list[int]) -> list[int]:
-    if len(a) <= 1:
-        return a.copy()
-    mid   = len(a) // 2
-    left  = merge_sort(a[:mid])
-    right = merge_sort(a[mid:])
-    return merge(left, right)`,
-  sizeRange: { min: 4, max: 16, default: 8 },
-  defaultData(size = 8) {
-    // Use the canonical CLRS-style demo at default size for clean teaching;
-    // fall back to a deterministic shuffle at any other size.
-    if (size === 8) return [5, 2, 4, 7, 1, 3, 2, 6];
+def merge(a: list[int], lo: int, mid: int, hi: int) -> None:
+    left, right = a[lo : mid + 1], a[mid + 1 : hi + 1]
+    i = j = 0
+    for k in range(lo, hi + 1):
+        take_left = j == len(right) or (i < len(left) and left[i] <= right[j])
+        if take_left:
+            a[k] = left[i]; i += 1
+        else:
+            a[k] = right[j]; j += 1`,
+  sizeRange: { min: 4, max: 32, default: 16 },
+  defaultData(size = 16) {
+    if (size === 16) return [8, 3, 12, 1, 10, 5, 15, 2, 11, 6, 16, 13, 4, 14, 7, 9];
     return shuffledRange(size, 31);
   },
   run(input) {
-    const original = input && input.length ? [...input] : [5, 2, 4, 7, 1, 3, 2, 6];
-    const tree = _GLIB.mergeRecursionTree(original.length);
-    // Each node carries its own slice contents over time. Initially it
-    // mirrors the input; once the call returns, contents become sorted.
-    const slices = {};
-    const sortedFlag = {};
-    tree.nodes.forEach((n) => {
-      slices[n.id] = original.slice(n.lo, n.hi + 1);
-      sortedFlag[n.id] = n.lo === n.hi;   // singletons start sorted
-    });
-
-    const activeStack = [];   // call stack of node ids
+    const a = input && input.length ? [...input] : [8, 3, 12, 1, 10, 5, 15, 2, 11, 6, 16, 13, 4, 14, 7, 9];
+    const n = a.length;
     const frames = [];
+    let runs = [];            // sorted-run segments [lo, hi], non-overlapping
+    const stack = [];         // active recursion windows {lo, hi, depth}, root → current
 
-    function buildNodes(activeId, mergingPair = null, justFinishedId = null) {
-      return tree.nodes.map((n) => {
-        const p = tree.positions[n.id];
-        let state = "default";
-        if (n.id === justFinishedId) state = "found";
-        else if (n.id === activeId) state = "active";
-        else if (mergingPair && (mergingPair[0] === n.id || mergingPair[1] === n.id)) state = "compare";
-        else if (sortedFlag[n.id] && (n.hi - n.lo + 1) > 1) state = "visited";
-        else if (sortedFlag[n.id]) state = "visited";
-        else if (activeStack.includes(n.id)) state = "frontier";
-        else if (!activeStack.length && !sortedFlag[n.id] && activeStack.length === 0 && frames.length > 0) {
-          state = "default";
-        }
-        // Per-level slot width = 88 / max(siblings - 1). Beyond the leaf row
-        // we'd have so little room that rects with `[lo..hi]` overlap each
-        // other; switch to a circle with a compact label there.
-        const siblings = 2 ** n.depth;
-        const slotW = 88 / Math.max(1, siblings);
-        const isLeaf = n.lo === n.hi;
-        const sliceText = slices[n.id].join(" ");
-        const useRect = slotW >= 14 && !isLeaf;
-        const labelText = useRect
-          ? `[${n.lo}..${n.hi}]`
-          : isLeaf
-          ? String(slices[n.id][0])              // leaf — just the value
-          : `${n.hi - n.lo + 1}`;                // dense internal — slice size
-        const sublabelText = useRect
-          ? sliceText
-          : (slotW >= 8 && !isLeaf ? sliceText : null);
-        return {
-          id: n.id,
-          label: labelText,
-          x: p.x,
-          y: p.y,
-          state,
-          sublabel: sublabelText,
-          shape: useRect ? "rect" : "circle",
-          maxWidth: Math.max(8, slotW - 2),
-        };
-      });
-    }
-    function buildEdges() {
-      return tree.edges.map((e) => {
-        const role = activeStack.includes(e.from) && activeStack.includes(e.to) ? "active"
-          : sortedFlag[e.to] ? "found"
-          : "default";
-        return { from: e.from, to: e.to, role };
-      });
-    }
-    function pushFrame({ line, desc, role, activeId, mergingPair = null, justFinishedId = null, side = null, merge = null, arrayHi = null }) {
-      const cur = activeId || (activeStack.length ? activeStack[activeStack.length - 1] : null);
-      // Compute the current overall array snapshot by writing each "sorted"
-      // slice's contents back into the shared array.
-      const arr = [...original];
-      tree.nodes.forEach((n) => {
-        if (sortedFlag[n.id]) {
-          for (let k = 0; k < slices[n.id].length; k++) arr[n.lo + k] = slices[n.id][k];
-        }
-      });
-      // Highlight the active call's range in the array view.
-      const hi = arrayHi || {};
-      if (cur) {
-        const node = tree.nodes.find((n) => n.id === cur);
-        if (node) {
-          for (let k = node.lo; k <= node.hi; k++) {
-            if (!(k in hi)) hi[k] = "active";
-          }
-        }
-      }
+    const LINE = { def: 1, base: 2, mid: 4, merge: 7, mergeSlice: 10, takeL: 15, takeR: 17 };
+
+    const idxRange = (lo, hi) => { const o = []; for (let k = lo; k <= hi; k++) o.push(k); return o; };
+    const depthStack = () => stack.map((s) => ({ lo: s.lo, hi: s.hi, depth: s.depth }));
+    const runWindows = () => runs.map((r) => [r[0], r[1]]);
+    const addRun = (lo, hi) => { runs.push([lo, hi]); runs.sort((p, q) => p[0] - q[0]); };
+    const dropRunsIn = (lo, hi) => { runs = runs.filter((r) => r[1] < lo || r[0] > hi); };
+
+    function emit({ line, desc, highlights = {}, pointers = {}, windows = {}, variables = {} }) {
       frames.push({
-        line,
-        desc,
-        data: [],
-        viewKind: "tree-view",
-        highlights: { [role]: [0] },
-        pointers: {},
-        variables: {},
-        visual: {
-          type: "tree-view",
-          nodes: buildNodes(cur, mergingPair, justFinishedId),
-          edges: buildEdges(),
-          array: { values: arr, highlights: hi, title: "current array a (sorted ranges in green, active in pivot)" },
-          merge,
-          side,
-        },
+        line, desc, data: [...a],
+        highlights,
+        pointers, variables,
+        windows: { depthStack: depthStack(), runs: runWindows(), ...windows },
       });
     }
 
-    function callMergeSort(nodeId) {
-      activeStack.push(nodeId);
-      const n = tree.nodes.find((x) => x.id === nodeId);
-      if (n.lo === n.hi) {
-        // Base case
-        pushFrame({
-          line: 16,
-          desc: `merge_sort(a[${n.lo}..${n.hi}]): single element [${slices[n.id][0]}] is trivially sorted. Return.`,
-          role: "found",
-          activeId: nodeId,
-          side: { title: "call stack (top = current)", rows: activeStack.map((id, i) => ({
-            label: `${i}`,
-            value: id === nodeId ? `▶ merge_sort([${id}])` : `merge_sort([${id}])`,
-            role: id === nodeId ? "active" : "",
-          }))},
+    function mergeSortRec(lo, hi, depth) {
+      if (lo > hi) return;                       // empty slice — no frame
+      if (lo === hi) {
+        stack.push({ lo, hi, depth });
+        addRun(lo, hi);
+        emit({
+          line: LINE.base,
+          desc: `merge_sort([${lo}..${hi}]) — the single element a[${lo}] = ${a[lo]} is trivially sorted. Return.`,
+          highlights: { found: [lo] },
+          windows: { frame: [lo, hi] },
+          variables: { lo, hi },
         });
-        sortedFlag[nodeId] = true;
-        activeStack.pop();
-        return slices[nodeId];
+        stack.pop();
+        return;
       }
-      pushFrame({
-        line: 17,
-        desc: `merge_sort(a[${n.lo}..${n.hi}]): more than one element. Split at mid = ${Math.floor((n.lo + n.hi) / 2) - n.lo + 1} relative to slice start.`,
-        role: "pivot",
-        activeId: nodeId,
-        side: { title: "call stack", rows: activeStack.map((id, i) => ({
-          label: `${i}`,
-          value: id === nodeId ? `▶ merge_sort([${id}])` : `merge_sort([${id}])`,
-          role: id === nodeId ? "active" : "",
-        }))},
+      const mid = Math.floor((lo + hi) / 2);
+      stack.push({ lo, hi, depth });
+      emit({
+        line: LINE.mid,
+        desc: `DIVIDE — merge_sort([${lo}..${hi}]) splits at mid = ${mid}: left half [${lo}..${mid}] (${mid - lo + 1} elem), right half [${mid + 1}..${hi}] (${hi - mid} elem).`,
+        windows: { frame: [lo, hi], leftHalf: [lo, mid], rightHalf: [mid + 1, hi] },
+        variables: { lo, mid, hi },
+        pointers: { lo, mid, hi },
       });
+      mergeSortRec(lo, mid, depth + 1);
+      mergeSortRec(mid + 1, hi, depth + 1);
 
-      // Find left & right child node ids
-      const childIds = tree.edges.filter((e) => e.from === nodeId).map((e) => e.to);
-      const [leftId, rightId] = childIds;
-      const leftSorted = callMergeSort(leftId);
-      const rightSorted = callMergeSort(rightId);
-
-      // Merge step
-      activeStack.push(nodeId);   // re-push for clarity (not popped between recursive calls)
-      const out = [];
+      // ---- CONQUER: merge the two sorted halves a[lo..mid] and a[mid+1..hi] ----
+      const left = a.slice(lo, mid + 1);
+      const right = a.slice(mid + 1, hi + 1);
+      dropRunsIn(lo, hi);                        // the two child runs are consumed
       let i = 0, j = 0;
-      // Pre-merge frame
-      pushFrame({
-        line: 4,
-        desc: `Merge two sorted halves: left = [${leftSorted.join(", ")}], right = [${rightSorted.join(", ")}]. Two fingers i=0, j=0; output buffer is empty.`,
-        role: "compare",
-        activeId: nodeId,
-        mergingPair: [leftId, rightId],
-        merge: { left: [...leftSorted], right: [...rightSorted], output: [...out], i, j, role: `merging into a[${n.lo}..${n.hi}]` },
-        side: { title: "merge", rows: [
-          { label: "left",  value: `[${leftSorted.join(", ")}]` },
-          { label: "right", value: `[${rightSorted.join(", ")}]` },
-        ]},
+      emit({
+        line: LINE.mergeSlice,
+        desc: `MERGE — combine sorted halves left = [${left.join(", ")}] and right = [${right.join(", ")}] back into a[${lo}..${hi}]. Fingers i = 0, j = 0; write head k = ${lo}.`,
+        windows: { frame: [lo, hi], leftHalf: [lo, mid], rightHalf: [mid + 1, hi] },
+        variables: { lo, mid, hi, i, j, k: lo },
+        pointers: { k: lo },
       });
-      while (i < leftSorted.length && j < rightSorted.length) {
-        if (leftSorted[i] <= rightSorted[j]) {
-          out.push(leftSorted[i]);
-          pushFrame({
-            line: 6,
-            desc: `left[${i}] = ${leftSorted[i]} ≤ right[${j}] = ${rightSorted[j]} → take from left. Output ← ${leftSorted[i]}.`,
-            role: "found",
-            activeId: nodeId,
-            mergingPair: [leftId, rightId],
-            merge: { left: [...leftSorted], right: [...rightSorted], output: [...out], i, j, role: `step ${out.length}` },
-          });
-          i++;
+      for (let k = lo; k <= hi; k++) {
+        const takeLeft = j === right.length || (i < left.length && left[i] <= right[j]);
+        let why;
+        if (takeLeft) {
+          why = j === right.length
+            ? `right is exhausted → take left[${i}] = ${left[i]}`
+            : `left[${i}] = ${left[i]} ≤ right[${j}] = ${right[j]} → take from left`;
         } else {
-          out.push(rightSorted[j]);
-          pushFrame({
-            line: 9,
-            desc: `right[${j}] = ${rightSorted[j]} < left[${i}] = ${leftSorted[i]} → take from right. Output ← ${rightSorted[j]}.`,
-            role: "found",
-            activeId: nodeId,
-            mergingPair: [leftId, rightId],
-            merge: { left: [...leftSorted], right: [...rightSorted], output: [...out], i, j, role: `step ${out.length}` },
-          });
-          j++;
+          why = i === left.length
+            ? `left is exhausted → take right[${j}] = ${right[j]}`
+            : `right[${j}] = ${right[j]} < left[${i}] = ${left[i]} → take from right`;
         }
+        const chosen = takeLeft ? left[i] : right[j];
+        a[k] = chosen;
+        if (takeLeft) i++; else j++;
+        emit({
+          line: takeLeft ? LINE.takeL : LINE.takeR,
+          desc: `${why}. Write a[${k}] ← ${chosen}.`,
+          highlights: { swap: [k] },
+          windows: { frame: [lo, hi], leftHalf: [lo, mid], rightHalf: [mid + 1, hi], merged: [lo, k] },
+          variables: { lo, mid, hi, i, j, k },
+          pointers: { k },
+        });
       }
-      while (i < leftSorted.length) { out.push(leftSorted[i]); i++; }
-      while (j < rightSorted.length) { out.push(rightSorted[j]); j++; }
-      slices[nodeId] = out;
-      sortedFlag[nodeId] = true;
-      pushFrame({
-        line: 11,
-        desc: `Drain any leftover. Merged result = [${out.join(", ")}]. Write back to a[${n.lo}..${n.hi}] and return.`,
-        role: "found",
-        activeId: nodeId,
-        justFinishedId: nodeId,
-        merge: { left: [], right: [], output: [...out], i, j, role: "result" },
+      addRun(lo, hi);
+      emit({
+        line: LINE.merge,
+        desc: `merge_sort([${lo}..${hi}]) done — a[${lo}..${hi}] = [${a.slice(lo, hi + 1).join(", ")}] is now one sorted run. Return.`,
+        highlights: { found: idxRange(lo, hi) },
+        windows: { frame: [lo, hi], merged: [lo, hi] },
+        variables: { lo, mid, hi },
       });
-      activeStack.pop();
-      activeStack.pop();   // pop the duplicate we pushed before merging
-      return out;
+      stack.pop();
     }
 
-    // Initial frame
-    pushFrame({
-      line: 14,
-      desc: `merge_sort(a) on a = [${original.join(", ")}]. The recursion tree below shows every subproblem; we walk it depth-first.`,
-      role: "pivot",
-      activeId: tree.nodes[0].id,
-      side: { title: "input", rows: [
-        { label: "n", value: original.length },
-        { label: "depth", value: Math.ceil(Math.log2(original.length)) },
-        { label: "leaves", value: original.length },
-      ]},
+    emit({
+      line: LINE.def,
+      desc: `merge_sort(a, 0, ${n - 1}) on a = [${a.join(", ")}]. We split, recurse, then merge — the brackets above the bars track how deep the recursion currently is.`,
+      windows: { frame: [0, n - 1] },
+      variables: { n, lo: 0, hi: n - 1 },
     });
-    callMergeSort(tree.nodes[0].id);
-    pushFrame({
-      line: 19,
-      desc: `merge_sort returns. The array is sorted in Θ(n log n) total work.`,
-      role: "found",
-      side: { title: "complexity", rows: [
-        { label: "T(n)",  value: "2T(n/2) + Θ(n)" },
-        { label: "solved", value: "Θ(n log n)" },
-      ]},
+    mergeSortRec(0, n - 1, 0);
+    runs = [[0, n - 1]];
+    emit({
+      line: LINE.def,
+      desc: `Done — the array is sorted. Total work: Θ(log n) levels × Θ(n) per level = Θ(n log n).`,
+      highlights: { found: idxRange(0, n - 1) },
+      windows: { merged: [0, n - 1] },
     });
     return frames;
   },

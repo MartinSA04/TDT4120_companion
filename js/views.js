@@ -47,6 +47,18 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
   const windows = frame.windows || {};
   const floating = frame.floating || {};
 
+  // ---- Merge-sort divide & conquer overlays ----
+  const isMerge = viewKind === "merge";
+  const depthStack = isMerge && Array.isArray(windows.depthStack) ? windows.depthStack : null;
+  const leftHalf = isMerge && Array.isArray(windows.leftHalf) ? windows.leftHalf : null;
+  const rightHalf = isMerge && Array.isArray(windows.rightHalf) ? windows.rightHalf : null;
+  const mergedWin = isMerge && Array.isArray(windows.merged) ? windows.merged : null;
+  const runWins = isMerge && Array.isArray(windows.runs) ? windows.runs : null;
+  const BRACKET_STEP = 15;
+  // Reserve a fixed amount of headroom for the deepest possible bracket stack
+  // so the bars never shift between steps.
+  const mergeBracketsH = isMerge ? (Math.ceil(Math.log2(Math.max(2, n))) + 1) * BRACKET_STEP + 8 : 0;
+
   // Pointer chips suppressed at indices that already host a floating box.
   const floatingIndices = new Set(Object.keys(floating).map((k) => +k));
   const pointerByIdx = {};
@@ -77,7 +89,7 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
   const FOCUS_LABEL_GAP = 22;   // top: -22 of bars-row for the value labels
   const BRACKET_GAP = 14;        // pair-bracket lives above the focus labels
   const CHIP_TO_BARS = FOCUS_LABEL_GAP + BRACKET_GAP + 4;
-  const topBand = pointerH + CHIP_TO_BARS + floatingH + minBadgeH;
+  const topBand = pointerH + CHIP_TO_BARS + floatingH + minBadgeH + mergeBracketsH;
 
   // ---- Sorted-region tint band ----
   let sortedBand = null;
@@ -148,6 +160,52 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
     <div style={{ position: "relative", padding: "0 4px" }}>
       {/* Headroom above bars for the pointer rail, floating boxes, ★ min badge */}
       <div style={{ height: topBand, position: "relative" }}>
+        {/* ---------- Merge-sort recursion brackets (deepest nearest the bars) ---------- */}
+        {depthStack &&
+          depthStack.map((w, m) => {
+            const fromBottom = depthStack.length - 1 - m; // 0 = deepest = lowest
+            const bottom =
+              CHIP_TO_BARS + pointerH + floatingH + minBadgeH + 4 + fromBottom * BRACKET_STEP;
+            const active = m === depthStack.length - 1;
+            const col = active ? "var(--accent)" : "var(--rule-strong)";
+            return (
+              <div
+                key={`brk-${m}`}
+                style={{
+                  position: "absolute",
+                  bottom,
+                  ...bandOf(w.lo, w.hi, n),
+                  height: BRACKET_STEP - 5,
+                  borderTop: `2px solid ${col}`,
+                  borderLeft: `2px solid ${col}`,
+                  borderRight: `2px solid ${col}`,
+                  boxSizing: "border-box",
+                  pointerEvents: "none",
+                  zIndex: 1,
+                }}
+              >
+                {active && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: -1,
+                      left: "50%",
+                      transform: "translate(-50%, -100%)",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: "var(--accent)",
+                      background: "var(--surface)",
+                      padding: "0 3px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    [{w.lo}..{w.hi}]
+                  </span>
+                )}
+              </div>
+            );
+          })}
         {/* ---------- Pointer rail (chips above bars) ---------- */}
         <div
           style={{
@@ -248,6 +306,73 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
         }}
       >
         {/* === Decoration overlays (BEHIND the bars) === */}
+
+        {/* Merge-sort: finished sorted runs (light green) */}
+        {runWins &&
+          runWins.map(([lo, hi], ri) =>
+            lo <= hi ? (
+              <div
+                key={`run-${ri}`}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  ...bandOf(lo, hi, n),
+                  background: "color-mix(in srgb, var(--role-sorted) 14%, transparent)",
+                  borderLeft: "1px solid color-mix(in srgb, var(--role-sorted) 35%, transparent)",
+                  borderRight: "1px solid color-mix(in srgb, var(--role-sorted) 35%, transparent)",
+                  boxSizing: "border-box",
+                  pointerEvents: "none",
+                  zIndex: 0,
+                }}
+              />
+            ) : null
+          )}
+
+        {/* Merge-sort: left half being merged (compare colour) */}
+        {leftHalf && leftHalf[0] <= leftHalf[1] && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              ...bandOf(leftHalf[0], leftHalf[1], n),
+              background: "color-mix(in srgb, var(--role-compare) 16%, transparent)",
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+          />
+        )}
+        {/* Merge-sort: right half being merged (pivot colour) */}
+        {rightHalf && rightHalf[0] <= rightHalf[1] && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              ...bandOf(rightHalf[0], rightHalf[1], n),
+              background: "color-mix(in srgb, var(--role-pivot) 16%, transparent)",
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+          />
+        )}
+        {/* Merge-sort: merged-so-far prefix (green, drawn on top of the halves) */}
+        {mergedWin && mergedWin[0] <= mergedWin[1] && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              ...bandOf(mergedWin[0], mergedWin[1], n),
+              background: "color-mix(in srgb, var(--role-sorted) 26%, transparent)",
+              borderRight: "2px solid var(--role-sorted)",
+              boxSizing: "border-box",
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+          />
+        )}
 
         {/* Sorted-region soft tint */}
         {sortedBand && (

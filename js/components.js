@@ -356,6 +356,13 @@ const LEGEND_FOR = {
     ["swap", "swapping"],
     ["sorted", "in place"],
   ],
+  merge: [
+    ["default", "unsorted"],
+    ["compare", "left half"],
+    ["pivot", "right half"],
+    ["sorted", "merged / sorted run"],
+    ["swap", "writing a[k]"],
+  ],
   search: [
     ["default", "candidate"],
     ["pivot", "mid"],
