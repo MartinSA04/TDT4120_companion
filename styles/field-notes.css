@@ -759,6 +759,42 @@
 .fn-matrix td.blank {
   background: var(--surface);
 }
+.fn-preference-wrap {
+  overflow-x: auto;
+}
+.fn-preference-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+}
+.fn-preference-table th,
+.fn-preference-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--rule-soft);
+  text-align: left;
+}
+.fn-preference-table thead th {
+  background: var(--surface);
+  color: var(--ink-3);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.fn-preference-table tbody th {
+  background: var(--surface);
+  font-weight: 600;
+}
+.fn-preference-table tbody td {
+  background: var(--surface-2);
+}
+.fn-preference-table .group-start th,
+.fn-preference-table .group-start td {
+  border-top-color: var(--ink);
+  border-top-width: 1.5px;
+}
 .fn-choice-list {
   margin: 0;
   padding-left: var(--s-5);

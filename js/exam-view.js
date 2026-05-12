@@ -239,6 +239,7 @@ function shouldSkipBlock(problem, block) {
   if (problem.id === "2024-des-06" && block.type === "paragraph" && /^x\s+y\s+z\s+w$/.test(block.text)) return true;
   if (problem.id === "2024-des-07" && block.type === "paragraph" && /^u\s+3\/\s*5\s+v$/.test(block.text)) return true;
   if (problem.id === "2024-des-11" && block.type === "paragraph" && /^Husk at x = x1\/2/.test(block.text)) return true;
+  if (problem.id === "2023-aug-10" && block.type === "paragraph" && /^(Lurvik|Gløgsund):/.test(block.text)) return true;
   return false;
 }
 
@@ -629,6 +630,42 @@ function ProcedurePairVisual() {
   );
 }
 
+function MatchingPreferenceTable() {
+  const rows = [
+    ["Lurvik", "Gløgsund", "Flinckenhagen", "Klokland", "Flinckenhagen"],
+    ["Smartnes", "Gløgsund", "Klokland", "Flinckenhagen", "Gløgsund"],
+    ["Visdal", "Klokland", "Flinckenhagen", "Gløgsund", "Klokland"],
+    ["Gløgsund", "Lurvik", "Smartnes", "Visdal", "Smartnes"],
+    ["Klokland", "Visdal", "Smartnes", "Lurvik", "Visdal"],
+    ["Flinckenhagen", "Lurvik", "Smartnes", "Visdal", "Lurvik"],
+  ];
+  return (
+    <VisualFrame title="Preferanser og oppgitt matching">
+      <div className="fn-preference-wrap">
+        <table className="fn-preference-table">
+          <thead>
+            <tr>
+              <th>Person</th>
+              <th>1. valg</th>
+              <th>2. valg</th>
+              <th>3. valg</th>
+              <th>Matchet med</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={row[0]} className={index === 3 ? "group-start" : ""}>
+                <th>{row[0]}</th>
+                {row.slice(1).map((cell) => <td key={cell}>{cell}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </VisualFrame>
+  );
+}
+
 function AlgorithmCodeVisual({ title, code }) {
   const CodeView = window.AlgViz.CodeView;
   return (
@@ -693,6 +730,7 @@ function FormulaVisual({ kind }) {
 }
 
 function ExamVisual({ kind }) {
+  if (kind === "matching-preferences-2023-aug") return <MatchingPreferenceTable />;
   if (kind === "randomized-select-2022-des") {
     return <AlgorithmCodeVisual title="Algoritme 1 · Randomized-Select(A, p, r, i)" code={`if r <= p
   return A[p]
@@ -995,7 +1033,16 @@ function FormattedExamText({ text, exam, pdf, page, problem, lang, className, sh
       {blocks.map((block, index) => {
         if (shouldSkipBlock(problem, block)) return null;
         if (block.type === "paragraph") {
-          return <p key={index} className="serif"><InlineText text={block.text} problem={problem} /></p>;
+          const paragraph = <p className="serif"><InlineText text={block.text} problem={problem} /></p>;
+          if (problem.id === "2023-aug-10" && /har følgende preferanser/.test(block.text)) {
+            return (
+              <React.Fragment key={index}>
+                {paragraph}
+                <ExamVisual kind="matching-preferences-2023-aug" />
+              </React.Fragment>
+            );
+          }
+          return <React.Fragment key={index}>{paragraph}</React.Fragment>;
         }
         if (block.type === "list") {
           const Tag = block.ordered ? "ol" : "ul";
