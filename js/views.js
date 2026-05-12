@@ -54,10 +54,17 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
   const rightHalf = isMerge && Array.isArray(windows.rightHalf) ? windows.rightHalf : null;
   const mergedWin = isMerge && Array.isArray(windows.merged) ? windows.merged : null;
   const runWins = isMerge && Array.isArray(windows.runs) ? windows.runs : null;
+  const mergeInfo = isMerge && frame.merge ? frame.merge : null;
   const BRACKET_STEP = 15;
   // Reserve a fixed amount of headroom for the deepest possible bracket stack
   // so the bars never shift between steps.
   const mergeBracketsH = isMerge ? (Math.ceil(Math.log2(Math.max(2, n))) + 1) * BRACKET_STEP + 8 : 0;
+  // For merge sort, the bars take ~60% of the stage and the bottom holds the
+  // two "lifted out" half-buffers; the panel area is reserved on every step so
+  // the bars don't jump between divide / merge frames.
+  const barAreaH = isMerge ? Math.round(height * 0.58) : height;
+  const panelBarsH = isMerge ? Math.round(height * 0.30) : 0;
+  const mergePanelH = isMerge ? panelBarsH + 56 : 0;   // 12 (title) + 16 (chips) + bars + slack
 
   // Pointer chips suppressed at indices that already host a floating box.
   const floatingIndices = new Set(Object.keys(floating).map((k) => +k));
@@ -302,7 +309,7 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
         className="bars-row"
         style={{
           position: "relative",
-          height,
+          height: barAreaH,
         }}
       >
         {/* === Decoration overlays (BEHIND the bars) === */}
@@ -451,9 +458,10 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
         >
           {data.map((value, idx) => {
             const isGap = gapIdx === idx;
+            const blank = mergeInfo && idx >= mergeInfo.k && idx <= mergeInfo.hi;
             const role = roleAt(highlights, idx);
             const fill = role ? `var(--role-${role})` : "var(--role-default)";
-            const h = (value / Math.max(maxValue, 1)) * (height - 4);
+            const h = (value / Math.max(maxValue, 1)) * (barAreaH - 4);
             const isFocus = role && FOCUS_ROLES.has(role);
             return (
               <div
@@ -466,7 +474,17 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
                   alignItems: "flex-end",
                 }}
               >
-                {isGap ? (
+                {blank ? (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      border: "1px dashed color-mix(in srgb, var(--role-sorted) 45%, var(--rule-strong))",
+                      background: "color-mix(in srgb, var(--role-sorted) 5%, transparent)",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                ) : isGap ? (
                   <div
                     style={{
                       width: "100%",
@@ -652,6 +670,109 @@ function Bars({ frame, viewKind, maxValue, height = 280 }) {
           </div>
         ))}
       </div>
+
+      {/* ---------- Merge-sort: the two "lifted out" half-buffers ---------- */}
+      {isMerge && mergeInfo && (() => {
+        const { left, right, i, j } = mergeInfo;
+        // Each buffer lives in its own well-separated box so the two arrays
+        // read as distinct collections (no longer column-aligned to the array).
+        const renderHalf = (vals, ptr, ptrName, accent, box) => {
+          const m = vals.length;
+          return (
+            <div
+              key={ptrName}
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                ...box,
+                display: "grid",
+                gridTemplateColumns: `repeat(${m}, minmax(0, 26px))`,
+                gap: 5,
+                justifyContent: "center",
+                alignContent: "stretch",
+                border: "1px solid var(--rule-soft)",
+                borderRadius: 2,
+                background: `color-mix(in srgb, ${accent} 6%, transparent)`,
+                padding: "0 6px",
+              }}
+            >
+              {vals.map((v, k) => {
+                const consumed = k < ptr;
+                const cur = k === ptr;
+                const bh = Math.max(2, (v / Math.max(maxValue, 1)) * (panelBarsH - 4));
+                return (
+                  <div
+                    key={k}
+                    style={{
+                      gridColumn: `${k + 1} / ${k + 2}`,
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div style={{ height: 18, display: "flex", alignItems: "flex-end", marginBottom: 2 }}>
+                      {cur && <div className="chip">{ptrName}</div>}
+                    </div>
+                    <div style={{ flex: 1 }} />
+                    {consumed ? (
+                      <div
+                        style={{
+                          width: "100%",
+                          height: bh,
+                          border: "1px dashed var(--rule-strong)",
+                          boxSizing: "border-box",
+                          opacity: 0.4,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: "100%",
+                          height: bh,
+                          background: cur
+                            ? "var(--role-compare)"
+                            : `color-mix(in srgb, ${accent} 40%, var(--role-default))`,
+                          border: "1px solid var(--ink)",
+                          borderBottom: "none",
+                          transition:
+                            "height 200ms var(--ease-out), background 200ms var(--ease-out)",
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        };
+        return (
+          <div style={{ position: "relative", height: mergePanelH, marginTop: 16, padding: "0 4px" }}>
+            <div
+              style={{
+                position: "absolute",
+                top: -2,
+                left: 0,
+                right: 0,
+                textAlign: "center",
+                fontFamily: "var(--font-mono)",
+                fontSize: 9,
+                fontWeight: 600,
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                color: "var(--ink-4)",
+              }}
+            >
+              merge buffers — pull the smaller of left[i] / right[j] up into a[k]
+            </div>
+            <div style={{ position: "absolute", top: 16, left: 0, right: 0, bottom: 0 }}>
+              {renderHalf(left, i, "i", "var(--role-compare)", { left: "1%", width: "44%" })}
+              {renderHalf(right, j, "j", "var(--role-pivot)", { left: "55%", width: "44%" })}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

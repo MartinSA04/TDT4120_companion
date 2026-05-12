@@ -791,11 +791,11 @@ def merge(a: list[int], lo: int, mid: int, hi: int) -> None:
     const addRun = (lo, hi) => { runs.push([lo, hi]); runs.sort((p, q) => p[0] - q[0]); };
     const dropRunsIn = (lo, hi) => { runs = runs.filter((r) => r[1] < lo || r[0] > hi); };
 
-    function emit({ line, desc, highlights = {}, pointers = {}, windows = {}, variables = {} }) {
+    function emit({ line, desc, highlights = {}, pointers = {}, windows = {}, variables = {}, merge = null }) {
       frames.push({
         line, desc, data: [...a],
         highlights,
-        pointers, variables,
+        pointers, variables, merge,
         windows: { depthStack: depthStack(), runs: runWindows(), ...windows },
       });
     }
@@ -828,39 +828,45 @@ def merge(a: list[int], lo: int, mid: int, hi: int) -> None:
       mergeSortRec(mid + 1, hi, depth + 1);
 
       // ---- CONQUER: merge the two sorted halves a[lo..mid] and a[mid+1..hi] ----
+      // The two halves are "lifted out" into separate buffers shown below the
+      // main array; we then refill a[lo..hi] left-to-right, pulling the smaller
+      // current element up from one of the two buffers each step.
       const left = a.slice(lo, mid + 1);
       const right = a.slice(mid + 1, hi + 1);
       dropRunsIn(lo, hi);                        // the two child runs are consumed
       let i = 0, j = 0;
+      const mergeObj = (k) => ({ lo, mid, hi, left: [...left], right: [...right], i, j, k });
       emit({
         line: LINE.mergeSlice,
-        desc: `MERGE — combine sorted halves left = [${left.join(", ")}] and right = [${right.join(", ")}] back into a[${lo}..${hi}]. Fingers i = 0, j = 0; write head k = ${lo}.`,
-        windows: { frame: [lo, hi], leftHalf: [lo, mid], rightHalf: [mid + 1, hi] },
+        desc: `MERGE — lift the sorted halves out: left = a[${lo}..${mid}] = [${left.join(", ")}], right = a[${mid + 1}..${hi}] = [${right.join(", ")}]. Refill a[${lo}..${hi}] left-to-right; fingers i = 0, j = 0, write head k = ${lo}.`,
+        windows: { frame: [lo, hi] },
         variables: { lo, mid, hi, i, j, k: lo },
         pointers: { k: lo },
+        merge: mergeObj(lo),
       });
-      for (let k = lo; k <= hi; k++) {
+      for (let p = lo; p <= hi; p++) {
         const takeLeft = j === right.length || (i < left.length && left[i] <= right[j]);
         let why;
         if (takeLeft) {
           why = j === right.length
-            ? `right is exhausted → take left[${i}] = ${left[i]}`
-            : `left[${i}] = ${left[i]} ≤ right[${j}] = ${right[j]} → take from left`;
+            ? `right buffer is empty → pull left[${i}] = ${left[i]} up`
+            : `left[${i}] = ${left[i]} ≤ right[${j}] = ${right[j]} → pull from left`;
         } else {
           why = i === left.length
-            ? `left is exhausted → take right[${j}] = ${right[j]}`
-            : `right[${j}] = ${right[j]} < left[${i}] = ${left[i]} → take from right`;
+            ? `left buffer is empty → pull right[${j}] = ${right[j]} up`
+            : `right[${j}] = ${right[j]} < left[${i}] = ${left[i]} → pull from right`;
         }
         const chosen = takeLeft ? left[i] : right[j];
-        a[k] = chosen;
+        a[p] = chosen;
         if (takeLeft) i++; else j++;
         emit({
           line: takeLeft ? LINE.takeL : LINE.takeR,
-          desc: `${why}. Write a[${k}] ← ${chosen}.`,
-          highlights: { swap: [k] },
-          windows: { frame: [lo, hi], leftHalf: [lo, mid], rightHalf: [mid + 1, hi], merged: [lo, k] },
-          variables: { lo, mid, hi, i, j, k },
-          pointers: { k },
+          desc: `${why}: a[${p}] ← ${chosen}.${p < hi ? ` Advance ${takeLeft ? "i" : "j"} and k → ${p + 1}.` : ""}`,
+          highlights: { swap: [p] },
+          windows: { frame: [lo, hi], merged: [lo, p] },
+          variables: { lo, mid, hi, i, j, k: p + 1 },
+          pointers: p < hi ? { k: p + 1 } : {},
+          merge: mergeObj(p + 1),
         });
       }
       addRun(lo, hi);
