@@ -73,7 +73,7 @@ function CodeView({ code, filename, activeLine }) {
           {lines.length} lines · python
         </span>
       </div>
-      <div style={{ padding: "16px 18px" }}>
+      <div style={{ padding: "16px 18px", overflowX: "auto" }}>
         {lines.map((line, idx) => {
           const lineNo = idx + 1;
           const active = lineNo === activeLine;
@@ -462,6 +462,7 @@ function Transport({
   };
   return (
     <div
+      className="vis-transport"
       style={{
         display: "grid",
         gridTemplateColumns: "auto 1fr auto",
@@ -571,6 +572,7 @@ function StatCell({ label, value, accent }) {
 function Masthead({ algo, n, idx, total, line, doing }) {
   return (
     <header
+      className="vm-masthead"
       style={{
         display: "grid",
         gridTemplateColumns: "auto 1fr",
@@ -612,6 +614,7 @@ function Masthead({ algo, n, idx, total, line, doing }) {
       </div>
 
       <div
+        className="vm-stats"
         style={{
           display: "flex",
           justifyContent: "flex-end",
@@ -650,7 +653,25 @@ function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, sizeRange
         borderBottom: "1px solid var(--rule-soft)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 0, flexWrap: "wrap" }}>
+      {/* Mobile / narrow screens: a plain dropdown instead of the tab strip */}
+      <label className="cat-select">
+        <span className="eyebrow" style={{ marginRight: 10 }}>Catalogue</span>
+        <select
+          value={activeIdx}
+          onChange={(e) => onSelect(parseInt(e.target.value, 10))}
+        >
+          {algorithms.map((a, i) => (
+            <option key={a.name} value={i}>
+              {a.name}
+              {a.complexities?.avg || a.complexities?.worst
+                ? ` — ${a.complexities.avg || a.complexities.worst}`
+                : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="cat-tabs" style={{ display: "flex", alignItems: "center", gap: 0, flexWrap: "wrap" }}>
         <span className="eyebrow" style={{ marginRight: 12 }}>Catalogue</span>
         {algorithms.map((a, i) => {
           const active = i === activeIdx;
@@ -694,7 +715,7 @@ function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, sizeRange
         })}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div className="cat-controls" style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {sizeRange && (
           <>
             <span className="eyebrow">Size n =</span>

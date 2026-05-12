@@ -189,6 +189,15 @@
   background: var(--surface);
   border: 1px solid var(--rule-soft);
 }
+/* Compact dropdown shown instead of the full list on narrow screens */
+.fn-index-select { display: none; align-items: center; gap: var(--s-2); padding: var(--s-3) var(--s-4); }
+.fn-index-select select {
+  flex: 1; min-width: 0;
+  font-family: var(--font-body); font-size: var(--t-body);
+  padding: 6px 8px;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--ink);
+}
 .fn-index-head {
   display: flex; justify-content: space-between; align-items: baseline;
   padding: var(--s-3) var(--s-4);
@@ -578,16 +587,98 @@
   font-size: var(--t-body);
 }
 
+/* The catalogue dropdown only appears on narrow screens (see media query). */
+.cat-select { display: none; align-items: center; min-width: 0; }
+.cat-select select {
+  flex: 1; min-width: 0;
+  font-family: var(--font-body); font-size: var(--t-body);
+  padding: 6px 8px;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--ink);
+}
+
 /* =============================================================
    Responsive
    ============================================================= */
+
+/* ── Tablet / small laptop ───────────────────────────────────── */
 @media (max-width: 960px) {
   .fn-study { grid-template-columns: 1fr; }
   .fn-index { position: static; }
   .fn-row.two { grid-template-columns: 1fr; }
   .fn-vis-grid { grid-template-columns: 1fr; }
-  .fn-masthead {
-    grid-template-columns: 1fr;
-  }
+  .fn-masthead { grid-template-columns: 1fr; }
   .fn-mast-controls { grid-column: 1; grid-row: auto; }
+}
+
+/* ── Phones ──────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  /* App shell header: tabs scroll horizontally instead of overflowing */
+  .fn-masthead { padding: var(--s-4) var(--s-4) 0; gap: var(--s-2) var(--s-4); }
+  .fn-mast-title h1 { font-size: var(--t-2xl); }
+  .fn-mast-title .fn-tagline { font-size: var(--t-body); }
+  .fn-tabs {
+    margin: var(--s-4) calc(var(--s-4) * -1) 0;
+    padding: 0 var(--s-4);
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .fn-tabs::-webkit-scrollbar { display: none; }
+  .fn-tab { white-space: nowrap; flex: 0 0 auto; padding: var(--s-3) var(--s-4); }
+  .fn-mast-controls { flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-3); }
+
+  /* Section primitives: tighter padding, allow head to wrap */
+  .fn-section-head { padding: var(--s-4) var(--s-4) var(--s-3); flex-wrap: wrap; gap: var(--s-3); }
+  .fn-section-body { padding: var(--s-4); }
+  .fn-section-actions { flex-wrap: wrap; }
+
+  /* Lecture list → dropdown (the full list ate too much vertical space) */
+  .fn-index { position: static; border: 0; margin-bottom: var(--s-4); }
+  .fn-index-head, .fn-index-list { display: none; }
+  .fn-index-select { display: flex; border: 1px solid var(--rule-soft); }
+
+  /* Lecture hero: stack title and the "mark complete" button (was 1fr auto,
+     which pushed the button off-screen on narrow viewports) */
+  .fn-lecture-hero { grid-template-columns: 1fr; gap: var(--s-4); padding: 0 var(--s-4) var(--s-4); }
+  .fn-lecture-hero h2 { font-size: var(--t-2xl); }
+  .fn-lecture-hero p { font-size: var(--t-body); }
+  .fn-lecture-hero-side { align-items: stretch; }
+  .fn-lecture-hero-side .fn-btn { justify-content: center; }
+
+  /* Visualizer page */
+  .fn-visualizer { padding: var(--s-4) var(--s-3); }
+  .fn-vis-grid { padding: var(--s-3); gap: var(--s-4); }
+
+  /* Catalogue bar → stacked; swap tab strip for the dropdown */
+  .catalogue-bar { grid-template-columns: 1fr !important; padding: var(--s-3) var(--s-4) !important; gap: var(--s-3) !important; }
+  .cat-tabs { display: none !important; }
+  .cat-select { display: flex !important; }
+  .cat-controls { flex-wrap: wrap; }
+  .cat-controls input[type="range"] { flex: 1; min-width: 90px; }
+
+  /* Visualizer masthead ("Field Notes for X") — compact, single column */
+  .vm-masthead { grid-template-columns: 1fr !important; gap: var(--s-3) !important; padding: var(--s-4) var(--s-4) var(--s-3) !important; }
+  .vm-masthead h1 { font-size: var(--t-2xl) !important; }
+  .vm-masthead h1 + span { font-size: var(--t-lg) !important; }
+  .vm-stats { flex-wrap: wrap !important; justify-content: flex-start !important; gap: var(--s-3) var(--s-5) !important; }
+
+  /* Transport (playback controls) — stack the three groups */
+  .vis-transport { grid-template-columns: 1fr !important; gap: var(--s-3) !important; padding: var(--s-3) var(--s-3) !important; }
+  .vis-transport input[type="range"] { flex: 1; min-width: 90px; }
+
+  /* Make wide tables scroll rather than blow out the layout */
+  .fn-table-wrap, .fn-section-body table { display: block; max-width: 100%; overflow-x: auto; }
+
+  /* Larger tap targets for the small key-cap buttons */
+  .fn-seg button, .cat-tab { min-height: 36px; }
+}
+
+/* ── Very small phones ───────────────────────────────────────── */
+@media (max-width: 420px) {
+  .fn-mast-title h1 { font-size: var(--t-xl); }
+  .vm-masthead h1 { font-size: var(--t-xl) !important; }
+  .vm-stats { font-size: var(--t-micro) !important; }
+  .fn-section-body, .fn-section-head { padding-left: var(--s-3); padding-right: var(--s-3); }
+  .fn-lecture-hero { padding-left: var(--s-3); padding-right: var(--s-3); }
+  .fn-lecture-hero h2 { font-size: var(--t-xl); }
 }

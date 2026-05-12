@@ -72,6 +72,18 @@ function LectureIndex({ course, lectureId, completedSet, lang }) {
         <Eyebrow>{txt({ no: "Forelesninger", en: "Lectures" }, lang)}</Eyebrow>
         <MonoMeta>{completedSet.size}/{course.lectures.length}</MonoMeta>
       </div>
+      {/* Mobile / narrow screens: the lecture list collapses to a dropdown */}
+      <label className="fn-index-select">
+        <span className="eyebrow">{txt({ no: "Forelesning", en: "Lecture" }, lang)}</span>
+        <select value={lectureId} onChange={(e) => go("study", e.target.value)}>
+          {course.lectures.map((it) => (
+            <option key={it.id} value={it.id}>
+              {String(it.number).padStart(2, "0")} · {txt(it.title, lang)}
+              {completedSet.has(it.id) ? " ✓" : ""}
+            </option>
+          ))}
+        </select>
+      </label>
       <ol className="fn-index-list">
         {course.lectures.map((it) => {
           const done = completedSet.has(it.id);
