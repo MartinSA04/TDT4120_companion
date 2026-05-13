@@ -20,12 +20,13 @@ function readStoredState() {
         completedLectures: parsed.progress?.completedLectures || [],
         masteredGoals: parsed.progress?.masteredGoals || [],
         quizAttempts: parsed.progress?.quizAttempts || {},
+        completedExamTasks: parsed.progress?.completedExamTasks || [],
       },
     };
   } catch {
     return {
       lang: "no", theme: "paper",
-      progress: { completedLectures: [], masteredGoals: [], quizAttempts: {} },
+      progress: { completedLectures: [], masteredGoals: [], quizAttempts: {}, completedExamTasks: [] },
     };
   }
 }
@@ -88,9 +89,11 @@ function App() {
 
   const completedSet = useMemo(() => asSet(progress.completedLectures), [progress.completedLectures]);
   const masteredSet = useMemo(() => asSet(progress.masteredGoals), [progress.masteredGoals]);
+  const examDoneSet = useMemo(() => asSet(progress.completedExamTasks), [progress.completedExamTasks]);
 
   const updateLectureComplete = (id) => setProgress((p) => ({ ...p, completedLectures: toggleList(p.completedLectures, id) }));
   const updateGoalMastered = (id) => setProgress((p) => ({ ...p, masteredGoals: toggleList(p.masteredGoals, id) }));
+  const updateExamTaskComplete = (id) => setProgress((p) => ({ ...p, completedExamTasks: toggleList(p.completedExamTasks, id) }));
   const recordQuiz = (quizId, correct) => setProgress((prev) => {
     const prior = prev.quizAttempts[quizId] || { total: 0, correct: 0 };
     return {
@@ -105,13 +108,14 @@ function App() {
       },
     };
   });
-  const resetProgress = () => setProgress({ completedLectures: [], masteredGoals: [], quizAttempts: {} });
+  const resetProgress = () => setProgress({ completedLectures: [], masteredGoals: [], quizAttempts: {}, completedExamTasks: [] });
 
   const common = {
-    algorithms, course, lang, theme, progress, completedSet, masteredSet,
+    algorithms, course, lang, theme, progress, completedSet, masteredSet, examDoneSet,
     onLang: setLang, onTheme: setTheme,
     onLectureComplete: updateLectureComplete,
     onGoalMastered: updateGoalMastered,
+    onExamTaskComplete: updateExamTaskComplete,
     onQuiz: recordQuiz, onResetProgress: resetProgress,
   };
 

@@ -73,221 +73,33 @@ function linkTo(pdf, page) {
   return `${archiveBase}${filename}#page=${page || 1}`;
 }
 
+function blockText(block) {
+  if (!block) return "";
+  if (typeof block === "string") return block;
+  if (block.type === "text" || block.type === "paragraph") return block.text || "";
+  if (block.type === "list") return (block.items || []).join(" ");
+  if (block.type === "code") return `${block.title || ""} ${block.code || ""}`;
+  if (block.type === "equation") return `${block.title || ""} ${(block.lines || []).join(" ")}`;
+  if (block.type === "visual") return block.kind || "";
+  return "";
+}
+
+function contentText(content) {
+  if (Array.isArray(content)) return content.map(blockText).join("\n");
+  return String(content || "");
+}
+
+function problemText(problem) {
+  return `${problem.number}\n${contentText(problem.prompt)}\n${contentText(problem.solution)}`;
+}
+
 function categoryFor(problem) {
-  const haystack = `${problem.title}\n${problem.prompt}\n${problem.solution}`;
+  const haystack = problemText(problem);
   return categoryRules.find((rule) => rule.rx.test(haystack))?.id || "other";
 }
 
 function categoryLabel(categoryId, lang) {
   return txt(categories.find((item) => item.id === categoryId)?.label || categories[0].label, lang);
-}
-
-function cleanExamLine(line, index = -1) {
-  let next = String(line || "").replace(/\t/g, "  ").replace(/\s+$/g, "");
-  if (index === 0) {
-    next = next
-      .replace(/^\s*\d+\s*%\s*\d+\s*/, "")
-      .replace(/^\s*\d+\s*%\s*/, "")
-      .replace(/^\s*\d{1,2}\s+/, "");
-  }
-  return next;
-}
-
-function compareLine(line) {
-  return cleanExamLine(line)
-    .replace(/^\s*\d{1,2}\s+/, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-
-function stripPromptFromSolution(solution, prompt) {
-  const promptLines = new Set(
-    String(prompt || "")
-      .split("\n")
-      .map(compareLine)
-      .filter((line) => line.length > 2)
-  );
-  const output = [];
-  let started = false;
-
-  String(solution || "").split("\n").forEach((line, index) => {
-    const normalized = compareLine(line);
-    const promptLike = promptLines.has(normalized);
-    const boilerplate = index === 0 && /^\s*(?:\d+\s*%\s*)?\d{1,2}\s+/.test(line);
-
-    if (!started && (!normalized || promptLike || boilerplate)) return;
-    if (started && promptLike) return;
-    started = true;
-    output.push(line);
-  });
-
-  const stripped = output.join("\n").trim();
-  return stripped || solution;
-}
-
-function isAlgorithmHeader(line) {
-  return /^\s*Algoritme\s+\d+/i.test(line);
-}
-
-function isFigureHeader(line) {
-  return /^\s*(Figur|Figure)\s+\d+\s*$/i.test(line);
-}
-
-function isCallSignature(line) {
-  const trimmed = line.trim();
-  return /^[A-ZÆØÅA-Za-z_][A-Za-zÆØÅæøå0-9_-]+\([^)]*\)\s*$/.test(trimmed);
-}
-
-function isCodeLine(line) {
-  const trimmed = line.trim();
-  if (!/^\d+\s+/.test(trimmed)) return false;
-  if (/^\d+\.\s+/.test(trimmed)) return false;
-  if (/^\d+\s+\.\s*\./.test(trimmed)) return false;
-  return /(for|if|else|elseif|return|while|let|allocate|swap|insert|decrease|enqueue|dequeue|list-prepend|randomized|partition|untitled|permutations|counting|relax|extract|min|main|init|reverse|unzip|too-tired|fung-sort|[A-ZÆØÅ][A-Za-zÆØÅæøå-]+\(|Q\.|[A-Z]\[|[a-z]\.[a-z]|[a-z]\s*=)/i.test(trimmed);
-}
-
-function stripCodeLine(line) {
-  const numbered = line.match(/^\s*\d+\s?(.*)$/);
-  return (numbered ? numbered[1] : line.trimStart()).replace(/\s+$/g, "");
-}
-
-function codeContent(line) {
-  if (isCallSignature(line)) return line.trim();
-  const content = stripCodeLine(line);
-  if (/^=\s*A\[/i.test(content.trim())) return `▮▮▮ ${content.trim()}`;
-  return content;
-}
-
-function codeLineNumber(line) {
-  const match = line.trim().match(/^(\d+)\s+/);
-  return match ? Number(match[1]) : null;
-}
-
-function normalizeCodeBlock(lines) {
-  const trimmed = lines.map((line) => String(line || "").replace(/\s+$/g, ""));
-  const indents = trimmed
-    .filter((line) => line.trim())
-    .map((line) => (line.match(/^\s*/) || [""])[0].length);
-  const minIndent = indents.length ? Math.min(...indents) : 0;
-
-  return trimmed.map((line) => {
-    const shifted = line.slice(Math.min(minIndent, (line.match(/^\s*/) || [""])[0].length));
-    const leading = (shifted.match(/^\s*/) || [""])[0].length;
-    if (leading < 4) return shifted;
-    return `${" ".repeat(Math.round(leading / 5) * 2)}${shifted.trimStart()}`;
-  }).join("\n").trimEnd();
-}
-
-function isDenseArtifactLine(line) {
-  const trimmed = line.trim();
-  if (!trimmed) return false;
-  const letters = (trimmed.match(/[A-Za-zÆØÅæøå]/g) || []).length;
-  const symbols = (trimmed.match(/[0-9∞→←↑↓/\\|=(){}[\],.:;+\-*⟨⟩]/g) || []).length;
-  const leading = (line.match(/^\s*/) || [""])[0].length;
-  return leading >= 10 && letters <= 8 && (symbols >= 4 || /^\d+(?:\s+\d+)+$/.test(trimmed));
-}
-
-function isCodeContinuation(line) {
-  const trimmed = line.trim();
-  if (/^(Oppgi|Forklar|Hva|Hvordan|Hvorfor|Hvilk|Du|Det|Her|Merk|Anta|Som|I|Om|Hvis|Dersom)\b/i.test(trimmed)) return false;
-  return /^\s{8,}\S/.test(line) && /(=|return|if|else|for|while|\(|\)|\[|\]|∅|∞|\/\/)/i.test(trimmed);
-}
-
-function shouldStopArtifact(line) {
-  const trimmed = line.trim();
-  if (!trimmed) return false;
-  if (isAlgorithmHeader(line) || isCodeLine(line) || isCallSignature(line)) return true;
-  if (/^[•*-]\s+/.test(trimmed)) return true;
-  if (/^(Hva|Hvordan|Hvorfor|Hvilk|Du|Det|Målet|Merk|Anta|Input|Om|Hvis|Her|For|Under|Tabellen|Prosedyren|Dersom|Som)\b/i.test(trimmed)) return true;
-  const letters = (trimmed.match(/[A-Za-zÆØÅæøå]/g) || []).length;
-  return letters >= 14 && /[.!?:)]$/.test(trimmed);
-}
-
-function shouldSkipArtifact(problem, block) {
-  const stray = new Set([
-    "2023-des-04",
-    "2023-des-08",
-    "2024-aug-06",
-    "2024-aug-07",
-    "2024-aug-10",
-    "2024-des-11",
-    "2025-des-12",
-    "2025-des-14",
-    "2025-des-16",
-  ]);
-  return stray.has(problem.id) && block.type === "artifact";
-}
-
-function shouldSkipBlock(problem, block) {
-  if (shouldSkipArtifact(problem, block)) return true;
-  if (block.type === "code") {
-    const misplacedCode = {
-      "2022-des-14": /Randomized-Select|Lurviks versjon/i,
-      "2023-aug-02": /Fung-Sort/i,
-      "2023-aug-07": /Fung-Sort/i,
-      "2023-des-07": /Untitled\(A,\s*p,\s*r,\s*k\)/i,
-      "2024-aug-18": /Unzip|Inversen av Zip/i,
-      "2024-des-17": /Extract-Min|Decrease-Key|for each vertex u/i,
-      "2024-des-19": /Extract-Min|Decrease-Key|for each vertex u/i,
-      "2025-aug-03": /Too-Tired-For-This/i,
-      "2025-aug-04": /Too-Tired-For-This/i,
-    };
-    if (misplacedCode[problem.id]?.test(`${block.title}\n${block.code}`)) return true;
-  }
-  if (problem.id === "2023-aug-07" && block.type === "code" && /Insertion-Sort\(A, n\)\s+1 Merge-Sort/.test(block.code)) return true;
-  if (problem.id === "2024-des-06" && block.type === "paragraph" && /^x\s+y\s+z\s+w$/.test(block.text)) return true;
-  if (problem.id === "2024-des-07" && block.type === "paragraph" && /^u\s+3\/\s*5\s+v$/.test(block.text)) return true;
-  if (problem.id === "2024-des-11" && block.type === "paragraph" && /^Husk at x = x1\/2/.test(block.text)) return true;
-  if (problem.id === "2023-aug-10" && block.type === "paragraph" && /^(Lurvik|Gløgsund):/.test(block.text)) return true;
-  return false;
-}
-
-function artifactKind(problem, block) {
-  const byProblem = {
-    "2022-des-09": "matrix-2022-w",
-    "2023-aug-12": "recurrence-2023-aug-12",
-    "2023-des-06": "flow-2023-des",
-    "2023-des-05": "disjoint-forest-2023",
-    "2024-aug-10": "adjacency-2024-aug",
-    "2024-aug-13": "relax-graph-2024-aug",
-    "2024-des-06": "dfs-chain-2024-des",
-    "2024-des-08": "huffman-2024-des",
-    "2024-des-12": "mst-cut-2024-des",
-    "2024-des-15": "apsp-2024-des",
-    "2024-des-16": "array-tree-2024-des",
-    "2024-des-20": "stable-matching-2024-des",
-    "2025-des-02": "runtime-choices-2025",
-    "2025-des-05": "lcs-formula-2025",
-    "2025-des-08": "residual-formula-2025",
-    "2025-des-16": "dag-2025-des",
-    "2025-des-17": "flow-2025-des",
-    "2025-des-20": "k33-2025-des",
-  };
-  return byProblem[problem.id] || null;
-}
-
-function leadingVisualKinds(problem) {
-  const byProblem = {
-    "2022-des-15": ["randomized-select-2022-des"],
-    "2022-des-16": ["randomized-select-2022-des"],
-    "2023-aug-01": ["fung-sort-2023-aug"],
-    "2023-aug-07": ["sort-comparison-2023-aug"],
-    "2023-des-05": ["disjoint-forest-2023"],
-    "2023-des-06": ["flow-2023-des"],
-    "2024-aug-10": ["adjacency-2024-aug"],
-    "2024-aug-19": ["unzip-2024-aug"],
-    "2024-des-06": ["dfs-chain-2024-des"],
-    "2024-des-07": ["residual-edge-2024-des"],
-    "2024-des-08": ["huffman-2024-des"],
-    "2024-des-11": ["sqrt-laws-2024-des"],
-    "2024-des-12": ["mst-cut-2024-des"],
-    "2024-des-17": ["bellman-queue-2024-des"],
-    "2025-aug-05": ["too-tired-2025-aug"],
-    "2025-des-16": ["dag-2025-des"],
-    "2025-des-17": ["flow-2025-des"],
-  };
-  return byProblem[problem.id] || [];
 }
 
 function normalizeMathText(text, problem) {
@@ -347,134 +159,6 @@ function InlineText({ text, problem }) {
   }
   if (lastIndex < normalized.length) parts.push(normalized.slice(lastIndex));
   return <>{parts}</>;
-}
-
-function joinParagraph(lines) {
-  return lines.reduce((text, raw) => {
-    const line = raw.trim();
-    if (!line) return text;
-    if (!text) return line;
-    if (text.endsWith("-")) return `${text.slice(0, -1)}${line}`;
-    return `${text} ${line}`;
-  }, "");
-}
-
-function parseExamBlocks(rawText) {
-  const lines = String(rawText || "")
-    .replace(/\r/g, "")
-    .split("\n")
-    .map((line, index) => cleanExamLine(line, index));
-  const blocks = [];
-  let paragraph = [];
-
-  const flushParagraph = () => {
-    const text = joinParagraph(paragraph);
-    if (text) blocks.push({ type: "paragraph", text });
-    paragraph = [];
-  };
-
-  for (let i = 0; i < lines.length;) {
-    const line = lines[i];
-    const trimmed = line.trim();
-
-    if (!trimmed) {
-      flushParagraph();
-      i += 1;
-      continue;
-    }
-
-    if (isAlgorithmHeader(line) || isCodeLine(line) || (isCallSignature(line) && isCodeLine(lines[i + 1] || ""))) {
-      flushParagraph();
-      let title = isAlgorithmHeader(line) ? trimmed : "Pseudokode";
-      const codeLines = [];
-      let lastCodeNumber = null;
-      let firstCodeNumber = null;
-      const addCodeLine = (sourceLine) => {
-        const number = codeLineNumber(sourceLine);
-        if (number && firstCodeNumber === null) firstCodeNumber = number;
-        if (number && lastCodeNumber && number > lastCodeNumber + 1) {
-          for (let missing = lastCodeNumber + 1; missing < number; missing += 1) codeLines.push("▮▮▮");
-        }
-        if (number) lastCodeNumber = number;
-        codeLines.push(codeContent(sourceLine));
-      };
-      if (!isAlgorithmHeader(line)) {
-        if (isCallSignature(line)) title = trimmed;
-        else addCodeLine(line);
-      }
-      i += 1;
-
-      while (i < lines.length) {
-        const current = lines[i];
-        const currentTrimmed = current.trim();
-        if (!currentTrimmed) {
-          if (codeLines.length > 0 && (isCodeLine(lines[i + 1] || "") || isCallSignature(lines[i + 1] || ""))) {
-            codeLines.push("");
-            i += 1;
-            continue;
-          }
-          break;
-        }
-        if (isFigureHeader(current)) break;
-        if (isCallSignature(current) && codeLines.length === 0) {
-          title = title === "Pseudokode" ? currentTrimmed : `${title} · ${currentTrimmed}`;
-          i += 1;
-          continue;
-        }
-        if (isCodeLine(current) || isCallSignature(current) || (codeLines.length > 0 && isCodeContinuation(current))) {
-          addCodeLine(current);
-          i += 1;
-          continue;
-        }
-        break;
-      }
-
-      const code = normalizeCodeBlock(codeLines);
-      if (code.trim() && !/^\.\s*\.\s*\./.test(code.trim())) blocks.push({ type: "code", title, code, startLine: firstCodeNumber || 1 });
-      continue;
-    }
-
-    if (/^\d+\.\s+/.test(trimmed)) {
-      flushParagraph();
-      const items = [];
-      while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
-        items.push(lines[i].trim().replace(/^\d+\.\s+/, ""));
-        i += 1;
-      }
-      blocks.push({ type: "list", items, ordered: true });
-      continue;
-    }
-
-    if (/^[•*-]\s+/.test(trimmed)) {
-      flushParagraph();
-      const items = [];
-      while (i < lines.length && /^[•*-]\s+/.test(lines[i].trim())) {
-        items.push(lines[i].trim().replace(/^[•*-]\s+/, ""));
-        i += 1;
-      }
-      blocks.push({ type: "list", items });
-      continue;
-    }
-
-    if (isFigureHeader(line) || isDenseArtifactLine(line)) {
-      flushParagraph();
-      const label = isFigureHeader(line) ? trimmed : "Figur/tabell";
-      const artifactLines = [line];
-      i += 1;
-      while (i < lines.length && !shouldStopArtifact(lines[i])) {
-        artifactLines.push(lines[i]);
-        i += 1;
-      }
-      blocks.push({ type: "artifact", label, lines: artifactLines });
-      continue;
-    }
-
-    paragraph.push(line);
-    i += 1;
-  }
-
-  flushParagraph();
-  return blocks;
 }
 
 function VisualFrame({ title, children, narrow = false }) {
@@ -1007,7 +691,7 @@ function EquationBlockVisual({ block, problem }) {
   const rawLines = (block.lines || [])
     .map((line) => line.replace(/\u0001/g, "").trimEnd())
     .filter((line) => line.trim() && !/^Figur\s+\d+$/i.test(line.trim()));
-  const title = rawLines.some((line) => /=|T\(|Θ|Ω|O\(/.test(line)) ? "Utregning" : (block.label || "Figur");
+  const title = block.title || (rawLines.some((line) => /=|T\(|Θ|Ω|O\(/.test(line)) ? "Utregning" : (block.label || "Figur"));
 
   return (
     <VisualFrame title={title}>
@@ -1022,27 +706,20 @@ function EquationBlockVisual({ block, problem }) {
   );
 }
 
-function FormattedExamText({ text, exam, pdf, page, problem, lang, className, showArtifactLinks = false, includeLeadingVisuals = true }) {
-  const blocks = useMemo(() => parseExamBlocks(text), [text]);
+function normalizeExamBlocks(content) {
+  if (Array.isArray(content)) return content;
+  return content ? [{ type: "text", text: String(content) }] : [];
+}
+
+function FormattedExamText({ text, problem, className }) {
+  const blocks = useMemo(() => normalizeExamBlocks(text), [text]);
   const CodeView = window.AlgViz.CodeView;
-  const leadingKinds = includeLeadingVisuals ? leadingVisualKinds(problem) : [];
 
   return (
     <div className={className}>
-      {leadingKinds.map((kind) => <ExamVisual key={`leading-${kind}`} kind={kind} />)}
       {blocks.map((block, index) => {
-        if (shouldSkipBlock(problem, block)) return null;
-        if (block.type === "paragraph") {
-          const paragraph = <p className="serif"><InlineText text={block.text} problem={problem} /></p>;
-          if (problem.id === "2023-aug-10" && /har følgende preferanser/.test(block.text)) {
-            return (
-              <React.Fragment key={index}>
-                {paragraph}
-                <ExamVisual kind="matching-preferences-2023-aug" />
-              </React.Fragment>
-            );
-          }
-          return <React.Fragment key={index}>{paragraph}</React.Fragment>;
+        if (block.type === "text" || block.type === "paragraph") {
+          return <p key={index} className="serif"><InlineText text={block.text} problem={problem} /></p>;
         }
         if (block.type === "list") {
           const Tag = block.ordered ? "ol" : "ul";
@@ -1057,8 +734,8 @@ function FormattedExamText({ text, exam, pdf, page, problem, lang, className, sh
             </div>
           );
         }
-        const kind = artifactKind(problem, block);
-        if (kind) return <ExamVisual key={index} kind={kind} />;
+        if (block.type === "visual") return <ExamVisual key={index} kind={block.kind} />;
+        if (block.type === "equation") return <EquationBlockVisual key={index} block={block} problem={problem} />;
         return <EquationBlockVisual key={index} block={block} problem={problem} />;
       })}
     </div>
@@ -1066,7 +743,7 @@ function FormattedExamText({ text, exam, pdf, page, problem, lang, className, sh
 }
 
 function prepFor(problem, course, algorithms) {
-  const haystack = `${problem.title}\n${problem.prompt}\n${problem.solution}`;
+  const haystack = problemText(problem);
   const lectureIds = [];
   const conceptIds = [];
   const algorithmIds = [];
@@ -1242,14 +919,14 @@ function PdfIconButton({ href, label }) {
   );
 }
 
-function ProblemCard({ exam, problem, category, course, algorithms, lang, open, onToggle }) {
+function ProblemCard({ exam, problem, category, course, algorithms, lang, open, done, onToggle, onDoneToggle }) {
   const prep = useMemo(
     () => prepFor(problem, course, algorithms),
     [problem, course, algorithms]
   );
 
   return (
-    <article className={open ? "fn-exam-card open" : "fn-exam-card"}>
+    <article className={`fn-exam-card${open ? " open" : ""}${done ? " done" : ""}`}>
       <header className="fn-exam-card-head">
         <div>
           <Eyebrow>{categoryLabel(category, lang)}</Eyebrow>
@@ -1263,21 +940,21 @@ function ProblemCard({ exam, problem, category, course, algorithms, lang, open, 
             href={linkTo(exam.problemPdf, problem.problemPage)}
             label={txt({ no: "Åpne oppgave-PDF", en: "Open problem PDF" }, lang)}
           />
-          <button className={open ? "fn-btn ghost" : "fn-btn primary"} onClick={onToggle} aria-expanded={open}>
-            {open
-              ? txt({ no: "Skjul løsning", en: "Hide solution" }, lang)
-              : txt({ no: "Vis løsning", en: "Show solution" }, lang)}
+          <button
+            className={done ? "fn-btn ghost" : "fn-btn primary"}
+            onClick={onDoneToggle}
+            aria-pressed={done}
+          >
+            {done
+              ? txt({ no: "Markert ferdig ✓", en: "Marked complete ✓" }, lang)
+              : txt({ no: "Marker oppgave ferdig", en: "Mark problem complete" }, lang)}
           </button>
         </div>
       </header>
 
       <FormattedExamText
         text={problem.prompt}
-        exam={exam}
-        pdf={exam.problemPdf}
-        page={problem.problemPage}
         problem={problem}
-        lang={lang}
         className="fn-exam-prompt"
       />
 
@@ -1289,25 +966,26 @@ function ProblemCard({ exam, problem, category, course, algorithms, lang, open, 
           </div>
           <FormattedExamText
             text={problem.solution
-              ? stripPromptFromSolution(problem.solution, problem.prompt)
+              ? problem.solution
               : txt({ no: "Se løsnings-PDF for denne oppgaven.", en: "See the solution PDF for this problem." }, lang)}
-            exam={exam}
-            pdf={exam.solutionPdf}
-            page={problem.solutionPage}
             problem={problem}
-            lang={lang}
             className="fn-exam-solution-text"
-            showArtifactLinks
-            includeLeadingVisuals={false}
           />
           <PrepLinks prep={prep} exam={exam} problem={problem} lang={lang} />
         </div>
       )}
+      <footer className="fn-exam-card-foot">
+        <button className={open ? "fn-btn ghost" : "fn-btn primary"} onClick={onToggle} aria-expanded={open}>
+          {open
+            ? txt({ no: "Skjul løsning", en: "Hide solution" }, lang)
+            : txt({ no: "Vis løsning", en: "Show solution" }, lang)}
+        </button>
+      </footer>
     </article>
   );
 }
 
-function ExamView({ course, algorithms, lang, selectedExamId }) {
+function ExamView({ course, algorithms, lang, selectedExamId, examDoneSet, onExamTaskComplete }) {
   const exams = window.AlgViz.EXAMS || [];
   const selectedId = exams.some((exam) => exam.id === selectedExamId) ? selectedExamId : "all";
   const selectedExam = exams.find((exam) => exam.id === selectedId);
@@ -1334,7 +1012,7 @@ function ExamView({ course, algorithms, lang, selectedExamId }) {
     const q = query.trim().toLowerCase();
     const filtered = scopedItems.filter(({ problem, category: itemCategory }) => {
       const matchCategory = category === "all" || itemCategory === category;
-      const matchQuery = !q || `${problem.number} ${problem.title} ${problem.prompt}`.toLowerCase().includes(q);
+      const matchQuery = !q || `${problem.number} ${problemText(problem)}`.toLowerCase().includes(q);
       return matchCategory && matchQuery;
     });
 
@@ -1427,7 +1105,9 @@ function ExamView({ course, algorithms, lang, selectedExamId }) {
                 algorithms={algorithms}
                 lang={lang}
                 open={openIds.includes(problem.id)}
+                done={examDoneSet?.has(problem.id)}
                 onToggle={() => toggle(problem.id)}
+                onDoneToggle={() => onExamTaskComplete?.(problem.id)}
               />
             ))}
             {visibleItems.length === 0 && (

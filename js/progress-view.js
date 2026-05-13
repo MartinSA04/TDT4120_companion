@@ -17,10 +17,15 @@ function Bar({ value, max, label }) {
   );
 }
 
-function ProgressView({ course, lang, progress, completedSet, masteredSet, onResetProgress }) {
+function ProgressView({ course, lang, progress, completedSet, masteredSet, examDoneSet, onResetProgress }) {
+  const exams = window.AlgViz.EXAMS || [];
   const totalGoals = useMemo(
     () => course.lectures.reduce((s, l) => s + l.learningGoals.length, 0),
     [course.lectures]
+  );
+  const totalExamTasks = useMemo(
+    () => exams.reduce((sum, exam) => sum + exam.tasks.length, 0),
+    [exams]
   );
   const totalLectures = course.lectures.length;
   const totalQuizzes = course.quizzes.length;
@@ -56,7 +61,42 @@ function ProgressView({ course, lang, progress, completedSet, masteredSet, onRes
             value={totalCorrect} max={Math.max(totalQuizzes, totalAttempts)}
             label={txt({ no: "Quizsvar riktig (totalt forsøk)", en: "Quiz answers correct (of attempts)" }, lang)}
           />
+          <Bar
+            value={examDoneSet?.size || 0} max={totalExamTasks}
+            label={txt({ no: "Eksamensoppgaver gjort", en: "Exam problems done" }, lang)}
+          />
         </div>
+      </Section>
+
+      <Section eyebrow={txt({ no: "§ — Eksamen", en: "§ — Exam" }, lang)}>
+        <table className="fn-table">
+          <thead>
+            <tr>
+              <th>{txt({ no: "Eksamen", en: "Exam" }, lang)}</th>
+              <th className="mono">{txt({ no: "Gjort", en: "Done" }, lang)}</th>
+              <th className="mono">%</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {exams.map((exam) => {
+              const done = exam.tasks.filter((problem) => examDoneSet?.has(problem.id)).length;
+              const pct = Math.round((done / Math.max(1, exam.tasks.length)) * 100);
+              return (
+                <tr key={exam.id}>
+                  <td className="serif">{exam.title}</td>
+                  <td className="mono">{done}/{exam.tasks.length}</td>
+                  <td className="mono">{pct}%</td>
+                  <td>
+                    <button className="fn-link" onClick={() => go("exam", exam.id)}>
+                      {txt({ no: "Åpne", en: "Open" }, lang)} →
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </Section>
 
       <Section eyebrow={txt({ no: "§ — Per forelesning", en: "§ — By lecture" }, lang)}>
