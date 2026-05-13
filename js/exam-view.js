@@ -196,27 +196,59 @@ function MatrixTable({ title, columns, rows, values }) {
   );
 }
 
+let examGraphSequence = 0;
+
 function ExamGraph({ title, nodes, edges, width = 520, height = 240, directed = true }) {
+  const markerId = useMemo(() => `exam-arrow-${examGraphSequence += 1}`, []);
   const byId = nodes.reduce((acc, node) => {
     acc[node.id] = node;
     return acc;
   }, {});
+
+  const isDirected = (edge) => directed && edge.directed !== false;
+
+  const trimmedEndpoints = (edge) => {
+    const from = byId[edge.from];
+    const to = byId[edge.to];
+    if (!from || !to) return null;
+
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const fromRadius = from.r || 16;
+    const toRadius = to.r || 16;
+    const startPad = Math.min(edge.startPad ?? fromRadius + 2, len / 3);
+    const endPad = Math.min(edge.endPad ?? toRadius + (isDirected(edge) ? 7 : 2), len / 3);
+
+    return {
+      from,
+      to,
+      start: { x: from.x + ux * startPad, y: from.y + uy * startPad },
+      end: { x: to.x - ux * endPad, y: to.y - uy * endPad },
+    };
+  };
 
   const edgePath = (edge) => {
     const from = byId[edge.from];
     const to = byId[edge.to];
     if (!from || !to) return "";
     if (edge.loop) {
-      const r = edge.loopRadius || 14;
-      return `M ${from.x - 2} ${from.y - from.r - 1 || from.y - 17} C ${from.x - r} ${from.y - 42}, ${from.x + r} ${from.y - 42}, ${from.x + 2} ${from.y - from.r - 1 || from.y - 17}`;
+      const nodeRadius = from.r || 16;
+      const r = edge.loopRadius || 18;
+      const y = from.y - nodeRadius - 4;
+      return `M ${from.x - 8} ${y} C ${from.x - r} ${from.y - 48}, ${from.x + r} ${from.y - 48}, ${from.x + 8} ${y}`;
     }
-    if (!edge.curve) return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
+    const trimmed = trimmedEndpoints(edge);
+    if (!trimmed) return "";
+    if (!edge.curve) return `M ${trimmed.start.x} ${trimmed.start.y} L ${trimmed.end.x} ${trimmed.end.y}`;
+    const dx = trimmed.end.x - trimmed.start.x;
+    const dy = trimmed.end.y - trimmed.start.y;
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const cx = (from.x + to.x) / 2 - (dy / len) * edge.curve;
-    const cy = (from.y + to.y) / 2 + (dx / len) * edge.curve;
-    return `M ${from.x} ${from.y} Q ${cx} ${cy} ${to.x} ${to.y}`;
+    const cx = (trimmed.start.x + trimmed.end.x) / 2 - (dy / len) * edge.curve;
+    const cy = (trimmed.start.y + trimmed.end.y) / 2 + (dx / len) * edge.curve;
+    return `M ${trimmed.start.x} ${trimmed.start.y} Q ${cx} ${cy} ${trimmed.end.x} ${trimmed.end.y}`;
   };
 
   const labelPoint = (edge) => {
@@ -231,7 +263,7 @@ function ExamGraph({ title, nodes, edges, width = 520, height = 240, directed = 
     <VisualFrame title={title}>
       <svg className="fn-graph-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={title}>
         <defs>
-          <marker id="exam-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+          <marker id={markerId} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
             <path d="M 0 0 L 8 4 L 0 8 z" />
           </marker>
         </defs>
@@ -242,7 +274,7 @@ function ExamGraph({ title, nodes, edges, width = 520, height = 240, directed = 
               <path
                 d={edgePath(edge)}
                 className={edge.dashed ? "dashed" : ""}
-                markerEnd={directed && edge.directed !== false ? "url(#exam-arrow)" : undefined}
+                markerEnd={isDirected(edge) ? `url(#${markerId})` : undefined}
               />
               {edge.label && <text x={point.x} y={point.y} className="edge-label">{edge.label}</text>}
             </g>
@@ -579,24 +611,35 @@ return true`} />;
   }
   if (kind === "mst-cut-2024-des") {
     const nodes = [
-      [85, 105], [135, 60], [135, 150], [230, 105],
-      [285, 60], [285, 150], [410, 70], [465, 120], [410, 170],
+      [115, 130], [175, 70], [175, 190],
+      [255, 130], [330, 70], [330, 190],
+      [450, 70], [450, 190], [520, 130],
     ];
-    const edges = [[0, 1], [0, 2], [1, 3], [2, 3], [3, 4], [3, 5], [4, 6], [5, 8], [6, 7], [7, 8], [5, 7]];
-    const strong = new Set(["2-3", "3-5", "6-7"]);
+    const edges = [
+      [0, 1], [0, 2], [1, 2], [1, 4],
+      [2, 3], [2, 5], [3, 4], [3, 5],
+      [4, 6], [4, 7], [5, 7], [6, 7], [6, 8], [7, 8],
+    ];
+    const aEdges = [[2, 5], [6, 8]];
+    const aNodes = new Set(aEdges.flat());
     return (
       <VisualFrame title="Snitt og foreløpig kantmengde A">
-        <svg className="fn-graph-svg" viewBox="0 0 560 230" role="img" aria-label="Snitt og foreløpig kantmengde A">
-          <path className="cut-line" d="M 30 115 C 95 80, 130 180, 200 120 S 315 35, 390 110 S 485 175, 535 105" />
-          <text x="35" y="35" className="edge-label">A = markerte kanter</text>
-          <text x="500" y="80" className="edge-label">S</text>
-          <text x="505" y="150" className="edge-label">V - S</text>
-          {edges.map(([a, b]) => {
-            const key = `${Math.min(a, b)}-${Math.max(a, b)}`;
-            return <line key={key} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} className={strong.has(key) ? "strong-line" : ""} />;
-          })}
+        <svg className="fn-graph-svg mst-cut-svg" viewBox="0 0 620 250" role="img" aria-label="Snitt og foreløpig kantmengde A">
+          <line x1="48" y1="36" x2="92" y2="36" className="mst-a-edge" />
+          <line x1="48" y1="36" x2="92" y2="36" />
+          <text x="124" y="41" className="edge-label">= A</text>
+          <path className="cut-line" d="M 55 130 C 110 123, 128 170, 170 166 S 220 108, 260 68 S 330 18, 377 58 S 425 126, 466 166 S 510 121, 575 130" />
+          <text x="572" y="83" className="edge-label">↑ S</text>
+          <text x="570" y="142" className="edge-label">↓ V - S</text>
+          {aEdges.map(([a, b]) => (
+            <line key={`a-${a}-${b}`} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} className="mst-a-edge" />
+          ))}
+          {edges.map(([a, b]) => (
+            <line key={`${a}-${b}`} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} />
+          ))}
           {nodes.map(([x, y], index) => (
             <g key={index} className="node">
+              {aNodes.has(index) && <circle cx={x} cy={y} r="22" className="mst-a-node" />}
               <circle cx={x} cy={y} r="15" />
             </g>
           ))}

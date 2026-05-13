@@ -732,10 +732,19 @@
   stroke-width: 1.4;
   stroke-dasharray: 8 6;
 }
+.fn-graph-svg .mst-a-edge {
+  stroke: rgba(24, 26, 27, 0.18);
+  stroke-width: 14;
+  stroke-linecap: round;
+}
 .fn-graph-svg .node circle {
   fill: var(--surface);
   stroke: var(--ink);
   stroke-width: 1.5;
+}
+.fn-graph-svg .node .mst-a-node {
+  fill: rgba(24, 26, 27, 0.14);
+  stroke: none;
 }
 .fn-graph-svg .node.highlight circle {
   fill: var(--surface-2);
