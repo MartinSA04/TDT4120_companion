@@ -1012,6 +1012,20 @@
   overflow: auto;
 }
 .fn-exam-solution-text p { color: var(--ink); }
+.fn-exam-learning-goals {
+  padding: 0 var(--s-5) var(--s-4);
+}
+.fn-exam-learning-goals ul {
+  margin: var(--s-2) 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: var(--s-1);
+}
+.fn-exam-learning-goals li {
+  font-family: var(--font-serif);
+  color: var(--ink);
+  line-height: 1.45;
+}
 .fn-inline-math {
   font-family: var(--font-serif);
   white-space: nowrap;
@@ -1239,6 +1253,7 @@
   .fn-exam-card-foot .fn-btn { width: 100%; justify-content: center; }
   .fn-exam-prompt,
   .fn-exam-solution-text,
+  .fn-exam-learning-goals,
   .fn-exam-prep,
   .fn-exam-solution-head { padding-left: var(--s-4); padding-right: var(--s-4); }
   .fn-visual-split { grid-template-columns: 1fr; }

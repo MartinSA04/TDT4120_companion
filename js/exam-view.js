@@ -754,6 +754,130 @@ function normalizeExamBlocks(content) {
   return content ? [{ type: "text", text: String(content) }] : [];
 }
 
+const learningGoalPattern = /\bRelevante?\s+læringsmål:\s*/i;
+
+function goalTextIsComplete(text) {
+  const trimmed = String(text || "").trim();
+  return Boolean(trimmed) && /[.!?)]$/.test(trimmed) && !/[-‐‑‒–—]$/.test(trimmed);
+}
+
+function likelyLearningGoalContinuation(text, previous) {
+  const trimmed = String(text || "").trim();
+  if (!trimmed) return true;
+  if (/[-‐‑‒–—]$/.test(String(previous || "").trim())) return true;
+  return /^[a-zæøå]/.test(trimmed);
+}
+
+function appendLearningGoal(goals, text) {
+  const next = String(text || "").trim();
+  if (!next) return;
+  const last = goals[goals.length - 1] || "";
+  if (last && /[-‐‑‒–—]$/.test(last.trim())) {
+    goals[goals.length - 1] = last.trim().replace(/[-‐‑‒–—]$/, "") + next;
+  } else if (last) {
+    goals[goals.length - 1] = `${last.trim()} ${next}`;
+  } else {
+    goals.push(next);
+  }
+}
+
+function startLearningGoal(goals, text) {
+  const next = String(text || "").trim();
+  if (next) goals.push(next);
+}
+
+function cleanLearningGoal(text) {
+  return String(text || "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .trim();
+}
+
+function splitLearningGoalItems(goals) {
+  return goals
+    .map(cleanLearningGoal)
+    .filter(Boolean)
+    .flatMap((goal) => goal.replace(/\.$/, "").split(/\s*;\s*/))
+    .map((goal) => goal.trim())
+    .filter(Boolean);
+}
+
+function splitSolutionLearningGoals(content) {
+  const blocks = normalizeExamBlocks(content);
+  const solution = [];
+  const learningGoals = [];
+  let needsContinuation = false;
+
+  blocks.forEach((block) => {
+    if ((block.type === "text" || block.type === "paragraph") && needsContinuation) {
+      if (likelyLearningGoalContinuation(block.text, learningGoals[learningGoals.length - 1])) {
+        appendLearningGoal(learningGoals, block.text);
+        needsContinuation = !goalTextIsComplete(learningGoals[learningGoals.length - 1]);
+        return;
+      }
+      needsContinuation = false;
+    }
+
+    if (block.type === "text" || block.type === "paragraph") {
+      const text = String(block.text || "");
+      const match = learningGoalPattern.exec(text);
+      if (!match) {
+        solution.push(block);
+        return;
+      }
+
+      const before = text.slice(0, match.index).trim();
+      const goal = text.slice(match.index + match[0].length).trim();
+      if (before) solution.push({ ...block, text: before });
+      startLearningGoal(learningGoals, goal);
+      needsContinuation = !goalTextIsComplete(goal);
+      return;
+    }
+
+    if (block.type === "equation") {
+      const lines = block.lines || [];
+      const labelIndex = lines.findIndex((line) => learningGoalPattern.test(line));
+      if (labelIndex === -1) {
+        solution.push(block);
+        return;
+      }
+
+      const labelLine = lines[labelIndex];
+      const match = learningGoalPattern.exec(labelLine);
+      const beforeLabel = labelLine.slice(0, match.index).trimEnd();
+      const beforeLines = lines.slice(0, labelIndex);
+      if (beforeLabel) beforeLines.push(beforeLabel);
+      if (beforeLines.length) solution.push({ ...block, lines: beforeLines });
+
+      const goal = [labelLine.slice(match.index + match[0].length), ...lines.slice(labelIndex + 1)].join(" ").trim();
+      startLearningGoal(learningGoals, goal);
+      needsContinuation = !goalTextIsComplete(goal);
+      return;
+    }
+
+    solution.push(block);
+  });
+
+  return {
+    solution,
+    learningGoals: splitLearningGoalItems(learningGoals),
+  };
+}
+
+function LearningGoalsSection({ goals, problem }) {
+  if (!goals.length) return null;
+  return (
+    <section className="fn-exam-learning-goals">
+      <Eyebrow>Relevante læringsmål</Eyebrow>
+      <ul>
+        {goals.map((goal, index) => (
+          <li key={`${goal}-${index}`}><InlineText text={goal} problem={problem} /></li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function FormattedExamText({ text, problem, className }) {
   const blocks = useMemo(() => normalizeExamBlocks(text), [text]);
   const CodeView = window.AlgViz.CodeView;
@@ -967,6 +1091,12 @@ function ProblemCard({ exam, problem, category, course, algorithms, lang, open, 
     () => prepFor(problem, course, algorithms),
     [problem, course, algorithms]
   );
+  const solutionParts = useMemo(
+    () => splitSolutionLearningGoals(problem.solution),
+    [problem.solution]
+  );
+  const fallbackSolution = txt({ no: "Se løsnings-PDF for denne oppgaven.", en: "See the solution PDF for this problem." }, lang);
+  const solutionText = problem.solution ? solutionParts.solution : fallbackSolution;
 
   return (
     <article className={`fn-exam-card${open ? " open" : ""}${done ? " done" : ""}`}>
@@ -1007,13 +1137,14 @@ function ProblemCard({ exam, problem, category, course, algorithms, lang, open, 
             <Eyebrow>{txt({ no: "Løsningsforslag", en: "Solution" }, lang)}</Eyebrow>
             <MonoMeta>{exam.term} · p. {problem.solutionPage}</MonoMeta>
           </div>
-          <FormattedExamText
-            text={problem.solution
-              ? problem.solution
-              : txt({ no: "Se løsnings-PDF for denne oppgaven.", en: "See the solution PDF for this problem." }, lang)}
-            problem={problem}
-            className="fn-exam-solution-text"
-          />
+          {(solutionParts.solution.length > 0 || !problem.solution) && (
+            <FormattedExamText
+              text={solutionText}
+              problem={problem}
+              className="fn-exam-solution-text"
+            />
+          )}
+          <LearningGoalsSection goals={solutionParts.learningGoals} problem={problem} />
           <PrepLinks prep={prep} exam={exam} problem={problem} lang={lang} />
         </div>
       )}
