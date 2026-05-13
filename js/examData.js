@@ -1967,6 +1967,10 @@ const exams = [
         "solutionPage": 5,
         "prompt": [
           {
+            "type": "text",
+            "text": "Løs rekurrensen T(n) = 2T(n/4) + √(n lg n). Oppgi svaret i Θ-notasjon."
+          },
+          {
             "type": "visual",
             "kind": "sqrt-laws-2024-des"
           }
@@ -1974,11 +1978,11 @@ const exams = [
         "solution": [
           {
             "type": "text",
-            "text": "q Θ       n lg^3 n \u0001"
+            "text": "Θ(√(n lg^3 n))"
           },
           {
             "type": "text",
-            "text": "Dette kan skrives på flere måter, som f.eks. Θ(n^(1/2) · lg 3/2 n). Følger av tilfelle 2 av masterteoremet, der a = 2, b = 4 og k = 1/2. Relevant læringsmål: Kunne løse rekurrenser med masterteoremet."
+            "text": "Dette kan skrives på flere måter, som f.eks. Θ(√n · √(lg^3 n)). Følger av tilfelle 2 av masterteoremet, der a = 2, b = 4 og k = 1/2. Relevant læringsmål: Kunne løse rekurrenser med masterteoremet."
           }
         ]
       },
