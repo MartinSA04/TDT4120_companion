@@ -1120,7 +1120,7 @@ function ProblemCard({ exam, problem, category, course, algorithms, lang, open, 
           >
             {done
               ? txt({ no: "Markert ferdig ✓", en: "Marked complete ✓" }, lang)
-              : txt({ no: "Marker oppgave ferdig", en: "Mark problem complete" }, lang)}
+              : txt({ no: "Marker ferdig", en: "Mark done" }, lang)}
           </button>
         </div>
       </header>
@@ -1149,7 +1149,7 @@ function ProblemCard({ exam, problem, category, course, algorithms, lang, open, 
         </div>
       )}
       <footer className="fn-exam-card-foot">
-        <button className={open ? "fn-btn ghost" : "fn-btn primary"} onClick={onToggle} aria-expanded={open}>
+        <button className={open ? "fn-btn ghost" : "fn-btn ghost"} onClick={onToggle} aria-expanded={open}>
           {open
             ? txt({ no: "Skjul løsning", en: "Hide solution" }, lang)
             : txt({ no: "Vis løsning", en: "Show solution" }, lang)}
