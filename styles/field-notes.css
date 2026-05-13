@@ -120,6 +120,31 @@
 .fn-btn.ghost:hover { background: var(--bg-tint); }
 .fn-btn.ghost.danger { color: var(--accent); border-color: var(--accent); }
 .fn-btn.ghost.danger:hover { background: var(--accent); color: var(--surface-2); }
+.fn-icon-btn {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ink);
+  background: var(--surface);
+  color: var(--ink);
+  transition: background 120ms, color 120ms;
+}
+.fn-icon-btn:hover {
+  background: var(--bg-tint);
+}
+.fn-icon-btn svg {
+  width: 17px;
+  height: 17px;
+}
+.fn-icon-btn path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .fn-link {
   background: transparent; border: 0;
   font-family: var(--font-mono); font-size: var(--t-caption);
@@ -594,6 +619,12 @@
 .fn-exam-card-head .fn-mono-meta {
   display: block;
   margin-top: var(--s-1);
+}
+.fn-exam-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-2);
 }
 .fn-exam-prompt {
   padding: var(--s-4) var(--s-5);

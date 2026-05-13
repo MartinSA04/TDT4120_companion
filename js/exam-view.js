@@ -1169,9 +1169,6 @@ function PrepLinks({ prep, exam, problem, lang }) {
   return (
     <div className="fn-exam-prep">
       <div className="fn-exam-link-row">
-        <a className="fn-btn ghost" href={linkTo(exam.problemPdf, problem.problemPage)} target="_blank" rel="noreferrer">
-          {txt({ no: "Åpne oppgave-PDF", en: "Open problem PDF" }, lang)}
-        </a>
         <a className="fn-btn ghost" href={linkTo(exam.solutionPdf, problem.solutionPage)} target="_blank" rel="noreferrer">
           {txt({ no: "Åpne løsnings-PDF", en: "Open solution PDF" }, lang)}
         </a>
@@ -1232,6 +1229,19 @@ function PrepLinks({ prep, exam, problem, lang }) {
   );
 }
 
+function PdfIconButton({ href, label }) {
+  return (
+    <a className="fn-icon-btn" href={href} target="_blank" rel="noreferrer" aria-label={label} title={label}>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M6 3h8l4 4v14H6z" />
+        <path d="M14 3v5h5" />
+        <path d="M8.8 15h6.4" />
+        <path d="M8.8 18h4.6" />
+      </svg>
+    </a>
+  );
+}
+
 function ProblemCard({ exam, problem, category, course, algorithms, lang, open, onToggle }) {
   const prep = useMemo(
     () => prepFor(problem, course, algorithms),
@@ -1248,11 +1258,17 @@ function ProblemCard({ exam, problem, category, course, algorithms, lang, open, 
           </h3>
           <MonoMeta>{exam.term}</MonoMeta>
         </div>
-        <button className={open ? "fn-btn ghost" : "fn-btn primary"} onClick={onToggle} aria-expanded={open}>
-          {open
-            ? txt({ no: "Skjul løsning", en: "Hide solution" }, lang)
-            : txt({ no: "Vis løsning", en: "Show solution" }, lang)}
-        </button>
+        <div className="fn-exam-card-actions">
+          <PdfIconButton
+            href={linkTo(exam.problemPdf, problem.problemPage)}
+            label={txt({ no: "Åpne oppgave-PDF", en: "Open problem PDF" }, lang)}
+          />
+          <button className={open ? "fn-btn ghost" : "fn-btn primary"} onClick={onToggle} aria-expanded={open}>
+            {open
+              ? txt({ no: "Skjul løsning", en: "Hide solution" }, lang)
+              : txt({ no: "Vis løsning", en: "Show solution" }, lang)}
+          </button>
+        </div>
       </header>
 
       <FormattedExamText
