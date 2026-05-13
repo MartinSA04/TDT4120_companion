@@ -17,6 +17,7 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
   const initialIdx = Math.max(0, algorithms.findIndex((a) => a.id === requestedAlgoId));
   const [algoIdx, setAlgoIdx] = useState(initialIdx >= 0 ? initialIdx : 0);
   const algo = algorithms[algoIdx];
+  const isCustomExplainer = algo.customPage === "asymptotic-notation";
   const [seed, setSeed] = useState(0);
   const [size, setSize] = useState(() => algo.sizeRange?.default ?? 0);
 
@@ -56,15 +57,16 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
   useEffect(() => { setIdx(0); setPlaying(false); }, [algoIdx, seed, size]);
 
   useEffect(() => {
-    if (!playing || frames.length === 0) return;
+    if (isCustomExplainer || !playing || frames.length === 0) return;
     const ms = 80 + (1 - speed / 100) * 900;
     timerRef.current = setInterval(() => {
       setIdx((p) => (p >= frames.length - 1 ? (setPlaying(false), p) : p + 1));
     }, ms);
     return () => clearInterval(timerRef.current);
-  }, [playing, speed, frames.length]);
+  }, [isCustomExplainer, playing, speed, frames.length]);
 
   useEffect(() => {
+    if (isCustomExplainer) return;
     const handler = (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       if (e.key === "ArrowLeft") { setPlaying(false); setIdx((i) => Math.max(0, i - 1)); }
@@ -75,7 +77,23 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [frames.length]);
+  }, [isCustomExplainer, frames.length]);
+
+  if (isCustomExplainer && A.AsymptoticNotationExplainer) {
+    return (
+      <div className="fn-vis-shell custom-explainer">
+        {A.CatalogueBar && (
+          <A.CatalogueBar
+            algorithms={algorithms}
+            activeIdx={algoIdx}
+            onSelect={setAlgoIdx}
+            showControls={false}
+          />
+        )}
+        <A.AsymptoticNotationExplainer algo={algo} lang={lang} />
+      </div>
+    );
+  }
 
   if (frames.length === 0) {
     return (
@@ -146,7 +164,7 @@ function VisualizerWorkbench({ algorithms, lang, theme, onTheme, requestedAlgoId
 
         <aside className="fn-vis-side">
           {A.DescriptionBlock && <A.DescriptionBlock algo={algo} lang={lang} />}
-          {A.Variables && <A.Variables vars={frame.vars} />}
+          {A.Variables && <A.Variables vars={frame.vars || frame.variables} />}
           {A.Marginalia && <A.Marginalia frame={frame} />}
           {A.Legend && <A.Legend viewKind={visualKind} />}
           {A.StepLog && (

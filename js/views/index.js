@@ -7,7 +7,7 @@
 (function () {
 const {
   Bars, SearchView, BfsView, DfsView, MstView, DijkstraView, FlowView, TreeView,
-  TableView, BucketsView, TimelineView, ReductionView, GraphView,
+  TableView, BucketsView, TimelineView, ReductionView, GraphView, AsymptoticGraphView,
 } = window.AlgViz;
 
 function StructuredVisualization({ frame, viewKind, height }) {
@@ -33,6 +33,7 @@ function Visualization({ frame, viewKind, maxValue, height }) {
   if (kind === "dijkstra") return <DijkstraView frame={frame} height={height} />;
   if (kind === "max-flow") return <FlowView frame={frame} height={height} />;
   if (kind === "tree-view") return <TreeView frame={frame} height={height} />;
+  if (kind === "asymptotic-graph") return <AsymptoticGraphView frame={frame} height={height} />;
   if (["tree", "graph", "flow", "table", "buckets", "timeline", "reduction"].includes(kind)) {
     return <StructuredVisualization frame={frame} viewKind={kind} height={height} />;
   }

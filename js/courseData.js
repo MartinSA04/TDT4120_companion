@@ -8,7 +8,7 @@ const glossary = [
     term: t("Asymptotisk notasjon", "Asymptotic notation"),
     english: "O, Ω, Θ, o, ω",
     lectureIds: ["l01", "l04"],
-    algorithmIds: ["insertion-sort", "quick-sort", "binary-search"],
+    algorithmIds: ["asymptotic-notation", "insertion-sort", "quick-sort", "binary-search"],
     explanation: t(
       "Et presist språk for øvre og nedre grenser på vekst. Notasjonen beskriver funksjoner, ikke bare bestemte tilfeller som worst-case.",
       "A precise language for upper and lower growth bounds. The notation describes functions, not only specific cases such as worst-case."
@@ -326,7 +326,7 @@ const lectures = [
       "Do not let O automatically mean worst-case. O is an upper bound; it can describe best-case too."
     ),
     conceptIds: ["asymptotic-notation", "ram-model", "problem-instance"],
-    algorithmIds: ["insertion-sort"],
+    algorithmIds: ["asymptotic-notation", "insertion-sort"],
     quizIds: ["q01"],
   },
   {
@@ -402,7 +402,7 @@ const lectures = [
       "For a lower bound to transfer, the reduction must go the right way and be fast enough itself."
     ),
     conceptIds: ["comparison-lower-bound", "stable-sort", "asymptotic-notation"],
-    algorithmIds: ["selection-sort", "quick-sort"],
+    algorithmIds: ["asymptotic-notation", "selection-sort", "quick-sort"],
     quizIds: ["q04"],
   },
   {

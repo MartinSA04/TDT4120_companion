@@ -8,6 +8,7 @@
 const a = window.AlgViz.A.algos;
 window.AlgViz = window.AlgViz || {};
 window.AlgViz.ALGORITHMS = [
+  a.asymptoticNotation,
   a.bubble, a.insertion, a.selection, a.quick, a.binary,
   a.mergeSort, a.recursionTree, a.liveCountingRadix, a.heapPQ, a.bst,
   a.liveDPTable, a.liveActivitySelection, a.bfs, a.dfs, a.mst, a.shortestPaths,

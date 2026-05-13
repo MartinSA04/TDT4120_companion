@@ -406,6 +406,13 @@ const LEGEND_FOR = {
     ["compare", "assumption"],
     ["found", "result"],
   ],
+  "asymptotic-graph": [
+    ["default", "reference"],
+    ["pivot", "active bound"],
+    ["compare", "shape"],
+    ["sorted", "upper bound"],
+    ["found", "resolved"],
+  ],
 };
 
 function Legend({ viewKind }) {
@@ -640,7 +647,7 @@ function Masthead({ algo, n, idx, total, line, doing }) {
 // =============================================================
 // Catalogue bar — algorithm tabs + size slider + shuffle
 // =============================================================
-function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, sizeRange, onShuffle }) {
+function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, sizeRange, onShuffle, showControls = true }) {
   return (
     <div
       className="catalogue-bar"
@@ -715,8 +722,9 @@ function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, sizeRange
         })}
       </div>
 
+      {showControls && (
       <div className="cat-controls" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {sizeRange && (
+        {sizeRange && onSize && (
           <>
             <span className="eyebrow">Size n =</span>
             <input
@@ -741,23 +749,26 @@ function CatalogueBar({ algorithms, activeIdx, onSelect, size, onSize, sizeRange
             </span>
           </>
         )}
-        <button
-          onClick={onShuffle}
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            fontWeight: 600,
-            padding: "5px 12px",
-            background: "var(--surface-2)",
-            color: "var(--ink)",
-            border: "1px solid var(--ink)",
-            cursor: "pointer",
-            boxShadow: "1px 1px 0 var(--rule-soft)",
-          }}
-        >
-          ↻ shuffle
-        </button>
+        {onShuffle && (
+          <button
+            onClick={onShuffle}
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              fontWeight: 600,
+              padding: "5px 12px",
+              background: "var(--surface-2)",
+              color: "var(--ink)",
+              border: "1px solid var(--ink)",
+              cursor: "pointer",
+              boxShadow: "1px 1px 0 var(--rule-soft)",
+            }}
+          >
+            ↻ shuffle
+          </button>
+        )}
       </div>
+      )}
     </div>
   );
 }

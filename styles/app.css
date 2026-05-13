@@ -1190,6 +1190,199 @@ button, input { border-radius: 0; }
   border-top-color: var(--role-swap);
 }
 
+.asymptotic-view {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.asymptotic-explainer {
+  display: grid;
+  gap: 28px;
+  padding: 34px;
+}
+
+.asymptotic-explainer-head {
+  display: grid;
+  gap: 10px;
+  max-width: 900px;
+}
+
+.asymptotic-explainer-head h1 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.asymptotic-explainer-head p {
+  margin: 0;
+  color: var(--ink-2);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.asymptotic-principles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.asymptotic-principles div {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  min-height: 112px;
+  padding: 14px;
+  border: 1px solid var(--rule-soft);
+  background: var(--bg-tint);
+}
+
+.asymptotic-principles strong {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.asymptotic-principles span {
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.asymptotic-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.asymptotic-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--rule-soft);
+  background: var(--surface);
+}
+
+.asymptotic-panel p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.asymptotic-head {
+  display: grid;
+  gap: 3px;
+  padding: 0 2px;
+}
+
+.asymptotic-head strong {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.asymptotic-head span {
+  color: var(--ink-3);
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.asymptotic-svg {
+  width: 100%;
+  height: 245px;
+  min-height: 0;
+  overflow: visible;
+}
+
+.asymptotic-axis {
+  stroke: var(--ink);
+  stroke-width: 0.45;
+}
+
+.asymptotic-grid {
+  stroke: var(--rule-soft);
+  stroke-width: 0.28;
+  opacity: 0.72;
+}
+
+.asymptotic-grid.faint {
+  opacity: 0.36;
+}
+
+.asymptotic-n0 {
+  stroke: var(--accent);
+  stroke-width: 0.5;
+  stroke-dasharray: 1.6 1.2;
+}
+
+.asymptotic-threshold {
+  stroke-width: 0.55;
+  stroke-dasharray: 2 1.5;
+  opacity: 0.9;
+}
+
+.asymptotic-tick,
+.asymptotic-note,
+.asymptotic-axis-label {
+  font-family: var(--font-mono);
+  fill: var(--ink-3);
+  pointer-events: none;
+}
+
+.asymptotic-tick {
+  font-size: 2.6px;
+}
+
+.asymptotic-note {
+  font-size: 2.75px;
+  fill: var(--accent);
+}
+
+.asymptotic-axis-label {
+  font-size: 2.9px;
+  font-weight: 700;
+  fill: var(--ink-2);
+}
+
+.asymptotic-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  border-top: 1px solid var(--rule-faint);
+  padding-top: 10px;
+}
+
+.asymptotic-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--bg-tint);
+  border: 1px solid var(--rule-faint);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.asymptotic-legend i {
+  width: 15px;
+  height: 3px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
 @media (max-width: 1180px) {
   .companion-header {
     grid-template-columns: 1fr;
@@ -1244,6 +1437,11 @@ button, input { border-radius: 0; }
     border-right: 0;
     border-top: 1px solid var(--rule-soft);
   }
+
+  .asymptotic-panel-grid,
+  .asymptotic-principles {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 680px) {
@@ -1289,6 +1487,27 @@ button, input { border-radius: 0; }
 
   .shortcut-hint {
     white-space: normal;
+  }
+
+  .asymptotic-explainer {
+    gap: 20px;
+    padding: 18px;
+  }
+
+  .asymptotic-explainer-head h1 {
+    font-size: 32px;
+  }
+
+  .asymptotic-explainer-head p {
+    font-size: 15px;
+  }
+
+  .asymptotic-panel {
+    padding: 12px;
+  }
+
+  .asymptotic-svg {
+    height: 220px;
   }
 }
 

@@ -55,7 +55,8 @@ function GlossaryView({ course, algorithms, lang }) {
 
         <ul className="fn-glossary-list">
           {filtered.map((c) => {
-            const linkedAlgos = (c.toolIds || [])
+            const linkedIds = [...new Set([...(c.toolIds || []), ...(c.algorithmIds || [])])];
+            const linkedAlgos = linkedIds
               .map((id) => algoIndex[id]).filter(Boolean);
             return (
               <li key={c.id} className="fn-glossary-row">

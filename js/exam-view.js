@@ -3,7 +3,7 @@ const { useMemo, useState } = React;
 const { txt, go, Section, Eyebrow, MonoMeta } = window.AlgViz;
 
 const topicRules = [
-  { rx: /asymptotisk|asymptotic|best-case|worst-case|average-case|gjennomsnitt|kjøretid|running time|o-notasjon|Ω|Ω|Θ|omega|theta/i, conceptIds: ["asymptotic-notation"], lectureIds: ["l01"] },
+  { rx: /asymptotisk|asymptotic|best-case|worst-case|average-case|gjennomsnitt|kjøretid|running time|o-notasjon|Ω|Ω|Θ|omega|theta/i, conceptIds: ["asymptotic-notation"], algorithmIds: ["asymptotic-notation"], lectureIds: ["l01"] },
   { rx: /ram-modell|ram model|logaritmisk minne|inputstørrelse|problemstørrelse/i, conceptIds: ["ram-model", "problem-instance"], lectureIds: ["l01"] },
   { rx: /insertion-sort|insertion sort|insertionsort/i, algorithmIds: ["insertion-sort"], lectureIds: ["l01"], conceptIds: ["loop-invariant"] },
   { rx: /merge-sort|merge sort|flettesort/i, algorithmIds: ["merge-sort"], lectureIds: ["l03"], conceptIds: ["divide-and-conquer", "recurrence"] },
