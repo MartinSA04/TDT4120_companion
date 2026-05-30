@@ -1,0 +1,187 @@
+---
+order: 6
+title: Dynamisk programmering
+summary: Når delinstanser overlapper sparer vi arbeid ved å løse hver delinstans én gang og lagre svaret — memoisert top-down eller iterativt bottom-up — og rekonstruerer løsningen fra lagrede valg.
+importance: core
+estMinutes: 50
+tags: [Designmetoder, DP, Optimering]
+part: "Del 4: Designmetoder"
+updated: 2026-05-30
+---
+
+<Term name="Dynamisk programmering">Dynamisk programmering</Term> (DP) er en
+designmetode for optimeringsproblemer der den rekursive løsningen løser de *samme*
+delinstansene om og om igjen. I stedet for å regne dem ut på nytt løser vi hver
+delinstans én gang og slår opp svaret senere. Naiv rekursjon kan være eksponentiell;
+DP gjør den polynomisk ved å bytte gjentatt regning mot litt minne.
+
+<LearningGoals>
+- **Forstå ideen om en delinstansgraf.**
+- **Forklar designmetoden dynamisk programmering.**
+- **Forklar memoisering som top-down-løsning.**
+- Forklar iterativ bottom-up-løsning.
+- Rekonstruer en løsning fra lagrede valg.
+- Forklar optimal delstruktur.
+- Forklar overlappende delinstanser.
+- Forklar stavkapping og LCS.
+- Forklar det binære ryggsekkproblemet fra appendiks E.
+</LearningGoals>
+
+## To forutsetninger: delstruktur og overlapp
+
+DP er riktig verktøy nøyaktig når problemet har to egenskaper samtidig.
+
+<Statement kind="principle" name="Optimal delstruktur">
+En optimal løsning på problemet inneholder optimale løsninger på sine delinstanser.
+Det lar oss bygge svaret rekursivt: gjør ett valg, og kombiner det med en optimal
+løsning på det som står igjen.
+</Statement>
+
+<Statement kind="principle" name="Overlappende delinstanser">
+Den rekursive nedbrytningen treffer de **samme** delinstansene flere ganger. Antall
+*distinkte* delinstanser er lite (polynomisk), selv om rekursjonstreet er
+eksponentielt stort.
+</Statement>
+
+Det er nyttig å se dette som en **delinstansgraf**: én node per distinkt
+delinstans, med en kant fra en delinstans til hver delinstans den avhenger av.
+Overlapp betyr at flere veier ender i samme node. Optimal delstruktur betyr at en
+nodes verdi kan regnes ut fra verdiene til etterfølgerne. Kjøretiden til DP-en er
+da ganske enkelt: *antall noder* $\times$ *arbeidet per node*.
+
+<Callout type="warning">
+Optimal delstruktur er **ikke gratis** — den må sjekkes for hvert problem. For
+korteste *enkle* vei mellom to noder gjelder den ikke: å lime sammen to optimale
+delveier kan gi en vei som gjentar noder, så den er ikke lenger en gyldig enkel
+vei. Da bryter DP-argumentet sammen. Verifiser alltid delstrukturen før du stoler
+på den.
+</Callout>
+
+## Memoisering vs. iterasjon
+
+Det finnes to måter å fylle inn delinstansgrafen på — de regner ut nøyaktig de
+samme verdiene, men i motsatt rekkefølge.
+
+<Compare>
+<CompareCol title="Top-down (memoisert)">
+Skriv den naturlige rekursjonen, men lagre hvert svar i en tabell første gang det
+regnes ut, og returner det lagrede svaret ved senere kall. Bekvemt, og regner bare
+ut de delinstansene som faktisk trengs. Bærer rekursjonens stakk-kostnad.
+</CompareCol>
+<CompareCol title="Bottom-up (iterativ)">
+Sorter delinstansene topologisk etter avhengighet og fyll tabellen med løkker fra
+de minste opp. Ingen rekursjon, ofte lavere konstantfaktor, og lett å resonnere om
+plassbruken — men du må selv finne en gyldig utfyllingsrekkefølge.
+</CompareCol>
+</Compare>
+
+Begge gir samme asymptotiske kjøretid. Verdien vi lagrer er som regel bare den
+*optimale tallverdien*; for å få selve løsningen lagrer vi i tillegg **hvilket
+valg** som var optimalt i hver celle, og **rekonstruerer** ved å følge valgene
+bakover fra det ferdige svaret.
+
+## Oppskrift: slik setter du opp en DP
+
+<Steps>
+<Step title="Karakteriser strukturen">
+Vis at en optimal løsning er bygd av optimale delløsninger — finn det første valget
+som splitter problemet i mindre, uavhengige delinstanser.
+</Step>
+<Step title="Definer verdien rekursivt">
+Skriv $\text{OPT}(\text{delinstans})$ som et maksimum/minimum over de mulige første
+valgene, uttrykt ved $\text{OPT}$ av mindre delinstanser. Husk grunntilfellene.
+</Step>
+<Step title="Regn ut nedenfra (eller memoiser)">
+Fyll en tabell over alle distinkte delinstanser i en rekkefølge som respekterer
+avhengighetene — bottom-up med løkker, eller top-down med memoisering.
+</Step>
+<Step title="Rekonstruer løsningen">
+Lagre hvilket valg som ga optimum i hver celle, og følg valgene bakover fra svaret
+for å sette sammen den faktiske løsningen.
+</Step>
+</Steps>
+
+## Stavkapping
+
+I **stavkapping** har vi en stav av lengde $n$ og en prisliste $p[1..n]$, og skal
+kappe den i biter som maksimerer total pris. Det første valget er lengden $i$ på
+den *første* biten; resten er en stav av lengde $n-i$, som vi løser optimalt på
+samme måte. Det gir rekurrensen
+
+$$r(n) = \max_{1 \le i \le n}\big(\, p[i] + r(n-i) \,\big), \qquad r(0) = 0.$$
+
+Det er bare $n+1$ distinkte delinstanser $r(0), \dots, r(n)$, og hver tar $O(n)$
+arbeid, så bottom-up-DP-en er $\Theta(n^2)$ — mot eksponentiell naiv rekursjon. Med
+prislisten $p = [1, 5, 8, 9]$ fyller vi tabellen nedenfra:
+
+<Table
+  columns={["$n$", "$r(n)$", "Optimalt første kutt"]}
+  rows={[
+    ["$0$", "$0$", "—"],
+    ["$1$", "$1$", "$1$"],
+    ["$2$", "$5$", "$2$"],
+    ["$3$", "$8$", "$3$"],
+    ["$4$", "$10$", "$2 + 2$"],
+  ]}
+  align={["center", "center", "left"]}
+  caption="Stavkapping med $p = [1,5,8,9]$. $r(4) = 10$ via to biter à lengde 2 ($5+5$), bedre enn én bit til 9. Den siste kolonnen er valget vi lagrer for å rekonstruere kuttene."
+/>
+
+## Lengste felles delsekvens (LCS)
+
+**LCS** finner den lengste sekvensen som forekommer (ikke nødvendigvis
+sammenhengende) i begge to strenger $X$ og $Y$. Sammenlign de siste tegnene: er de
+like, hører tegnet med i LCS-en, og vi går videre på begge prefiksene. Er de
+ulike, er svaret det beste av å droppe det siste tegnet i $X$ *eller* i $Y$:
+
+$$c[i,j] = \begin{cases} 0 & i=0 \text{ eller } j=0 \\ c[i-1,j-1] + 1 & x_i = y_j \\ \max(c[i-1,j],\, c[i,j-1]) & x_i \ne y_j. \end{cases}$$
+
+Tabellen $c$ har $(m+1)(n+1)$ celler og hver fylles i $O(1)$, så LCS er $\Theta(mn)$.
+Lagrer vi hvilken av de tre reglene som ga hver celle, kan vi rekonstruere selve
+delsekvensen ved å følge pilene fra $c[m,n]$ tilbake til hjørnet.
+
+## Binært ryggsekkproblem
+
+Det <Term name="Binært ryggsekkproblem">binære ryggsekkproblemet</Term> (appendiks E)
+gir $n$ gjenstander med vekt $w_i$ og verdi $v_i$ og en sekk med kapasitet $W$. Hver
+gjenstand tas *helt eller ikke i det hele tatt* (derav «binært»). Vi maksimerer
+verdien innenfor kapasiteten. Det første valget er om gjenstand $i$ er med:
+
+$$K[i, c] = \max\big(\, K[i-1, c],\ \ v_i + K[i-1, c - w_i] \,\big),$$
+
+der den andre grenen bare gjelder når $w_i \le c$. Tabellen har $n \cdot W$ celler,
+hver fylt i $O(1)$, så DP-en er <FormulaRef id="knapsack-dp">$\Theta(nW)$</FormulaRef>.
+
+<Callout type="warning">
+$\Theta(nW)$ ser polynomisk ut, men er **pseudopolynomisk**: kjøretiden er
+polynomisk i *tallverdien* $W$, ikke i instansens *størrelse*. Kapasiteten $W$
+kodes med $\Theta(\lg W)$ bits, så $W$ er eksponentiell i antall bits. Det binære
+ryggsekkproblemet er faktisk NP-hardt — DP-en er rask bare når $W$ er liten.
+</Callout>
+
+## Sjekk deg selv
+
+<Quiz
+  question="Hva gjør delinstanser overlappende?"
+  options={[
+    "Samme delinstans trengs via flere rekursive veier.",
+    "Alle delinstansene har nøyaktig samme størrelse.",
+    "Problemet har ingen grunntilfeller.",
+  ]}
+  answer={0}
+  explanation="Overlapp betyr at flere veier i delinstansgrafen ender i samme node. DP sparer arbeid nettopp fordi det samme delresultatet ellers ville blitt regnet ut på nytt mange ganger."
+/>
+
+<Callout type="note">
+Pensum: CLRS innledningen til del IV, kap. 14 (innledning, 14.1 stavkapping,
+14.3–14.4 LCS og optimal delstruktur) og det binære ryggsekkproblemet i
+pensumheftets appendiks E.
+</Callout>
+
+<KeyTakeaways>
+- DP passer når problemet har optimal delstruktur *og* overlappende delinstanser.
+- Tenk delinstansgraf: kjøretid $=$ antall distinkte delinstanser $\times$ arbeid per delinstans.
+- Memoisering (top-down) og iterasjon (bottom-up) regner ut det samme; bottom-up krever en gyldig utfyllingsrekkefølge.
+- Lagre det optimale *valget* i hver celle for å kunne rekonstruere selve løsningen.
+- Stavkapping er $\Theta(n^2)$, LCS er $\Theta(mn)$, binært ryggsekk er $\Theta(nW)$ — sistnevnte bare pseudopolynomisk.
+</KeyTakeaways>

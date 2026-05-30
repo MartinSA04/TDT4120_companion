@@ -1,0 +1,203 @@
+---
+order: 8
+title: Traversering av grafer
+summary: BFS og DFS er frontier-baserte måter å utforske en graf på. De gir korteste vei i uvektede grafer, tidsstempler med parentes- og hvit-sti-teoremet, kantklassifisering, topologisk sortering og sterkt sammenhengende komponenter.
+importance: core
+estMinutes: 45
+tags: [Grafer, Traversering, BFS, DFS]
+part: "Del 5: Grafalgoritmer"
+updated: 2026-05-30
+---
+
+En graf $G = (V, E)$ er nodemengde pluss kanter. Nesten alt vi gjør med grafer
+starter med å *utforske* dem systematisk: oppdage hver node og hver kant nøyaktig
+så mange ganger vi trenger. <Term name="Graftraversering">Traversering</Term> er
+ryggraden under korteste vei, spenntrær, topologisk sortering og mye mer — så det
+lønner seg å ha de to grunnmønstrene, bredde-først og dybde-først, helt i
+fingrene.
+
+<LearningGoals>
+- Forklar grafrepresentasjonene naboliste og nabomatrise, og når hver passer.
+- Forklar <Term name="Bredde-først-søk">BFS</Term> og korteste vei i uvektede grafer.
+- Forklar <Term name="Dybde-først-søk">DFS</Term>, parentesteoremet og hvit-sti-teoremet.
+- Forklar kantklassifisering med DFS.
+- Forklar topologisk sortering og sterkt sammenhengende komponenter.
+- **Forklar traversering med en vilkårlig prioritetskø — det fellesmønsteret BFS, DFS og Dijkstra alle er instanser av.**
+</LearningGoals>
+
+## Grafrepresentasjoner
+
+To representasjoner dominerer, og valget styrer kjøretiden til alt vi bygger
+oppå.
+
+<Table
+  columns={["Representasjon", "Plass", "Kant $(u,v)$ finnes?", "Naboer til $u$"]}
+  rows={[
+    ["Naboliste", "$\\Theta(V + E)$", "$O(\\deg u)$", "$\\Theta(\\deg u)$"],
+    ["Nabomatrise", "$\\Theta(V^2)$", "$\\Theta(1)$", "$\\Theta(V)$"],
+  ]}
+  align={["left", "left", "left", "left"]}
+  caption="Naboliste er kompakt for tynne grafer og lar oss gå gjennom naboene i grad-tid; matrise svarer på kant-spørringer i konstant tid, men koster $\\Theta(V^2)$ plass."
+/>
+
+For tynne grafer ($E \ll V^2$) er nabolista standardvalget, og det er den som gir
+den fine grensa <FormulaRef id="graf-traversering">$O(V+E)$</FormulaRef> for både
+BFS og DFS: hver node behandles én gang og hver kant følges et konstant antall
+ganger.
+
+## Bredde-først-søk
+
+BFS utforsker grafen **lagvis**: først kilden $s$, så alle naboene til $s$, så
+alle deres uoppdagede naboer, og så videre. En **FIFO-kø** holder fronten av
+oppdagede-men-ikke-ferdige noder. Fordi køen er først-inn-først-ut, behandles
+alltid alt på avstand $k$ før noe på avstand $k+1$ — og det er nettopp derfor
+`dist[]` ender opp med korteste vei målt i *antall kanter*.
+
+<CodeBlock
+  id="bfs"
+  title="bfs.py"
+  lang="python"
+  code={`def bfs(G, s):
+    for u in G.V:
+        dist[u] = INF
+    dist[s] = 0
+    Q = [s]
+    while Q:
+        u = Q.pop(0)
+        for v in G.adj[u]:
+            if dist[v] != INF:
+                continue
+            dist[v] = dist[u] + 1
+            Q.append(v)`}
+/>
+
+<Stepper
+  src="/steppers/bfs.js"
+  codeId="bfs"
+  title="Bredde-først-søk"
+  caption="Kilden er fiolett; fronten (køen) er oransje, ferdige noder grønne. Sub-tallet under hver node er dist[] = korteste antall kanter fra s. Tre-kantene (grønne) danner BFS-treet. Spill av eller stega med piltastene."
+  height={300}
+/>
+
+## Dybde-først-søk
+
+DFS gjør det motsatte av BFS: i stedet for å vifte utover, **dykker** det så dypt
+det kan langs én gren, og rygger først tilbake når grenen er kjørt tørr. Fronten
+er her **rekursjonsstakken** (LIFO). Hver node får to tidsstempler: en
+oppdagelsestid $d[u]$ når vi går inn i `visit(u)`, og en ferdigtid $f[u]$ når vi
+forlater den. Disse tidene bærer overraskende mye struktur.
+
+<CodeBlock
+  id="dfs"
+  title="dfs.py"
+  lang="python"
+  code={`def dfs(adj, source):
+    d, f = {}, {}            # oppdagelses- og ferdigtid
+    time = 0
+
+    def visit(u):
+        nonlocal time
+        time += 1; d[u] = time
+        for v in adj[u]:
+            if v not in d:
+                visit(v)
+        time += 1; f[u] = time
+
+    visit(source)
+    return d, f`}
+/>
+
+<Stepper
+  src="/steppers/dfs.js"
+  codeId="dfs"
+  title="Dybde-først-søk"
+  caption="Den aktive noden (toppen av stakken) er rød/accent, resten av stakken oransje, ferdige noder grønne. Sub-merket d/f er oppdagelses- og ferdigtid. Grønne kanter er trekanter; røde stiplede er tilbakekanter til en node som fortsatt ligger på stakken (en sykel)."
+  height={300}
+/>
+
+<Statement kind="theorem" name="Parentesteoremet">
+For to noder $u$ og $v$ er intervallene $[d[u], f[u]]$ og $[d[v], f[v]]$ enten
+**helt disjunkte**, eller det ene ligger **helt inni** det andre. De kan aldri
+delvis overlappe. Ligger $[d[v], f[v]]$ inni $[d[u], f[u]]$, er $v$ en
+etterkommer av $u$ i DFS-treet.
+</Statement>
+
+Et nært beslektet resultat er **hvit-sti-teoremet**: $v$ blir en etterkommer av
+$u$ i DFS-treet hvis og bare hvis det på tidspunktet $d[u]$ finnes en sti fra $u$
+til $v$ som bare går gjennom hvite (uoppdagede) noder. Sammen forklarer disse to
+hvorfor DFS-trærne fanger nøyaktig nåbarheten i grafen.
+
+## Kantklassifisering
+
+Når DFS følger en kant $(u, v)$, kan vi klassifisere den ut fra fargen til $v$:
+
+<Table
+  columns={["Kanttype", "Når DFS ser den", "Betydning"]}
+  rows={[
+    ["Trekant", "$v$ er hvit (uoppdaget)", "fører til en ny node i DFS-treet"],
+    ["Tilbakekant", "$v$ er grå (på stakken)", "peker mot en ane — avslører en sykel"],
+    ["Foroverkant", "$v$ er svart, etterkommer", "snarvei til en allerede ferdig etterkommer"],
+    ["Krysskant", "$v$ er svart, ikke i slekt", "mellom to ferdige greiner"],
+  ]}
+  align={["left", "left", "left"]}
+  caption="Kantklassifisering i en rettet graf. En graf er asyklisk nøyaktig når DFS ikke finner noen tilbakekant."
+/>
+
+## Topologisk sortering
+
+I en rettet asyklisk graf (DAG) er en **topologisk sortering** en lineær
+rekkefølge av nodene slik at hver kant $(u, v)$ peker framover. Algoritmen er
+forbløffende enkel: kjør DFS, og legg hver node fremst i en liste *når den blir
+ferdig*. Synkende ferdigtid $f[u]$ gir nettopp en gyldig topologisk rekkefølge.
+
+<Callout type="warning">
+Topologisk sortering er **samme idé som memoisert dynamisk programmering**: løs
+avhengighetene før det som avhenger av dem. I DP løser vi delinstansene i en
+rekkefølge som respekterer avhengighetsgrafen; topologisk sortering er bare den
+rekkefølgen gjort eksplisitt. Ser du «løs avhengigheter først», tenk på begge.
+</Callout>
+
+## Sterkt sammenhengende komponenter
+
+I en rettet graf er en **sterkt sammenhengende komponent** en maksimal mengde
+noder der alle kan nå alle. Standardalgoritmen kjører DFS to ganger: én gang på
+$G$ for å få ferdigtidene, og én gang på den **transponerte** grafen $G^\top$
+(alle kanter snudd), der vi starter nye trær i synkende ferdigtid. Hvert tre i
+andre runde er én komponent. Hele jobben er fortsatt $O(V + E)$.
+
+## Ett mønster, mange algoritmer
+
+BFS og DFS skiller seg bare i **hvilken datastruktur fronten er**: en FIFO-kø gir
+BFS, en LIFO-stakk gir DFS. Bytter vi fronten ut med en **vilkårlig
+prioritetskø** — ta alltid ut det «beste» elementet etter en nøkkel — får vi et
+generelt traverseringsskjelett. Velger vi nøkkelen til å være avstandsestimatet
+$d[v]$, faller Dijkstras algoritme rett ut av samme mønster (se
+[korteste vei](/korteste-vei)). Det er denne abstraksjonen som binder
+graf­algoritmene sammen.
+
+## Sjekk deg selv
+
+<Quiz
+  question="Hvorfor finner BFS korteste veier i uvektede grafer?"
+  options={[
+    "Den utforsker noder lagvis etter avstand fra start.",
+    "Den velger alltid letteste kant.",
+    "Den bruker rekursjon.",
+  ]}
+  answer={0}
+  explanation="FIFO-køen gjør at alle noder på avstand $k$ behandles før noen på avstand $k+1$. Dermed settes dist[v] første gang v oppdages, og det er nettopp korteste antall kanter fra kilden."
+/>
+
+<Callout type="note">
+Pensum: CLRS del VI (innledning) og kapittel 20, samt appendiks F i
+pensumheftet.
+</Callout>
+
+<KeyTakeaways>
+- Naboliste gir $\Theta(V+E)$ plass og grensa $O(V+E)$ for både BFS og DFS; nabomatrise koster $\Theta(V^2)$ men svarer på kant-spørringer i $O(1)$.
+- BFS bruker en FIFO-kø og gir korteste vei i *antall kanter* i uvektede grafer.
+- DFS bruker rekursjonsstakken og gir tidsstempler $d/f$; parentes- og hvit-sti-teoremet fanger slektskap i DFS-treet.
+- En tilbakekant i DFS betyr en sykel; ingen tilbakekanter $\Rightarrow$ grafen er en DAG.
+- Topologisk sortering = synkende ferdigtid, og er *samme idé* som memoisert DP: løs avhengigheter først.
+- BFS, DFS og Dijkstra er alle samme traversering med ulik prioritetskø som front.
+</KeyTakeaways>

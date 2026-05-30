@@ -1,0 +1,169 @@
+---
+order: 14
+title: NP-komplette problemer
+summary: Når CIRCUIT-SAT først er vist komplett, klassifiseres nye problemer med én ny reduksjon fra et allerede kjent komplett problem. En kart over de sentrale NP-komplette problemene, bevisideene som binder dem sammen, og hvorfor binært ryggsekk og lengste enkle vei er NP-harde.
+importance: core
+estMinutes: 40
+tags: [Kompleksitet, NP, Reduksjon]
+part: "Del 6: Kompleksitetsteori"
+updated: 2026-05-30
+---
+
+Forrige modul ga oss det *første* NP-komplette problemet (CIRCUIT-SAT, via
+Cook-Levin) og en frustrerende definisjon: for å vise at $X$ er NP-hardt må *alt*
+i NP reduseres til $X$. Den gode nyheten er at vi bare trenger å gjøre den jobben
+**én gang**. Når ett problem er kjent komplett, klassifiseres et nytt problem med
+én eneste ny <Term name="Karp-reduksjon">Karp-reduksjon</Term>.
+
+<LearningGoals>
+- **Forklar hvordan NP-kompletthet bevises med én ny reduksjon.**
+- **Kjenn de sentrale NP-komplette problemene og hvordan de henger sammen.**
+- Forklar hovedideen i utvalgte kompletthetsbevis.
+- Forklar at binært ryggsekkproblem er NP-hardt.
+- Forklar at lengste enkle vei er NP-hardt.
+- Bruk generelle reduksjonsstrategier i enkle hardhetsbevis.
+</LearningGoals>
+
+## Kompletthet ved én reduksjon
+
+Reduksjon er **transitiv**: kan ethvert NP-problem reduseres til $A$, og $A$
+reduseres til $B$, så kan ethvert NP-problem reduseres til $B$. Det gir en langt
+billigere oppskrift enn å gå tilbake til definisjonen hver gang.
+
+<Statement kind="theorem" name="Kompletthet ved én reduksjon">
+For å vise at et problem $X$ er **NP-komplett** holder det å vise to ting:
+**(1)** $X \in \text{NP}$ — et «ja» har et sertifikat som verifiseres i polynomisk
+tid; og **(2)** et *allerede kjent* NP-komplett problem $A$ kan Karp-reduseres til
+$X$ i polynomisk tid ($A \le_p X$). Ved transitivitet arver $X$ da hardheten til
+hele NP.
+</Statement>
+
+<Callout type="warning">
+Retningen er fortsatt den samme fellen som forrige modul: du reduserer **fra** det
+kjente harde problemet $A$ **til** ditt eget $X$ ($A \le_p X$). Snur du pilen,
+beviser du bare at $A$ kan løses ved hjelp av $X$ — altså at $A$ er *lett*, ikke at
+$X$ er hardt.
+
+En korrekt reduksjon må dessuten kjøre i **polynomisk tid** og bevare ja/nei-svaret
+*begge veier*: instansen $a$ er en ja-instans hvis og bare hvis den transformerte
+instansen $f(a)$ er det.
+</Callout>
+
+## Kartet over de sentrale problemene
+
+Fra CIRCUIT-SAT vokser et tre av reduksjoner som etablerer en kjerne av klassiske
+NP-komplette problemer. Hver pil er «reduserer til»:
+
+<Statement kind="principle" name="Den klassiske reduksjonskjeden">
+$$
+\text{CIRCUIT-SAT} \;\le_p\; \text{SAT} \;\le_p\; \text{3-CNF-SAT} \;\le_p\;
+\begin{cases} \text{CLIQUE} \le_p \text{VERTEX-COVER} \\ \text{HAM-CYCLE} \le_p \text{TSP} \\ \text{SUBSET-SUM} \end{cases}
+$$
+Hvert ledd er ett kompletthetsbevis. Når kjeden først er etablert, kan et nytt
+problem hektes på ved å redusere fra *hvilket som helst* av disse.
+</Statement>
+
+<Table
+  columns={["Problem", "Spørsmål (beslutningsversjon)"]}
+  rows={[
+    ["3-CNF-SAT", "Finnes en sann tilordning til en formel på 3-konjunktiv normalform?"],
+    ["CLIQUE", "Finnes en klikk (komplett delgraf) av størrelse $\\ge k$?"],
+    ["VERTEX-COVER", "Finnes en nodeoverdekning av størrelse $\\le k$?"],
+    ["HAM-CYCLE", "Finnes en sykel som besøker hver node nøyaktig én gang?"],
+    ["TSP", "Finnes en rundtur med total vekt $\\le k$?"],
+    ["SUBSET-SUM", "Finnes en delmengde av tallene med sum nøyaktig $t$?"],
+  ]}
+  align={["left", "left"]}
+  caption="Hvert problem er NP-komplett. Å kjenne dem som verktøy gjør det mulig å velge det «nærmeste» harde problemet å redusere fra."
+/>
+
+## To bevisideer
+
+Du trenger ikke å pugge alle reduksjonene, men ideen i et par av dem viser
+mønsteret — du bygger en **gadget** som oversetter strukturen i ett problem til
+strukturen i et annet.
+
+<Steps>
+<Step title="3-CNF-SAT ≤ₚ CLIQUE — klausuler blir noder">
+Lag én node per literal i hver klausul. Trekk en kant mellom to noder fra
+*ulike* klausuler som *ikke* er motstridende (ikke $x$ og $\lnot x$). En klikk på
+størrelse $k$ (antall klausuler) plukker da én sann literal per klausul som er
+innbyrdes konsistente — altså en oppfyllende tilordning. Ja-instanser svarer
+nøyaktig til ja-instanser.
+</Step>
+<Step title="HAM-CYCLE ≤ₚ TSP — kanter blir vekter">
+Gi hver kant i grafen vekt $1$, og legg til de manglende kantene med vekt $2$ slik
+at grafen blir komplett. En rundtur av total vekt $\le |V|$ kan bare bruke
+vekt-$1$-kanter — altså en hamiltonsk sykel i originalgrafen. Reduksjonen er bare å
+fylle ut vektmatrisen, klart polynomisk.
+</Step>
+</Steps>
+
+## Binært ryggsekk er NP-hardt
+
+I modulen om <Term name="Dynamisk programmering">dynamisk programmering</Term> løste
+vi <Term name="Binært ryggsekkproblem">binært ryggsekk</Term> med en
+$\Theta(nW)$-DP. Men som vi så i forrige modul er det **pseudopolynomisk**:
+kapasiteten $W$ er en tallverdi som kodes med $\Theta(\lg W)$ biter, så
+kjøretiden er eksponentiell i instansstørrelsen.
+
+<Statement kind="theorem" name="Binært ryggsekk er NP-hardt">
+SUBSET-SUM (er det en delmengde med sum nøyaktig $t$?) er en spesialform av binært
+ryggsekk der hvert objekts vekt er lik verdien og kapasiteten er $t$. Siden
+SUBSET-SUM er NP-komplett, reduseres den til binært ryggsekk — som dermed er
+NP-hardt. DP-en motsier ikke dette: den er rask bare når $W$ er liten i *verdi*,
+ikke i *antall biter*.
+</Statement>
+
+## Lengste enkle vei er NP-hardt
+
+Korteste vei løses i polynomisk tid — så hvorfor er *lengste enkle vei* hardt?
+Fordi «enkel» (ingen gjentatte noder) er det som river bort den optimale
+delstrukturen.
+
+<Statement kind="theorem" name="Lengste enkle vei er NP-hardt">
+HAM-CYCLE reduseres til lengste enkle vei: en graf har en hamiltonsk sti hvis og
+bare hvis dens lengste enkle vei har $|V| - 1$ kanter. En polynomisk algoritme for
+lengste enkle vei ville altså avgjort HAM-CYCLE i polynomisk tid. Dette er også
+grunnen til at <Term name="Kantoppdatering">Relax</Term>-maskineriet fra korteste
+vei ikke kan snus til å maksimere: delstier av en lengste *enkle* vei er ikke selv
+lengste enkle veier.
+</Statement>
+
+<Compare>
+<CompareCol title="Korteste vei — i P">
+Optimal delstruktur holder: en delsti av en korteste vei er en korteste vei.
+Relax/DP løser det i polynomisk tid.
+</CompareCol>
+<CompareCol title="Lengste enkle vei — NP-hardt">
+«Enkel» ødelegger delstrukturen: en delsti av en lengste enkel vei er *ikke*
+nødvendigvis lengst. Reduksjon fra HAM-CYCLE viser hardheten.
+</CompareCol>
+</Compare>
+
+## Sjekk deg selv
+
+<Quiz
+  question="Hva må med for å vise at et beslutningsproblem er NP-komplett?"
+  options={[
+    "Vis at det er i NP og at det er NP-hardt.",
+    "Vis bare at det ikke er i P.",
+    "Vis at det har en grådig algoritme.",
+  ]}
+  answer={0}
+  explanation="NP-kompletthet kombinerer to ting: medlemskap i NP (et sertifikat verifiseres raskt) og hardhet for hele NP (en reduksjon fra et allerede kjent NP-komplett problem). Å vise at noe «ikke er i P» er ikke noe vi kan gjøre — om P = NP er åpent."
+/>
+
+<KeyTakeaways>
+- Når ett problem er kjent komplett, vises et nytt NP-komplett ved (1) medlemskap i NP og (2) **én** reduksjon fra et kjent komplett problem — reduksjon er transitiv.
+- Retningen er alltid $A \le_p X$ (fra kjent hardt $A$ til ditt $X$), og reduksjonen må være polynomisk og bevare ja/nei.
+- Den klassiske kjeden: CIRCUIT-SAT → SAT → 3-CNF-SAT → CLIQUE / HAM-CYCLE / SUBSET-SUM osv. Kjenn problemene som verktøy.
+- Kompletthetsbevis bygger en **gadget** som oversetter strukturen (klausuler→noder, kanter→vekter).
+- Binært ryggsekk er NP-hardt (SUBSET-SUM reduseres til det); $\Theta(nW)$-DP-en er pseudopolynomisk, ikke en motsigelse.
+- Lengste *enkle* vei er NP-hardt (HAM-CYCLE reduseres til det) — «enkel» ødelegger den optimale delstrukturen som gjør korteste vei lett.
+</KeyTakeaways>
+
+<Callout type="note">
+Pensum: CLRS kap. 34.4–34.5 — kompletthetsbevisene og katalogen av sentrale
+NP-komplette problemer.
+</Callout>

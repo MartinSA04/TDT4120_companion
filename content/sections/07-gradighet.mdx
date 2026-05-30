@@ -1,0 +1,157 @@
+---
+order: 7
+title: Grådighet
+summary: Grådige algoritmer tar det lokalt beste valget og gjentar — raskt og enkelt, men korrekt bare når grådighetsegenskapen og optimal delstruktur begge holder. Aktivitetsutvelgelse, fractional ryggsekk og Huffman.
+importance: core
+estMinutes: 45
+tags: [Designmetoder, Grådighet, Optimering]
+part: "Del 4: Designmetoder"
+updated: 2026-05-30
+---
+
+En grådig algoritme bygger en løsning ved å gjøre det valget som ser best ut
+*akkurat nå*, og angrer aldri. Hvert slikt <Term name="Grådig valg">grådige valg</Term>
+er lokalt; utfordringen er sjelden å utføre det — det er å **bevise** at en stripe
+av lokale valg faktisk ender i et globalt optimum. Når det holder, er grådige
+algoritmer ofte de enkleste og raskeste vi har.
+
+<LearningGoals>
+- **Forklar designmetoden grådighet.**
+- **Forklar grådighetsegenskapen.**
+- Forklar aktivitetsutvelgelse og kontinuerlig (fractional) ryggsekk.
+- Forklar Huffman og Huffman-koder.
+</LearningGoals>
+
+## De to egenskapene en grådig algoritme trenger
+
+Grådighet er beslektet med dynamisk programmering — begge bygger på optimal
+delstruktur — men der DP vurderer *alle* første valg, satser grådighet på **ett**.
+Det krever en egenskap til.
+
+<Statement kind="principle" name="Grådighetsegenskapen">
+Det finnes alltid en optimal løsning som inneholder det grådige (lokalt beste)
+valget. Da kan vi trygt ta det valget, kaste resten av alternativene, og stå igjen
+med ett mindre delproblem av samme type.
+</Statement>
+
+<Statement kind="principle" name="Optimal delstruktur for grådighet">
+Etter at det grådige valget er gjort, må *det som står igjen* selv være en optimal
+løsning på den gjenværende delinstansen. Sammen med grådighetsegenskapen gir dette
+et fullstendig korrekthetsargument.
+</Statement>
+
+Det typiske beviset for grådighetsegenskapen er et **ombyttingsargument**: ta en
+vilkårlig optimal løsning, og vis at du kan bytte ut dens første valg med det
+grådige valget uten å gjøre løsningen dårligere. Da finnes en like god optimal
+løsning som starter grådig.
+
+<Compare>
+<CompareCol title="Grådig">
+Ta det lokalt beste valget **én gang**, uten å se på alternativene, og gjenta på
+resten. Krever grådighetsegenskapen *i tillegg til* optimal delstruktur. Vanligvis
+$O(n \lg n)$ eller raskere.
+</CompareCol>
+<CompareCol title="Dynamisk programmering">
+Prøv **alle** mulige første valg og kombiner med optimale delløsninger. Krever bare
+optimal delstruktur (og overlapp for å lønne seg). Mer generell, men tregere — som
+regel polynomisk i flere variabler.
+</CompareCol>
+</Compare>
+
+## Aktivitetsutvelgelse
+
+Gitt aktiviteter med start- og sluttider skal vi velge **flest mulig** som ikke
+overlapper. Det grådige valget er overraskende enkelt: velg alltid aktiviteten som
+**slutter først**. Den frigjør ressursen tidligst og etterlater mest plass til
+resten.
+
+<Steps>
+<Step title="Sorter etter sluttid">
+Sorter alle aktivitetene stigende på sluttidspunkt. Dette er den dominerende
+kostnaden, $O(n \lg n)$.
+</Step>
+<Step title="Velg den som slutter først">
+Ta den første aktiviteten i den sorterte rekkefølgen — den med tidligst sluttid er
+alltid med i en optimal løsning (grådighetsegenskapen).
+</Step>
+<Step title="Hopp over det som kolliderer">
+Gå videre nedover lista og hopp over alle aktiviteter som starter før den sist
+valgte sluttet.
+</Step>
+<Step title="Gjenta på resten">
+Den neste aktiviteten som er kompatibel velges, og prosessen gjentas til lista er
+tom. Hele skanningen etter sortering er $O(n)$.
+</Step>
+</Steps>
+
+Beviset er et ombyttingsargument: har en optimal løsning en *annen* første
+aktivitet, kan vi erstatte den med den som slutter først uten å skape nye
+kollisjoner — løsningen forblir like stor. Etter sorteringen koster utvelgelsen
+bare én lineær skanning, så algoritmen er $O(n \lg n)$ totalt.
+
+## Kontinuerlig (fractional) ryggsekk
+
+Her er det grådighet — og *ikke* DP — som er rett verktøy. I den **kontinuerlige**
+ryggsekken kan gjenstander deles: vi kan ta en brøkdel av en gjenstand. Det grådige
+valget er å sortere på **verditetthet** $v_i / w_i$ og fylle sekken med den tetteste
+først, og til slutt ta en brøkdel av den neste for å fylle akkurat opp til
+kapasiteten.
+
+<Callout type="note">
+Dette er nettopp forskjellen fra det <Term name="Binært ryggsekkproblem">binære
+ryggsekkproblemet</Term>: når gjenstandene kan deles, holder grådighetsegenskapen,
+og fractional ryggsekk løses i $O(n \lg n)$. Tar vi bort delbarheten kollapser det
+grådige argumentet — det binære problemet trenger DP og er NP-hardt.
+</Callout>
+
+## Huffman-koder
+
+**Huffman**-algoritmen bygger en optimal *prefikskode* for å komprimere data: hyppige
+tegn får korte bitstrenger, sjeldne får lange, og ingen kode er prefiks av en annen
+(så avkoding er entydig). Det grådige valget jobber nedenfra: gjentatte ganger
+**slå sammen de to symbolene med lavest frekvens** til én ny node hvis frekvens er
+summen, helt til alt henger i ett tre.
+
+<Statement kind="theorem" name="Huffmans grådige valg er trygt">
+De to minst hyppige symbolene kan alltid plasseres som søsken **dypest** i en
+optimal prefikskode. Derfor er det trygt å slå dem sammen først; resten følger som
+en optimal kode på det reduserte alfabetet — grådighetsegenskapen og optimal
+delstruktur i forening.
+</Statement>
+
+Med en min-haug for å hente de to minste frekvensene koster hver av de $n-1$
+sammenslåingene $O(\lg n)$, så Huffman bygger den optimale koden i $O(n \lg n)$.
+
+<Callout type="warning">
+**Grådighetsegenskapen alene er ikke nok.** At ett lokalt valg kan inngå i *en*
+optimal løsning sier ingenting om det som blir igjen etterpå. Du må også vise
+**optimal delstruktur** — at resten fortsatt er et optimalt delproblem av samme
+type — før du kan konkludere med at den grådige algoritmen er korrekt. Mangler den
+ene halvdelen, er «beviset» et ønske, ikke et argument.
+</Callout>
+
+## Sjekk deg selv
+
+<Quiz
+  question="Hva må vanligvis vises for at en grådig algoritme skal være korrekt?"
+  options={[
+    "Grådighetsegenskapen og optimal delstruktur.",
+    "At den alltid sorterer inputen først.",
+    "At den aldri bruker hjelpedatastrukturer.",
+  ]}
+  answer={0}
+  explanation="Det lokale valget må være trygt (grådighetsegenskapen), og det som står igjen må fortsatt være et optimalt delproblem (optimal delstruktur). Begge deler kreves."
+/>
+
+<Callout type="note">
+Pensum: CLRS kap. 15 (innledning, 15.1 aktivitetsutvelgelse, 15.2 grådige strategier,
+15.3 Huffman-koder).
+</Callout>
+
+<KeyTakeaways>
+- En grådig algoritme tar det lokalt beste valget én gang og gjentar — uten å angre.
+- Korrekthet krever **både** grådighetsegenskapen (det grådige valget er trygt) og optimal delstruktur.
+- Grådighetsegenskapen bevises typisk med et ombyttingsargument mot en vilkårlig optimal løsning.
+- Aktivitetsutvelgelse: velg den som slutter først, $O(n \lg n)$. Fractional ryggsekk: høyest verditetthet først.
+- Huffman slår sammen de to minst hyppige symbolene gjentatte ganger og gir en optimal prefikskode i $O(n \lg n)$.
+</KeyTakeaways>

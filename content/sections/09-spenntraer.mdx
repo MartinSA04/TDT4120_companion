@@ -1,0 +1,159 @@
+---
+order: 9
+title: Minimale spenntrær
+summary: Et MST kobler alle noder med lavest mulig total kantvekt. Generic-MST bygger det med trygge grådige valg — den letteste kanten over et snitt er alltid trygg. Kruskal bruker disjunkte mengder; Prim bruker en prioritetskø.
+importance: core
+estMinutes: 40
+tags: [Grafer, MST, Grådighet, Union-Find]
+part: "Del 5: Grafalgoritmer"
+updated: 2026-05-30
+---
+
+Gitt en sammenhengende, vektet og urettet graf: hvilken minste kantmengde holder
+alt sammen til lavest pris? Svaret er et <Term name="Minimalt spenntre">minimalt
+spenntre</Term> (MST) — et tre som spenner alle nodene med minst mulig total
+kantvekt. MST er skoleeksempelet på at <Term name="Grådig valg">grådighet</Term>
+faktisk gir et globalt optimum, og hele beviset hviler på ett presist begrep:
+*trygge kanter*.
+
+<LearningGoals>
+- Forklar skogimplementasjonen av <Term name="Disjunkte mengder">disjunkte mengder</Term> (union-find).
+- Definer spenntrær og minimale spenntrær.
+- **Forklar Generic-MST — det grådige skjelettet begge algoritmene er instanser av.**
+- Forklar trygge lette kanter over snitt, og hvorfor de er trygge.
+- Forklar Kruskals algoritme.
+- Forklar Prims algoritme og rollen til prioritetskøen.
+</LearningGoals>
+
+## Disjunkte mengder (union-find)
+
+<Term name="Disjunkte mengder">Disjunkte mengder</Term> vedlikeholder en
+partisjon av elementer under to operasjoner: `Find-Set(x)` returnerer
+representanten for mengden $x$ ligger i, og `Union(x, y)` slår sammen to mengder.
+Skogimplementasjonen lar hvert element peke mot en forelder; representanten er
+rota. To triks gjør operasjonene nesten konstante i amortisert tid:
+
+- **Union ved rang** — heng det lavere treet under det høyere, så trærne holder seg grunne.
+- **Stikomprimering** — pek hver besøkt node rett på rota under `Find-Set`.
+
+Med begge er $m$ operasjoner $O(m\,\alpha(n))$, der $\alpha$ er den (nesten
+konstante) inverse Ackermann-funksjonen. For oss er poenget at union-find lar
+Kruskal raskt svare på «ligger disse to nodene allerede i samme komponent?».
+
+## Spenntre og MST
+
+Et **spenntre** av en sammenhengende graf er et asyklisk delsett av kantene som
+kobler alle noder; det har alltid nøyaktig $|V| - 1$ kanter. Et **minimalt**
+spenntre er et spenntre med minst mulig sum av kantvekter. Det trenger ikke være
+entydig — med like vekter kan flere MST eksistere — men den minimale totalvekten
+er det.
+
+## Generic-MST og trygge kanter
+
+Begge algoritmene vi skal se er instanser av ett grådig skjelett. Vi holder på en
+delmengde $A$ av kanter som er en del av *et* MST, og legger til én **trygg** kant
+av gangen til $A$ er et helt spenntre.
+
+<Statement kind="definition" name="Trygg kant">
+En kant er **trygg** for $A$ hvis $A \cup \{(u,v)\}$ fortsatt er delmengde av et
+minimalt spenntre. Generic-MST legger gjentatte ganger til en trygg kant — den
+grådige korrektheten avhenger fullstendig av at vi alltid klarer å finne én.
+</Statement>
+
+Hva gjør en kant trygg? Et **snitt** $(S, V \setminus S)$ deler nodene i to. En
+kant **krysser** snittet om endepunktene ligger på hver sin side. Et snitt
+**respekterer** $A$ om ingen kant i $A$ krysser det. Da gjelder:
+
+<Statement kind="theorem" name="Snitt-teoremet for MST">
+La $A$ være delmengde av et MST, la $(S, V\setminus S)$ være et snitt som
+respekterer $A$, og la $(u,v)$ være en **lettest** kant som krysser snittet. Da
+er $(u,v)$ trygg for $A$.
+</Statement>
+
+Beviset er et klassisk **utbyttingsargument**: ta et MST $T$ som inneholder $A$.
+Inneholder $T$ allerede $(u,v)$, er vi ferdige. Ellers lager $(u,v)$ en sykel
+sammen med stien i $T$; den stien må krysse snittet via en annen kant $(x,y)$ med
+$w(x,y) \ge w(u,v)$. Bytt $(x,y)$ mot $(u,v)$: resultatet er fortsatt et
+spenntre, med vekt som ikke er større — altså også et MST som inneholder
+$A \cup \{(u,v)\}$. Dette er det sentrale beviset i hele kapittelet.
+
+## Kruskals algoritme
+
+Kruskal er Generic-MST med ett bestemt valg av snitt: sorter alle kantene etter
+vekt, og legg til hver kant som forbinder to **ulike** komponenter. En kant som
+ville koblet to noder i samme komponent forkastes — den ville lagd en sykel.
+Union-find er nettopp det som svarer på komponent-spørsmålet raskt.
+
+<CodeBlock
+  id="kruskal"
+  title="kruskal.py"
+  lang="python"
+  code={`def kruskal(V, edges):
+    parent = {v: v for v in V}
+    def find(x):
+        while parent[x] != x:
+            x = parent[x]
+        return x
+    tree = []
+    for u, v, w in sorted(edges, key=lambda e: e[2]):
+        if find(u) != find(v):
+            parent[find(u)] = find(v)
+            tree.append((u, v, w))
+    return tree`}
+/>
+
+<Stepper
+  src="/steppers/kruskal.js"
+  codeId="kruskal"
+  title="Kruskals algoritme"
+  caption="Kantene behandles fra lettest til tyngst. Grønne kanter er godtatt (med i MST); røde stiplede er forkastet fordi de ville lagd en sykel. Sub-merket under hver node er komponentrepresentanten dens — de smelter sammen etter hvert som Union kjøres."
+  height={300}
+/>
+
+Kruskal bruker $O(E \lg V)$ tid: sorteringen dominerer, og union-find-arbeidet er
+nesten lineært. Den sorterte rekkefølgen gjør hvert grådige valg trygt — hver
+godtatt kant er den letteste som krysser snittet mellom dens to komponenter og
+resten.
+
+## Prims algoritme
+
+Prim velger et annet snitt: la $A$ alltid være ett sammenhengende tre som vokser
+ut fra en startnode. I hvert steg legger vi til den letteste kanten som forlater
+treet. En **min-prioritetskø** (en <Term name="Haug">haug</Term>) over nodene
+utenfor treet, nøklet på letteste kjente kant inn til treet, gir nettopp denne
+kanten i logaritmisk tid. Prioritetskøen er hele motoren: med binær haug blir Prim
+$O(E \lg V)$, og med Fibonacci-haug $O(E + V \lg V)$.
+
+## Sjekk deg selv
+
+<Quiz
+  question="Hva betyr det at en kant er trygg i MST-sammenheng?"
+  options={[
+    "Den kan legges til uten å ødelegge muligheten for et optimalt MST.",
+    "Den har alltid globalt lavest vekt.",
+    "Den kobler to noder som allerede er i samme tre.",
+  ]}
+  answer={0}
+  explanation="Trygghet handler om at det finnes et optimalt tre som inkluderer kanten sammen med valgene så langt — ikke at kanten er den globalt letteste. Snitt-teoremet garanterer at den letteste kanten over et respekterende snitt er trygg."
+/>
+
+<Callout type="warning">
+Den letteste kanten over et snitt er trygg — men *ikke* nødvendigvis den globalt
+letteste gjenværende kanten i grafen. Det er snittet som gjør valget trygt. En
+kant kan ha lav vekt og likevel være feil å legge til hvis den lukker en sykel
+innenfor en allerede sammenhengende del.
+</Callout>
+
+<Callout type="note">
+Pensum: CLRS kapittel 19 (innledning, 19.1, 19.3) for MST og kapittel 21 for
+disjunkte mengder.
+</Callout>
+
+<KeyTakeaways>
+- Et MST kobler alle noder med $|V|-1$ kanter og minst mulig total vekt.
+- Generic-MST er det grådige skjelettet: legg gjentatte ganger til en *trygg* kant.
+- Snitt-teoremet: den letteste kanten over et snitt som respekterer $A$ er trygg — bevist med et utbyttingsargument.
+- Kruskal sorterer kantene og bruker union-find for å godta kanter som forbinder ulike komponenter; $O(E \lg V)$.
+- Prim vokser ett tre og bruker en min-prioritetskø for å plukke letteste utgående kant; $O(E \lg V)$ med binær haug.
+- Disjunkte mengder med union-ved-rang og stikomprimering gir nesten konstante operasjoner, $O(m\,\alpha(n))$.
+</KeyTakeaways>

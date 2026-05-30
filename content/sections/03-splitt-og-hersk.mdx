@@ -1,0 +1,200 @@
+---
+order: 3
+title: Splitt og hersk
+summary: Rekursiv dekomponering som designmetode — binærsøk, Merge-Sort og Quicksort, og rekurrensene som analyserer dem (substitusjon, rekursjonstrær, masterteoremet).
+importance: core
+estMinutes: 50
+tags: [Splitt og hersk, Rekurrenser, Sortering]
+part: "Del 2: Splitt, hersk og sortering"
+updated: 2026-05-30
+---
+
+Når en instans kan deles i mindre instanser av *samme* problem, blir rekursjon en
+designmetode i seg selv. <Term name="Splitt og hersk">Splitt og hersk</Term> deler
+instansen, løser delene rekursivt og kombinerer svarene — og kjøretiden faller ut
+av en <Term name="Rekurrens">rekurrens</Term> som vi kan løse mekanisk.
+
+<LearningGoals>
+- **Forklar designmetoden splitt og hersk.**
+- Forklar Bisect (binærsøk) og den iterative varianten.
+- Forklar Merge-Sort.
+- Forklar Quicksort og randomisert Quicksort.
+- **Løs rekurrenser med substitusjon, rekursjonstrær og masterteoremet.**
+- **Løs rekurrenser med iterasjonsmetoden.**
+</LearningGoals>
+
+## Metoden: del, hersk, kombiner
+
+<Statement kind="principle" name="Splitt og hersk">
+Et splitt-og-hersk-steg har tre faser: **del** instansen i en eller flere mindre
+delinstanser; **hersk** ved å løse hver delinstans rekursivt (grunntilfellene
+løses direkte); **kombiner** delsvarene til et svar for hele instansen.
+</Statement>
+
+Korrektheten følger ved <Term name="Induksjon">induksjon</Term> over
+instansstørrelsen: grunntilfellene er riktige, og hvis alle de mindre delene blir
+riktig løst, gjør kombineringssteget resten. Det vi må regne ut, er hvor mye
+arbeid de rekursive kallene pluss del- og kombineringssteget koster til sammen.
+
+## Binærsøk — den enkleste delingen
+
+<Term name="Splitt og hersk">Binærsøk</Term> (Bisect) er det reneste eksempelet:
+i en *sortert* tabell sammenligner vi med midtelementet og forkaster den halvdelen
+som umulig kan inneholde målet. Hvert steg halverer søkevinduet $[lo, hi]$, så vi
+når fra $n$ til $1$ på $\Theta(\lg n)$ steg.
+
+<CodeBlock
+  id="bisect"
+  title="binary_search.py"
+  lang="python"
+  code={`def binary_search(a: list[int], target: int) -> int:
+    lo, hi = 0, len(a) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if a[mid] == target:
+            return mid
+        if a[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1`}
+/>
+
+<Stepper
+  src="/steppers/binary-search.js"
+  codeId="bisect"
+  title="Binærsøk"
+  caption="Søkevinduet er rammet inn; forkastede indekser tones ut, midtelementet sammenlignes (oransje), og treffet låses grønt. lo/mid/hi vises som pekere. Spill av, stega med piltastene, eller endre antallet."
+  height={280}
+/>
+
+Binærsøk gir samtidig den enkleste rekurrensen i kurset: ett rekursivt kall på
+halve instansen pluss konstant arbeid, $T(n) = T(n/2) + \Theta(1) = \Theta(\lg n)$.
+Den iterative varianten over (while-løkka) er bare den samme rekursjonen rullet ut.
+
+## Merge-Sort — balansert deling
+
+Merge-Sort deler tabellen i to like halvdeler, sorterer hver rekursivt og
+**fletter** de to sorterte halvdelene med et lineært to-finger-sveip. Delingen er
+alltid balansert, så vi får $\Theta(\lg n)$ rekursjonsnivåer, og flettingen gjør
+$\Theta(n)$ arbeid per nivå:
+
+<FormulaRef id="merge-rek" />
+
+Det gir $\Theta(n \lg n)$ i alle tilfeller — Merge-Sort er ikke følsom for
+inputrekkefølge. Prisen er $\Theta(n)$ ekstra minne til flettebufferne.
+
+## Quicksort — deling ved partisjonering
+
+Quicksort snur problemet: i stedet for å dele blindt på midten og flette etterpå,
+gjør den alt arbeidet *før* rekursjonen, ved å **partisjonere**. Med Lomutos
+partisjon velger vi pivoten som det høyre elementet, skanner vinduet og samler alt
+som er $\le$ pivot til venstre. Pivoten havner på sin endelige plass mellom
+$\le$-regionen og $>$-regionen, og vi sorterer hver side rekursivt — uten noe
+kombineringssteg.
+
+<CodeBlock
+  id="quick"
+  title="quick_sort.py"
+  lang="python"
+  code={`def quick_sort(a, lo=0, hi=None):
+    if hi is None:
+        hi = len(a) - 1
+    if lo >= hi:
+        return
+    pivot = a[hi]
+    i = lo - 1
+    for j in range(lo, hi):
+        if a[j] <= pivot:
+            i += 1
+            a[i], a[j] = a[j], a[i]
+    a[i + 1], a[hi] = a[hi], a[i + 1]
+    quick_sort(a, lo, i)
+    quick_sort(a, i + 2, hi)`}
+/>
+
+<Stepper
+  src="/steppers/quick-sort.js"
+  codeId="quick"
+  title="Quicksort (Lomuto)"
+  caption="Pivoten er fiolett, elementet som sammenlignes oransje, og et bytte som utvider ≤-regionen er aksentfarget. Når pivoten slippes på plass låses den grønn. Den stiplede rammen er det aktive vinduet [lo..hi]."
+  height={280}
+/>
+
+Pivotvalget bestemmer alt. Deler partisjonen instansen jevnt, får vi rekurrensen
+$T(n) = 2T(n/2) + \Theta(n) = \Theta(n \lg n)$, akkurat som Merge-Sort. Men på
+allerede (omvendt) sortert input lander pivoten i hjørnet hver gang, partisjonen
+blir maksimalt skjev, og rekurrensen degenererer til
+$T(n) = T(n-1) + \Theta(n) = \Theta(n^2)$.
+
+**Randomisert Quicksort** fjerner avhengigheten av inputrekkefølgen ved å velge
+pivot tilfeldig (eller stokke tabellen først). Da blir den forventede kjøretiden
+$\Theta(n \lg n)$ for *enhver* fast input — worst-case finnes fortsatt, men ingen
+bestemt input kan fremtvinge den. I praksis er Quicksort ofte raskere enn
+Merge-Sort fordi den sorterer in-place og har små konstantfaktorer.
+
+## Å løse rekurrenser
+
+Rekurrensen forteller hvor mye arbeid splitt-og-hersk koster. Tre metoder løser de
+fleste vi møter:
+
+<Table
+  columns={["Metode", "Idé", "Når"]}
+  rows={[
+    ["Substitusjon", "gjett en grense, bevis den ved induksjon", "når du allerede aner svaret"],
+    ["Rekursjonstre", "summer arbeidet nivå for nivå i kalltreet", "for å bygge intuisjon / finne gjettet"],
+    ["Iterasjonsmetoden", "rull ut rekurrensen til et mønster trer fram", "enkle, lineære rekurrenser"],
+    ["Masterteoremet", "slå opp svaret fra $a$, $b$ og $f(n)$", "rekurrenser på standardform"],
+  ]}
+  align={["left", "left", "left"]}
+  caption="Fire verktøy for rekurrenser. Rekursjonstrær gir gjettet, substitusjon beviser det, og masterteoremet er oppslagsverket for standardformen."
+/>
+
+Standardformen masterteoremet dekker er
+
+<FormulaRef id="master" />
+
+der $a \ge 1$ delinstanser hver har størrelse $n/b$ og $f(n)$ er kostnaden for å
+dele og kombinere. Svaret avgjøres av en kappestrid mellom arbeidet i bladene,
+$n^{\log_b a}$, og arbeidet på toppen, $f(n)$:
+
+<Table
+  columns={["Tilfelle", "Betingelse", "Løsning"]}
+  rows={[
+    ["1", "$f(n) = O(n^{\\log_b a - \\varepsilon})$ — bladene dominerer", "$T(n) = \\Theta(n^{\\log_b a})$"],
+    ["2", "$f(n) = \\Theta(n^{\\log_b a})$ — balanse", "$T(n) = \\Theta(n^{\\log_b a} \\lg n)$"],
+    ["3", "$f(n) = \\Omega(n^{\\log_b a + \\varepsilon})$ og regularitet — toppen dominerer", "$T(n) = \\Theta(f(n))$"],
+  ]}
+  align={["center", "left", "left"]}
+  caption="Masterteoremets tre tilfeller. Merge-Sort er tilfelle 2 ($a=b=2$, $f(n)=\\Theta(n)$, $\\log_b a = 1$), som gir $\\Theta(n \\lg n)$."
+/>
+
+<Callout type="warning">
+Rekursjon og rekurrenser er samme mentale mønster — forstå *delinstansene* før du
+regner. Bruk masterteoremet bare når rekurrensen faktisk er på standardform med
+balanserte delinstanser av størrelse $n/b$; for en skjev splitt (som Quicksorts
+worst-case $T(n) = T(n-1) + \Theta(n)$) gjelder ingen av de tre tilfellene, og du
+må bruke rekursjonstre eller substitusjon i stedet.
+</Callout>
+
+## Sjekk deg selv
+
+<Quiz
+  question="Binærsøk halverer vinduet hver gang. Hva blir typisk kjøretid?"
+  options={["$\\Theta(\\lg n)$", "$\\Theta(n)$", "$\\Theta(n \\lg n)$"]}
+  answer={0}
+  explanation="Antall halveringer fra $n$ ned til $1$ er logaritmisk: rekurrensen $T(n) = T(n/2) + \Theta(1)$ løses til $\Theta(\lg n)$."
+/>
+
+<Callout type="note">
+Pensum: CLRS del II (intro), 2.3 (Merge-Sort), kap. 4 (rekurrenser og
+masterteoremet, 4.3–4.5) og kap. 7 (Quicksort).
+</Callout>
+
+<KeyTakeaways>
+- Splitt og hersk: del instansen, løs delene rekursivt, kombiner — korrekthet ved induksjon over størrelsen.
+- Binærsøk halverer et sortert vindu og kjører i $\Theta(\lg n)$; Merge-Sort deler balansert og fletter i $\Theta(n \lg n)$.
+- Quicksort partisjonerer rundt en pivot; balansert gir $\Theta(n \lg n)$, skjev gir $\Theta(n^2)$. Randomisering gir forventet $\Theta(n \lg n)$.
+- Rekurrenser løses med substitusjon, rekursjonstrær, iterasjonsmetoden eller masterteoremet.
+- Masterteoremet leser av svaret fra kappestriden mellom $n^{\log_b a}$ og $f(n)$ — men bare på standardform med balanserte delinstanser.
+</KeyTakeaways>

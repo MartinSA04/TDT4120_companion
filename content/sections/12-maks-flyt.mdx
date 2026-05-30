@@ -1,0 +1,175 @@
+---
+order: 12
+title: Maksimal flyt
+summary: Send mest mulig gjennom et kapasitetsbegrenset nett — restnett, forøkende stier, Ford-Fulkerson og Edmonds-Karp, og maks-flyt/min-snitt-dualiteten.
+importance: core
+estMinutes: 45
+tags: [Grafer, Flyt, Reduksjon, Dualitet]
+part: "Del 5: Grafalgoritmer"
+updated: 2026-05-30
+---
+
+Flyt er det mest allsidige grafproblemet i pensum: det kobler optimering,
+dualitet og reduksjoner i ett rammeverk. Mange tilsynelatende urelaterte
+problemer — maksimal paring, kantdisjunkte stier, prosjektutvelgelse — løses ved
+å oversette dem til et flytnett og kjøre én algoritme.
+
+<LearningGoals>
+- Definer flytnett, flyt og maks-flyt.
+- **Definer <Term name="Restnett">restnettet</Term> for en gitt flyt.**
+- Forklar hva en forøkende sti er.
+- **Forklar maks-flyt/min-snitt-teoremet.**
+- Forklar Ford-Fulkerson-metoden og Edmonds-Karp.
+- **Forklar heltallsteoremet.**
+- **Konstruer <Term name="Reduksjon">reduksjoner</Term> til maks-flyt.**
+</LearningGoals>
+
+## Flytnett, flyt og maks-flyt
+
+Et **flytnett** er en rettet graf $G = (V, E)$ med en ikke-negativ
+**kapasitet** $c(u,v) \ge 0$ på hver kant, en **kilde** $s$ og en **sluk** $t$.
+En <Term name="Maksimal flyt">flyt</Term> er en funksjon $f(u,v)$ som oppfyller
+to krav:
+
+<Statement kind="definition" name="Flyt i et nett">
+**Kapasitetsbegrensning:** $0 \le f(u,v) \le c(u,v)$ for hver kant — du kan ikke
+sende mer enn kapasiteten tillater. **Flytbevaring:** for hver node $v \ne s, t$
+er inngående flyt lik utgående flyt. Verdien av flyten er nettoutstrømmen fra
+kilden, $|f| = \sum_v f(s,v) - \sum_v f(v,s)$.
+</Statement>
+
+**Maks-flyt-problemet** er å finne en lovlig flyt med størst mulig verdi $|f|$.
+Verdien er begrenset oppad av enhver «flaskehals» i nettet — det er nettopp denne
+dualiteten min-snitt-teoremet gjør presis.
+
+## Restnett og forøkende stier
+
+Gitt en flyt $f$ er ikke det interessante hvor mye som *er* sendt, men hvor mye
+mer som *kan* sendes. Det fanger <Term name="Restnett">restnettet</Term> $G_f$.
+
+<Statement kind="definition" name="Restkapasitet">
+Restkapasiteten til $(u,v)$ er $c_f(u,v) = c(u,v) - f(u,v)$ for foroverkanter
+(ubrukt kapasitet) pluss $f(v,u)$ for bakoverkanter — den flyten vi allerede har
+sendt motsatt vei og dermed kan *oppheve*. Restnettet $G_f$ inneholder alle
+kanter med $c_f > 0$.
+</Statement>
+
+Bakoverkantene er nøkkelen: de lar algoritmen *ombestemme* seg og dirigere flyt
+en bedre vei senere. En **forøkende sti** er en hvilken som helst sti fra $s$ til
+$t$ i $G_f$. Langs den kan vi øke flytverdien med stiens **flaskehals** — den
+minste restkapasiteten på stien — uten å bryte verken kapasitet eller bevaring.
+
+## Maks-flyt/min-snitt-teoremet
+
+Et **snitt** $(S, T)$ deler nodene slik at $s \in S$ og $t \in T$. Snittets
+**kapasitet** er summen av kapasiteten på alle kanter som krysser *fra* $S$ *til*
+$T$. Enhver flyt må passere et hvilket som helst snitt, så $|f|$ er aldri større
+enn kapasiteten til noe snitt. Det stramme tilfellet er hovedresultatet:
+
+<Statement kind="theorem" name="Maks-flyt/min-snitt">
+For en flyt $f$ er følgende ekvivalent: (1) $f$ er en maksimal flyt; (2) $G_f$
+har ingen forøkende sti; (3) $|f|$ er lik kapasiteten til et minimalt snitt.
+Maksimal flytverdi er altså alltid lik minimal snittkapasitet.
+</Statement>
+
+Ekvivalensen $(1)\!\Leftrightarrow\!(2)$ gir terminerings­garantien for
+algoritmene under; $(2)\!\Leftrightarrow\!(3)$ gir et *sertifikat*: når søket
+ikke finner flere stier, danner nodene som fortsatt er nåbare fra $s$ i $G_f$ den
+ene siden $S$ av et minimalt snitt.
+
+## Ford-Fulkerson-metoden
+
+Ford-Fulkerson er en *metode*, ikke én bestemt algoritme: så lenge restnettet har
+en forøkende sti, finn en og forøk flyten langs den.
+
+<CodeBlock
+  id="maxflow"
+  title="ford_fulkerson.py"
+  lang="python"
+  code={`def ford_fulkerson(G, s, t):
+    for (u, v) in G.E:
+        f[u][v] = 0
+    while finnes_forøkende_sti(G_f, s, t):
+        p = bfs_sti(G_f, s, t)
+        c_f = min(restkapasitet(u, v) for (u, v) in p)
+        for (u, v) in p:
+            f[u][v] += c_f          # eller opphev motgående flyt
+    return sum(f[s][v] for v in G.adj[s])`}
+/>
+
+<Stepper
+  src="/steppers/ford-fulkerson.js"
+  codeId="maxflow"
+  title="Ford-Fulkerson / Edmonds-Karp"
+  caption="Kanter er merket med flyt/kapasitet. Den oransje stien er forøkende; røde kanter er mettede ($f = c$). Hver runde finner en sti i restnettet og sender flaskehalsen langs den. Spill av eller stega med piltastene; nettet er det klassiske CLRS-eksemplet med maks-flyt $23$."
+  height={300}
+/>
+
+Hvis vi alltid velger den **korteste** forøkende stien (færrest kanter), målt med
+et BFS i restnettet, får vi **Edmonds-Karp**. Det er nettopp denne varianten
+stepperen viser. Edmonds-Karp kjører i $O(VE^2)$ uavhengig av kapasitetene, mens
+en uheldig stivalg-strategi i den rene metoden kan bruke flere
+forøkninger jo større tallene er.
+
+<Callout type="warning">
+Den vanligste fellen er å glemme bakoverkantene. Restkapasitet er **ikke** bare
+ubrukt kapasitet fremover — den inkluderer flyten du allerede har sendt og
+dermed kan *oppheve*. Uten å kunne angre tidligere flyt finner du ofte bare en
+suboptimal flyt og «låser deg fast» før maks er nådd.
+</Callout>
+
+## Heltallsteoremet
+
+Når algoritmen følger en sti og legger til flaskehalsen, holder den seg innenfor
+heltallene så lenge kapasitetene er heltall:
+
+<Statement kind="theorem" name="Heltallsteoremet">
+Hvis alle kapasitetene i flytnettet er heltall, finnes det en maksimal flyt der
+$f(u,v)$ er et heltall for hver kant, og Ford-Fulkerson produserer en slik flyt.
+</Statement>
+
+Dette er grunnen til at flyt kan modellere kombinatoriske «alt-eller-ingenting»-valg:
+en heltallsflyt med kapasiteter $0/1$ velger faktisk *hele* kanter eller paringer.
+
+## Reduksjoner til maks-flyt
+
+Styrken ligger i at andre problemer kan *reduseres* til maks-flyt. Mønsteret er
+alltid det samme: bygg et flytnett der en heltalls maks-flyt koder en optimal
+løsning på det opprinnelige problemet.
+
+<Table
+  columns={["Problem", "Konstruksjon", "Maks-flyt betyr"]}
+  rows={[
+    ["Maksimal paring (todelt graf)", "$s \\to$ venstre side, kanter med kap. $1$, høyre side $\\to t$", "antall par i en største paring"],
+    ["Kantdisjunkte stier", "alle kanter får kapasitet $1$", "antall stier fra $s$ til $t$ uten felles kant"],
+    ["Flere kilder/sluk", "superkilde og supersluk med uendelig kapasitet", "samlet flyt fra alle kilder"],
+  ]}
+  align={["left", "left", "left"]}
+  caption="Tre standardreduksjoner til maks-flyt. Heltallsteoremet sikrer at $0/1$-kapasiteter gir en kombinatorisk (hele kanter) løsning."
+/>
+
+## Sjekk deg selv
+
+<Quiz
+  question="Hva beskriver restnettet $G_f$?"
+  options={[
+    "Hvor flyt kan økes eller oppheves gitt dagens flyt.",
+    "Bare kantene som aldri har hatt flyt.",
+    "Et minimalt spenntre i flytnettet.",
+  ]}
+  answer={0}
+  explanation="Restnettet samler restkapasitetene: foroverkanter med ubrukt kapasitet og bakoverkanter som representerer muligheten til å angre eller flytte tidligere flyt. Forøkende stier finnes nettopp i $G_f$."
+/>
+
+<KeyTakeaways>
+- Et flytnett har kapasiteter, en kilde og en sluk; en flyt respekterer kapasitet og bevaring, og vi maksimerer verdien $|f|$.
+- Restnettet $G_f$ samler restkapasitetene — inkludert bakoverkanter som lar algoritmen oppheve tidligere flyt.
+- Maks-flyt = min-snitt: når det ikke finnes flere forøkende stier, er flyten maksimal, og de nåbare nodene danner et minimalt snitt.
+- Ford-Fulkerson forøker langs stier i $G_f$; Edmonds-Karp velger korteste sti (BFS) og kjører i $O(VE^2)$.
+- Heltallsteoremet gjør flyt til et verktøy for kombinatoriske problemer via reduksjon (paring, kantdisjunkte stier).
+</KeyTakeaways>
+
+<Callout type="note">
+Pensum: CLRS kap. 24 (flytnett, Ford-Fulkerson, Edmonds-Karp, maks-flyt/min-snitt
+og heltallsteoremet) samt avsnittet om maks-flyt i kap. 29.2.
+</Callout>

@@ -1,14 +1,15 @@
 {
-  "name": "algorithm-visualizer-site",
-  "private": true,
-  "version": "0.0.0",
-  "description": "Static Field Notes site — built with esbuild, deployed to GitHub Pages.",
+  "name": "tdt4120-algdat",
   "type": "module",
+  "private": true,
   "scripts": {
-    "build": "node build.mjs",
-    "dev": "node build.mjs --serve"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
   },
-  "devDependencies": {
-    "esbuild": "^0.24.0"
-  }
+  "dependencies": {
+    "astro": "^6",
+    "study-companion": "github:MartinSA04/StudyCompanion#v1.2.0"
+  },
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319"
 }

@@ -1,13 +1,8 @@
-__pycache__/
-*.py[cod]
-*.egg-info/
-.venv/
-.ruff_cache/
-.ty_cache/
-dist/
-build/
-.idea/
-.vscode/
-design_handoff*/
-course_content/
 node_modules/
+dist/
+.astro/
+.DS_Store
+
+# Local reference material (exams, lecture slides, CLRS book, pensumhefte) —
+# copied from the source repo for authoring/verification, never committed.
+course_content/

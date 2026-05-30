@@ -1,0 +1,204 @@
+---
+order: 5
+title: Rotfaste trestrukturer
+summary: Trær som speiler rekursive relasjoner — hauger gir rask tilgang til ekstremverdier og driver Heapsort, mens binære søketrær gir ordnet søk i forventet logaritmisk høyde.
+importance: core
+estMinutes: 45
+tags: [Datastrukturer, Haug, Søketre]
+part: "Del 3: Datastrukturer"
+updated: 2026-05-30
+---
+
+Et tre organiserer data etter en rekursiv relasjon: en rot med deltrær som selv
+er trær. To rotfaste strukturer går igjen i pensum fordi de løser hver sin
+oppgave effektivt — <Term name="Haug">haugen</Term> gir konstant tilgang til
+ekstremverdien og logaritmisk innsetting, og det <Term name="Binært søketre">binære
+søketreet</Term> holder nøklene ordnet slik at søk kan kaste halve treet ved hver
+sammenligning.
+
+<LearningGoals>
+- **Forklar hauger og prioritetskø-operasjonene.**
+- Forklar Heapsort.
+- Forklar node- og pekerrepresentasjon av rotfaste trær.
+- **Forklar binære søketrær og standardoperasjonene.**
+- Kjenn forventet høyde for et tilfeldig binært søketre.
+- Kjenn at balanserte søketrær garanterer logaritmisk høyde.
+</LearningGoals>
+
+## Haugen som tabell og prioritetskø
+
+En <Term name="Haug" /> er et *nesten komplett* binærtre: alle nivåer er fulle
+unntatt eventuelt det nederste, som fylles fra venstre. Nettopp fordi treet er
+nesten komplett kan vi lagre det kompakt i en tabell uten pekere — node $i$ ligger
+i `a[i]`, og navigasjonen er ren aritmetikk.
+
+<Statement kind="definition" name="Haug-egenskapen og tabellnavigasjon">
+I en **maks-haug** gjelder $a[\text{forelder}(i)] \ge a[i]$ for alle noder: hver
+forelder dominerer barna sine. Med 0-indeksering er
+$$\text{venstre}(i) = 2i+1, \quad \text{høyre}(i) = 2i+2, \quad \text{forelder}(i) = \left\lfloor \tfrac{i-1}{2} \right\rfloor.$$
+Egenskapen er **lokal** — den sier ingenting om søsken og gir ikke total
+sortering — men den garanterer at roten `a[0]` er det største elementet.
+</Statement>
+
+Dette gjør haugen til en effektiv **prioritetskø**. `Maximum` leser bare `a[0]` i
+konstant tid. `Extract-Max` flytter siste element til roten og lar det *sive ned*
+(Max-Heapify) til egenskapen er gjenopprettet. `Insert` legger elementet bakerst
+og lar det *boble opp* mot roten. Begge berører bare én vei fra rot til blad, så
+de koster $O(\lg n)$ — like dypt som treet er.
+
+<Table
+  columns={["Operasjon", "Hva den gjør", "Kjøretid"]}
+  rows={[
+    ["$\\text{Maximum}$", "les roten $a[0]$", "$O(1)$"],
+    ["$\\text{Extract-Max}$", "fjern roten, siv ny rot ned", "$O(\\lg n)$"],
+    ["$\\text{Increase-Key}$", "boble et element oppover", "$O(\\lg n)$"],
+    ["$\\text{Insert}$", "legg til bakerst, boble opp", "$O(\\lg n)$"],
+    ["$\\text{Build-Max-Heap}$", "ordne en hel tabell til en haug", "$O(n)$"],
+  ]}
+  align={["left", "left", "left"]}
+  caption="Prioritetskø-operasjonene på en binær maks-haug. Alt unntatt $\\text{Build-Max-Heap}$ følger én rot-til-blad-vei."
+/>
+
+## Build-Max-Heap og Heapsort
+
+For å gjøre en vilkårlig tabell om til en haug kan vi kjøre `Max-Heapify` på hver
+interne node nedenfra og opp. Bladene (den øverste halvdelen av indeksene) er
+allerede trivielle hauger, så vi starter på den siste forelderen,
+$\lfloor n/2 \rfloor - 1$, og jobber mot roten. Da er begge deltrærne alltid
+gyldige hauger før vi siver ned i en node.
+
+<FormulaRef id="bygg-haug">Build-Max-Heap kjører i lineær tid</FormulaRef>: selv om
+hvert enkelt `Max-Heapify`-kall koster opptil $O(\lg n)$, er de aller fleste
+nodene grunne. Summerer vi det faktiske arbeidet over alle høydene konvergerer det
+til $O(n)$ — ikke $O(n \lg n)$.
+
+<CodeBlock
+  id="heap"
+  title="heap.py"
+  lang="python"
+  code={`def max_heapify(a, i, heap_size):
+    l, r = 2*i + 1, 2*i + 2
+    largest = i
+    if l < heap_size and a[l] > a[largest]:
+        largest = l
+    if r < heap_size and a[r] > a[largest]:
+        largest = r
+    if largest == i:
+        return                              # haug-egenskapen holder
+    a[i], a[largest] = a[largest], a[i]     # bytt med største barn
+    max_heapify(a, largest, heap_size)      # og siv videre nedover
+
+def build_max_heap(a):
+    n = len(a)
+    for i in range(n // 2 - 1, -1, -1):     # interne noder, nedenfra og opp
+        max_heapify(a, i, n)
+
+def heapsort(a):
+    build_max_heap(a)
+    for size in range(len(a), 1, -1):
+        a[0], a[size-1] = a[size-1], a[0]   # trekk ut maksimum til halen
+        max_heapify(a, 0, size-1)           # gjenopprett haugen`}
+/>
+
+<Stepper
+  src="/steppers/heap.js"
+  codeId="heap"
+  title="Build-Max-Heap og Heapsort"
+  caption="Den stiplede rammen er den levende haugen; den oransje sammenligningen og det vermillonfargede byttet driver Max-Heapify, og pekerne $i$, $2i{+}1$, $2i{+}2$ viser noden og barna. Etter byggefasen trekker Heapsort ut maksimum bakfra og den grønne sorterte halen vokser. Spill av, stega med piltastene, eller endre antallet."
+  height={300}
+/>
+
+**Heapsort** gjenbruker haugen som en sorteringsmaskin. Etter Build-Max-Heap er
+`a[0]` det største elementet; vi bytter det med det siste elementet i haugen, der
+det havner på sin endelige plass, krymper haugen med én og kjører `Max-Heapify` på
+roten igjen. Hver av de $n-1$ uttrekkingene koster $O(\lg n)$, så Heapsort sorterer
+in-place i $\Theta(n \lg n)$ — men den er *ikke* stabil.
+
+<Callout type="warning">
+**Build-Max-Heap er ikke det samme som å sette inn elementene ett og ett.** Bygger
+du haugen med $n$ `Insert`-kall, koster det $O(n \lg n)$. Den nedenfra-og-opp-baserte
+`Build-Max-Heap` gjør det *samme arbeidet* i bare $O(n)$, fordi de fleste nodene er
+nær bladene og siver ned svært kort. Husk grensen $O(n)$, ikke $O(n \lg n)$ — det
+er en klassisk eksamensfelle.
+</Callout>
+
+## Node- og pekerrepresentasjon
+
+Haugen er kompakt nettopp fordi den er nesten komplett. Generelle rotfaste trær er
+ikke det, og lagres derfor med eksplisitte **pekere**: hver node er et objekt med
+en nøkkel og pekere til barn (og ofte til forelder). For trær med ukjent eller
+varierende forgreningsgrad bruker man «venstre barn, høyre søsken»-representasjonen,
+slik at hver node trenger bare to pekere uansett hvor mange barn den har. Denne
+fleksibiliteten er prisen vi betaler når strukturen *ikke* kan kodes implisitt i
+en tabell slik haugen kan.
+
+## Binære søketrær
+
+Et <Term name="Binært søketre" /> ordner nøklene slik at søk blir retningsbestemt.
+
+<Statement kind="definition" name="Søketre-egenskapen">
+For hver node $x$ gjelder: alle nøkler i venstre deltre er $\le x.\text{key}$, og
+alle nøkler i høyre deltre er $\ge x.\text{key}$ — rekursivt for hele treet. Et
+*inorden*-traversal besøker derfor nøklene i sortert rekkefølge.
+</Statement>
+
+Søk utnytter dette direkte: i hver node sammenligner vi nøkkelen vår med
+`x.key`, og går til venstre eller høyre deltre. Dermed elimineres ett helt deltre
+ved hvert steg, akkurat som i binærsøk. De andre standardoperasjonene følger samme
+mønster og koster alle $O(h)$, der $h$ er treets høyde.
+
+<Table
+  columns={["Operasjon", "Strategi", "Kjøretid"]}
+  rows={[
+    ["$\\text{Search}$", "følg én gren, kast det andre deltreet", "$O(h)$"],
+    ["$\\text{Minimum / Maximum}$", "gå helt til venstre / høyre", "$O(h)$"],
+    ["$\\text{Successor}$", "minste node større enn $x$", "$O(h)$"],
+    ["$\\text{Insert}$", "søk til en tom plass, heng på et blad", "$O(h)$"],
+    ["$\\text{Delete}$", "tre tilfeller; bruk evt. etterfølgeren", "$O(h)$"],
+  ]}
+  align={["left", "left", "left"]}
+  caption="Standardoperasjonene på et binært søketre koster alle $O(h)$. Alt avhenger derfor av høyden $h$."
+/>
+
+Siden alt koster $O(h)$, er **høyden** hele spørsmålet. Et balansert tre har
+$h = \Theta(\lg n)$ og gir logaritmiske operasjoner. Et degenerert tre — bygget ved
+å sette inn allerede sorterte nøkler — blir en lenket liste med $h = n-1$ og
+lineære operasjoner.
+
+<Statement kind="theorem" name="Forventet høyde for et tilfeldig BST">
+Bygger vi et binært søketre ved å sette inn $n$ distinkte nøkler i en **tilfeldig
+rekkefølge**, er den forventede høyden $O(\lg n)$. I gjennomsnitt er altså et
+usortert BST grunt, selv om verste tilfelle er $\Theta(n)$.
+</Statement>
+
+Forventningen gjelder bare for tilfeldig innsettingsrekkefølge — vi kan ikke stole
+på den hvis dataene kan komme sortert. **Balanserte søketrær** (som rød-svarte trær
+eller AVL-trær) gir derfor en *garanti*: ved å rebalansere under innsetting og
+sletting holder de $h = O(\lg n)$ for enhver sekvens, og dermed logaritmisk verste
+tilfelle for alle operasjonene.
+
+## Sjekk deg selv
+
+<Quiz
+  question="Hva er haug-egenskapen i en maks-haug?"
+  options={[
+    "Forelderen er minst like stor som hvert av barna sine.",
+    "Venstre barn er alltid det minste i deltreet.",
+    "Hvert nivå er sortert fra venstre mot høyre.",
+  ]}
+  answer={0}
+  explanation="Haug-egenskapen er lokal mellom forelder og barn ($a[\text{forelder}(i)] \ge a[i]$), ikke en total sortering. Den garanterer bare at roten er størst."
+/>
+
+<Callout type="note">
+Pensum: CLRS innledningene til del III og V, kap. 6 (hauger og Heapsort),
+kap. 10.3 (pekerrepresentasjon) og kap. 12 (binære søketrær).
+</Callout>
+
+<KeyTakeaways>
+- En haug er et nesten komplett tre lagret i en tabell; barn ligger på $2i{+}1$ og $2i{+}2$, og roten er ekstremverdien.
+- Prioritetskø-operasjonene `Extract-Max`/`Insert` koster $O(\lg n)$; `Maximum` er $O(1)$.
+- Build-Max-Heap bygger en haug i $O(n)$ — *ikke* $O(n \lg n)$ som $n$ enkeltinnsettinger ville gitt.
+- Heapsort sorterer in-place i $\Theta(n \lg n)$, men er ikke stabil.
+- BST-operasjonene koster $O(h)$. Tilfeldig innsetting gir forventet $h = O(\lg n)$; balanserte trær *garanterer* det.
+</KeyTakeaways>
