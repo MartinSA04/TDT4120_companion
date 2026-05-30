@@ -23,6 +23,10 @@ accentDark: "#e8836b" # dark mode (lighter so links read on the dark ground)
 # ── Official course page (NTNU emneside) ─────────────────────────────────────
 courseUrl: "https://www.ntnu.no/studier/emner/TDT4120"
 
+# ── Source repo (→ footer "rediger denne siden" links + freshness) ───────────
+repoUrl: "https://github.com/MartinSA04/TDT4120_companion"
+repoBranch: main
+
 # ── Upcoming exam ────────────────────────────────────────────────────────────
 # `date` is intentionally omitted until the official H2026 date is published —
 # never seed a placeholder (these pages are a source of truth). Add it as
