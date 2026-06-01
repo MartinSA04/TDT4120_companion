@@ -12,8 +12,8 @@ importers:
         specifier: ^6
         version: 6.4.2(rollup@4.60.4)(yaml@2.9.0)
       study-companion:
-        specifier: github:MartinSA04/StudyCompanion#v1.3.0
-        version: https://codeload.github.com/MartinSA04/StudyCompanion/tar.gz/6112c46ca69252995da13bd62737067326429b4f(astro@6.4.2(rollup@4.60.4)(yaml@2.9.0))
+        specifier: github:MartinSA04/StudyCompanion#v1.4.0
+        version: https://codeload.github.com/MartinSA04/StudyCompanion/tar.gz/a3397dcfe5d887eb0492f16591fd452e2a0311cb(astro@6.4.2(rollup@4.60.4)(yaml@2.9.0))
 
 packages:
 
@@ -1441,9 +1441,9 @@ packages:
   stringify-entities@4.0.4:
     resolution: {integrity: sha512-IwfBptatlO+QCJUo19AqvrPNqlVMpW9YEL2LIVY+Rpv2qsjCGxaDLNRgeGsQWJhfItebuJhsGSLjaBbNSQ+ieg==}
 
-  study-companion@https://codeload.github.com/MartinSA04/StudyCompanion/tar.gz/6112c46ca69252995da13bd62737067326429b4f:
-    resolution: {tarball: https://codeload.github.com/MartinSA04/StudyCompanion/tar.gz/6112c46ca69252995da13bd62737067326429b4f}
-    version: 1.2.1
+  study-companion@https://codeload.github.com/MartinSA04/StudyCompanion/tar.gz/a3397dcfe5d887eb0492f16591fd452e2a0311cb:
+    resolution: {tarball: https://codeload.github.com/MartinSA04/StudyCompanion/tar.gz/a3397dcfe5d887eb0492f16591fd452e2a0311cb}
+    version: 1.4.0
     peerDependencies:
       astro: ^6
 
@@ -3588,7 +3588,7 @@ snapshots:
       character-entities-html4: 2.1.0
       character-entities-legacy: 3.0.0
 
-  study-companion@https://codeload.github.com/MartinSA04/StudyCompanion/tar.gz/6112c46ca69252995da13bd62737067326429b4f(astro@6.4.2(rollup@4.60.4)(yaml@2.9.0)):
+  study-companion@https://codeload.github.com/MartinSA04/StudyCompanion/tar.gz/a3397dcfe5d887eb0492f16591fd452e2a0311cb(astro@6.4.2(rollup@4.60.4)(yaml@2.9.0)):
     dependencies:
       '@astrojs/mdx': 5.0.6(astro@6.4.2(rollup@4.60.4)(yaml@2.9.0))
       astro: 6.4.2(rollup@4.60.4)(yaml@2.9.0)
