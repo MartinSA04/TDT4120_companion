@@ -7,7 +7,7 @@
 # generated from this file. See AUTHORING.md in the framework repo.
 # ─────────────────────────────────────────────────────────────────────────────
 
-schemaVersion: 2
+schemaVersion: 3
 
 # ── Identity ─────────────────────────────────────────────────────────────────
 code: TDT4120
