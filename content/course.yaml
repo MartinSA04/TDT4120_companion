@@ -35,6 +35,9 @@ repoBranch: main
 # the source of truth: "Vurderingsordning: Skriftlig skoleeksamen", "Varighet
 # 4 timer", "Hjelpemiddel Kode E" (= ingen hjelpemidler tillatt).
 exam:
+  # Ordinær eksamen (Studentweb) — digital i Inspera.
+  date: 2026-12-09
+  time: "15:00"
   durationMinutes: 240
   format: Skriftlig skoleeksamen
   aids: "Hjelpemiddelkode E — ingen hjelpemidler tillatt"
