@@ -23,6 +23,9 @@ accentDark: "#e8836b" # dark mode (lighter so links read on the dark ground)
 # ── Official course page (NTNU emneside) ─────────────────────────────────────
 courseUrl: "https://www.ntnu.no/studier/emner/TDT4120"
 
+# Kurs-huben (oversikten over alle emnesidene) — gir "Alle emner"-lenken øverst i sidemenyen.
+hubUrl: "https://kurs.martinsundal.no"
+
 # ── Source repo (→ footer "rediger denne siden" links + freshness) ───────────
 repoUrl: "https://github.com/MartinSA04/TDT4120_companion"
 repoBranch: main
