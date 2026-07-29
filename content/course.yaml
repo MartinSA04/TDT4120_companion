@@ -7,7 +7,7 @@
 # generated from this file. See AUTHORING.md in the framework repo.
 # ─────────────────────────────────────────────────────────────────────────────
 
-schemaVersion: 3
+schemaVersion: 4
 
 # ── Identity ─────────────────────────────────────────────────────────────────
 code: TDT4120
@@ -22,6 +22,11 @@ accentDark: "#e8836b" # dark mode (lighter so links read on the dark ground)
 
 # ── Official course page (NTNU emneside) ─────────────────────────────────────
 courseUrl: "https://www.ntnu.no/studier/emner/TDT4120"
+
+# Institusjonen som eier emnet. Havner som `provider` på Course-objektet denne
+# guiden er `about` i JSON-LD — aldri på selve siden (guiden er om emnet, ikke
+# emnet). De andre emnesidene setter den allerede.
+institution: NTNU
 
 # Kurs-huben (oversikten over alle emnesidene) — gir "Alle emner"-lenken øverst i sidemenyen.
 hubUrl: "https://kurs.martinsundal.no"
