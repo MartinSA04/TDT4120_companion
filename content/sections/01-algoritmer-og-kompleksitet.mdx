@@ -1,0 +1,307 @@
+---
+order: 1
+title: Algoritmer og kompleksitet
+summary: Problem, instans og RAM-modellen, asymptotisk notasjon, forskjellen på grense og tilfelle, og Insertion-Sort med løkkeinvariant og kjøretidsanalyse.
+importance: core
+part: "Del 1: Grunnlag"
+updated: 2026-08-21
+---
+
+To metoder kan løse samme problem og likevel ikke være i samme klasse. Skal vi
+pare givere og mottakere i et donasjonsregister, kan vi prøve alle koblinger
+etter tur, eller vi kan kjøre Ford-Fulkerson. Med fire personer på hver side har
+opptellingen 24 permutasjoner å gå gjennom, mens Ford-Fulkerson bruker rundt 36
+operasjoner. Opptellingen ser billigst ut. Dobler vi til åtte, står det 40 320
+mot 70.
+
+<LearningGoals>
+- Les lærebokas pseudokode, og oversett den til kjørbar Python.
+- Forklar hva <Term name="RAM-modellen">RAM-modellen</Term> koster og hva den ser bort fra.
+- Skill mellom <Term name="Problem og instans">problem, instans og problemstørrelse</Term>.
+- Definer og bruk <Term name="Asymptotisk notasjon">asymptotisk notasjon</Term>: $O$, $\Omega$, $\Theta$, $o$ og $\omega$.
+- Definer beste, verste og gjennomsnittlige tilfelle.
+- Bruk hvilken som helst av de fem operatorene på hvilket som helst av de tre tilfellene.
+- Bruk <Term name="Løkkeinvariant">løkkeinvarianter</Term> og induksjon til å vise at en løkke er korrekt.
+- Gjør rede for Insertion-Sort steg for steg.
+</LearningGoals>
+
+## Problem, instans og maskin
+
+Et problem er en relasjon mellom input og output. Sortering krever at outputen
+er en stigende omordning av inputen, og sier ingenting om hvilke tall som kommer
+inn. En instans er én bestemt input, for eksempel $\langle 6, 8, 3, 5 \rangle$.
+Problemstørrelsen $n$ er plassen en instans trenger, som regel antall elementer
+i den.
+
+Kjøretiden er en funksjon av $n$. For at den funksjonen skal si noe som gjelder
+på andre maskiner enn din egen, regner vi i <Term name="RAM-modellen" />:
+aritmetikk, sammenligning, hopp og oppslag i én celle koster én tidsenhet hver,
+og instruksjonene utføres etter hverandre. Heltallene har begrenset bredde, om
+lag $c \lg n$ bits, akkurat nok til å indeksere hele inputen. Vi kan regne med
+større tall enn det, slik kryptografi gjør, men da holder ikke antagelsen om
+konstant tid per operasjon lenger.
+
+## Vekstrater
+
+Anta ett mikrosekund per operasjon og hundre år til rådighet. Da rekker vi disse
+problemstørrelsene:
+
+<Table
+  columns={["Kjøretid", "Navn", "Største $n$ på hundre år"]}
+  rows={[
+    ["$\\lg n$", "logaritmisk", "$2^{3{,}2 \\cdot 10^{15}}$"],
+    ["$n$", "lineær", "$3{,}2 \\cdot 10^{15}$"],
+    ["$n \\lg n$", "linearitmisk", "$6{,}9 \\cdot 10^{13}$"],
+    ["$n^2$", "kvadratisk", "$56\\,000\\,000$"],
+    ["$n^3$", "kubisk", "$146\\,000$"],
+    ["$2^n$", "eksponentiell", "$51$"],
+    ["$n!$", "faktoriell", "$17$"],
+  ]}
+  align={["left", "left", "right"]}
+  caption="Alt på formen $n^k$ kaller vi polynomisk."
+/>
+
+<Figure
+  src="/figures/vekstrater.svg"
+  alt="Logaritmisk plott av antall operasjoner mot problemstørrelse for n, n lg n, n i andre, n i tredje, to opphøyd i n og n fakultet. De to siste stiger langt raskere enn de fire første."
+  number={1}
+  width={560}
+  height={320}
+  caption="Antall operasjoner mot $n$. Y-aksen er logaritmisk, så avstanden mellom to kurver er faktoren mellom dem."
+/>
+
+En raskere maskin hjelper mindre enn en bedre algoritme. Kjøper du en maskin som
+er tusen ganger raskere, flytter du de 17 faktorielle elementene til 20. Bytter
+du til en kvadratisk algoritme, flytter du dem til titalls millioner.
+
+## Asymptotisk notasjon
+
+Vi vil sammenligne vekst uten å måtte telle enkeltoperasjoner. Asymptotisk
+notasjon gjør det ved å se bort fra konstantfaktorer og lavere ordens ledd.
+
+<Statement kind="definition" name="Asymptotiske grenser">
+$f(n) = O(g(n))$ når det finnes konstanter $c > 0$ og $n_0$ slik at
+$0 \le f(n) \le c\,g(n)$ for alle $n \ge n_0$. Tilsvarende er
+$f(n) = \Omega(g(n))$ når $0 \le c\,g(n) \le f(n)$, og $f(n) = \Theta(g(n))$ når
+begge holder samtidig, altså $0 \le c_1 g(n) \le f(n) \le c_2 g(n)$ for
+$n \ge n_0$.
+</Statement>
+
+Grensen trenger bare å holde fra en eller annen $n_0$ og oppover, og $g$ kan
+skaleres med en konstant først. Derfor er $3n^2 + 100n = \Theta(n^2)$. For stor
+nok $n$ er $100n$ lite mot det kvadratiske leddet, og faktoren $3$ går inn i
+$c$.
+
+<Figure
+  src="/figures/asymptotiske-grenser.svg"
+  alt="Tre kurver mot n. Fra n lik hundre ligger f mellom n i andre og to n i andre. Til venstre for hundre ligger f over begge."
+  number={2}
+  width={560}
+  height={300}
+  caption="$f(n) = n^2 + 100n$ mot $g(n) = n^2$. Den nedre grensen holder med $c_1 = 1$ for alle $n$, den øvre først med $c_2 = 2$ fra $n_0 = 100$. Til venstre for $n_0$ bryter $f$ gjennom, og det er tillatt. Begge sammen gir $\Theta(n^2)$."
+/>
+
+### De to strenge operatorene
+
+$O$ sier at $f$ vokser høyst så raskt som $g$, og tillater at de to vokser like
+raskt. $2n^2 = O(n^2)$ og $2n = O(n^2)$ er begge sanne, men bare den første er
+stram. For en øvre grense som ikke er stram bruker vi $o$, og der må
+$f(n) < c\,g(n)$ holde for enhver $c > 0$, ikke bare for én eneste. Det er en
+langt sterkere påstand, og den er ekvivalent med at $f(n)/g(n)$ går mot null. Så
+$2n = o(n^2)$, mens $2n^2 \ne o(n^2)$.
+
+$\omega$ er det samme speilvendt: en nedre grense som ikke er stram, med
+$c\,g(n) < f(n)$ for enhver $c$. Da vokser $f(n)/g(n)$ over alle grenser, og
+$f(n) = o(g(n))$ er nøyaktig det samme som $g(n) = \omega(f(n))$.
+
+Alle fem oppfører seg som sammenligning av to tall, og det er den raskeste veien
+til å huske dem:
+
+<Table
+  columns={["Skriver vi", "Leses som", "Grensen $f(n)/g(n)$", "Som tall"]}
+  rows={[
+    ["$f = O(g)$", "vokser høyst så raskt som $g$", "endelig", "$a \\le b$"],
+    ["$f = \\Omega(g)$", "vokser minst så raskt som $g$", "større enn null", "$a \\ge b$"],
+    ["$f = \\Theta(g)$", "vokser like raskt som $g$", "en konstant, verken $0$ eller $\\infty$", "$a = b$"],
+    ["$f = o(g)$", "vokser strengt saktere enn $g$", "$0$", "$a < b$"],
+    ["$f = \\omega(g)$", "vokser strengt raskere enn $g$", "$\\infty$", "$a > b$"],
+  ]}
+  align={["left", "left", "left", "center"]}
+  caption="Analogien er lærebokas egen (CLRS §3.2). Den holder for transitivitet og for det meste ellers, med ett unntak: to tall kan alltid sammenlignes, men to funksjoner kan mangle et forhold i det hele tatt. $n$ og $n^{1+\sin n}$ er verken $O$ eller $\Omega$ av hverandre."
+/>
+
+Notasjonen dukker også opp midt inne i et uttrykk. Da står den for en ukjent
+funksjon av den oppgitte ordenen, slik at $n + O(n)$ betyr «$n$ pluss en eller
+annen funksjon som er $O(n)$». Slike ligninger leses fra venstre mot høyre, og
+høyresiden må være minst like generell som venstresiden. Derfor stemmer
+$n + O(n) = O(n)$, mens $O(n) = n + O(n)$ er galt.
+
+<Example title="Forenkle $O(n^a) + \Omega(n^b) + \Theta(n^c)$">
+Finn det enkleste ekvivalente uttrykket, uten å tape presisjon.
+
+<Solution>
+Ta de øvre og de nedre grensene hver for seg. $O(n^a)$ gir en øvre grense $n^a$
+og ingen nedre, så den nedre er $0$. $\Omega(n^b)$ gir en nedre grense $n^b$ og
+ingen øvre. $\Theta(n^c)$ gir begge, $n^c$.
+
+Summen av de nedre grensene er $0 + n^b + n^c$. Summen av de øvre er ubegrenset,
+fordi $\Omega(n^b)$ ikke setter noen tak. Vi står da igjen med en nedre grense
+alene, og en nedre grense alene skrives med $\Omega$.
+
+<Answer>$\Omega(n^b + n^c)$</Answer>
+</Solution>
+</Example>
+
+## Grenser og tilfeller
+
+For hver $n$ finnes det mange instanser, og de koster ulikt, så størrelsen alene
+bestemmer ikke kjøretiden. Beste tilfelle er den billigste instansen av
+størrelse $n$, verste tilfelle den dyreste, og gjennomsnittstilfellet er
+middelet over alle instansene av den størrelsen. Hvert av de tre er en egen
+funksjon av $n$.
+
+<Simulation
+  src="/sims/tilfeller.js"
+  host="dom"
+  title="Beste, verste og gjennomsnittlige tilfelle"
+  caption="Hvert punkt er én instans, kjørt gjennom Insertion-Sort og talt opp. De mørke punktene er den billigste og den dyreste. Velg tilfelle og grense, og se at alle ni kombinasjonene sier noe sant."
+  height={330}
+/>
+
+Hvilket tilfelle vi snakker om, og hvor stramt vi begrenser det, er to
+uavhengige valg. Alle fem operatorene kan brukes på alle tre funksjonene:
+
+<Table
+  columns={["Tilfelle", "$O$", "$\\Omega$", "$\\Theta$"]}
+  rows={[
+    ["Beste", "$O(n)$", "$\\Omega(n)$", "$\\Theta(n)$"],
+    ["Gjennomsnittlige", "$O(n^2)$", "$\\Omega(n^2)$", "$\\Theta(n^2)$"],
+    ["Verste", "$O(n^2)$", "$\\Omega(n^2)$", "$\\Theta(n^2)$"],
+    ["Ukjent input", "$O(n^2)$", "$\\Omega(n)$", "ingen"],
+  ]}
+  align={["left", "left", "left", "left"]}
+  caption="Insertion-Sort, stramme grenser i hver rute. Vet vi ikke hvilken instans vi får, må den øvre grensen dekke det verste og den nedre det beste, og da finnes det ingen $\Theta$."
+/>
+
+<Callout type="warning" title="Ukens snubletråd">
+Det er lov å skrive at verste tilfelle er $\Omega(n^2)$. Utsagnet sier at den
+dyreste instansen av størrelse $n$ koster minst kvadratisk tid, altså en nedre
+grense for et maksimum. Det tilsvarer å si at den høyeste i klassen er minst
+1 m høy.
+</Callout>
+
+Utelater du tilfellet, gjelder påstanden alle instanser. «Insertion-Sort bruker
+$O(n^2)$» er da riktig, og «$\Omega(n)$» også, mens «$\Theta(n^2)$» er galt: på
+en sortert tabell bruker den $\Theta(n)$.
+
+## Løkkeinvarianter
+
+En løkke gjør det samme trinnet om og om igjen, og korrekthetsbeviset for den er
+et induksjonsbevis. Vi trenger en påstand om tilstanden som holder ved starten
+av hver iterasjon.
+
+<Statement kind="definition" name="Løkkeinvariant">
+En invariant vises i tre deler. <b>Initialisering</b>: påstanden holder før
+første iterasjon. <b>Vedlikehold</b>: holder den før en iterasjon, holder den
+også før den neste. <b>Terminering</b>: løkka stopper, og påstanden gir da det vi
+var ute etter.
+</Statement>
+
+Initialisering er grunntilfellet og vedlikehold er induksjonssteget. Terminering
+er det løkker har i tillegg: beviset er verdiløst om løkka aldri stopper.
+
+Svak induksjon antar bare forrige trinn og passer til løkker. Sterk induksjon
+antar alle mindre tilfeller, og passer når en algoritme kaller seg selv på flere
+mindre instanser.
+
+## Insertion-Sort
+
+Læreboka skriver algoritmen i pseudokode med indekser fra 1. Under står den i
+Python, med indekser fra 0, slik øvingen krever.
+
+Invarianten er at `A[0 : i]` er sortert ved starten av hver iterasjon av
+`for`-løkka, og består av de elementene som lå der fra begynnelsen. Før første
+iterasjon er $i = 1$, og utsnittet har ett element. Én iterasjon løfter ut
+`A[i]`, skyver hvert større element i utsnittet ett hakk mot høyre og setter
+nøkkelen inn i den ledige plassen, slik at `A[0 : i+1]` er sortert. Når løkka
+stopper er utsnittet hele tabellen.
+
+<CodeBlock
+  id="insertion-sort"
+  title="insertion_sort.py"
+  lang="python"
+  code={`def insertion_sort(A, n):
+    for i in range(1, n):
+        key = A[i]
+        # Sett key inn i den sorterte delen A[0 : i]
+        j = i - 1
+        while j >= 0 and A[j] > key:
+            A[j + 1] = A[j]
+            j = j - 1
+        A[j + 1] = key
+    return A`}
+/>
+
+<Stepper
+  src="/steppers/insertion-sort.js"
+  codeId="insertion-sort"
+  title="Insertion-Sort"
+  caption="Grønt er den sorterte delen. Nøkkelen løftes ut i boksen over tabellen, den ledige plassen flytter seg mot venstre så lenge naboen er større, og nøkkelen settes inn når naboen ikke er det."
+  height={250}
+/>
+
+Den ytre løkka går $n-1$ ganger uansett input. Den indre gjør et sted mellom 0
+og $i$ forskyvninger, og det er der forskjellen mellom tilfellene ligger. Er
+tabellen sortert fra før, er `A[j]` aldri større enn nøkkelen, `while`-testen
+slår feil med én gang, og vi gjør $\Theta(n)$ arbeid totalt.
+
+<Example title="Verste tilfelle for Insertion-Sort">
+Tabellen er sortert synkende, $\langle n, n-1, \ldots, 1 \rangle$. Hvor mange
+forskyvninger gjør algoritmen?
+
+<Solution>
+I iterasjon $i$ er `A[i]` mindre enn hvert av de $i$ elementene foran seg, så
+nøkkelen må forbi dem alle. Det er $i$ forskyvninger. Lagt sammen over
+iterasjonene $i = 1, \ldots, n-1$:
+
+$$\sum_{i=1}^{n-1} i \;=\; \frac{n(n-1)}{2}$$
+
+Uttrykket er et halvt rektangel med sider $n$ og $n-1$. Uten konstantfaktoren og
+det lineære leddet står vi igjen med $n^2$.
+
+<Answer>$n(n-1)/2$ forskyvninger, altså $\Theta(n^2)$</Answer>
+</Solution>
+</Example>
+
+<Table
+  columns={["Tilfelle", "Kjøretid", "Instans"]}
+  rows={[
+    ["Beste", "$\\Theta(n)$", "sortert fra før, ingen forskyvninger"],
+    ["Gjennomsnittlige", "$\\Theta(n^2)$", "tilfeldig rekkefølge, halve utsnittet i snitt"],
+    ["Verste", "$\\Theta(n^2)$", "sortert synkende"],
+  ]}
+  align={["left", "left", "left"]}
+  caption="Minnebruken er $O(1)$ ut over selve tabellen, og like elementer beholder rekkefølgen sin."
+/>
+
+## Sjekk deg selv
+
+<Quiz
+  question="En algoritme har kjøretid beskrevet av $\Omega(n) + \Theta(n^2 \lg n) + O(n^3)$. Hva kan vi si om kjøretiden $W(n)$ i verste tilfelle?"
+  options={[
+    "$W(n) = \\Omega(n^2 \\lg n)$",
+    "$W(n) = \\Theta(n)$",
+    "$W(n) = o(n^2 \\lg n)$",
+  ]}
+  answer={0}
+  explanation="Uttrykket har $n^2 \lg n$ som nedre grense, så kjøretiden er minst så stor for enhver input. Verste tilfelle er per definisjon det dyreste, og er dermed også minst $n^2 \lg n$. Den øvre grensen $n^3$ sier derimot ingenting om hvor liten $W(n)$ kan være."
+/>
+
+<KeyTakeaways>
+- Et problem er relasjonen mellom input og output, en instans er én input, og $n$ er størrelsen på den.
+- RAM-modellen gir én tidsenhet per grunnoperasjon, slik at kjøretid kan sammenlignes uten å nevne en bestemt maskin.
+- Forskjellen mellom faktoriell og kvadratisk kjøretid er 17 elementer mot 56 millioner på hundre år.
+- $O$, $\Omega$, $\Theta$, $o$ og $\omega$ begrenser vekst. Beste, verste og gjennomsnittlige tilfelle velger input. De to aksene er uavhengige.
+- En løkkeinvariant vises med initialisering, vedlikehold og terminering.
+- Insertion-Sort holder $A[0 : i]$ sortert, og bruker $\Theta(n)$ i beste og $\Theta(n^2)$ i verste tilfelle.
+</KeyTakeaways>

@@ -48,210 +48,88 @@ exam:
   time: "15:00"
   durationMinutes: 240
   format: Skriftlig skoleeksamen
-  aids: "Hjelpemiddelkode E — ingen hjelpemidler tillatt"
+  aids: "Hjelpemiddelkode E, ingen hjelpemidler tillatt"
   formulaSheet: false # kode E (ingen hjelpemidler) — no sheet handed out at the exam
-
 # ── Reference formulas → Formelsamling page + inline <FormulaRef id="…"> ──────
-# Algoritmekurs: dette er kjøretider, grenser og rekurrenser snarere enn
+# Algoritmekurs: dette er definisjoner, kjøretider og grenser snarere enn
 # klassiske formler. KaTeX i YAML må dobbelt-quotes med doble bakstreker.
+# Listen vokser med modulene: her ligger bare det modulene faktisk dekker.
 formulas:
   - {
-      tex: "T(n) = aT(n/b) + f(n)",
-      label: "Masterteoremets rekurrensform",
-      section: "Asymptotikk og rekurrenser",
-      id: master,
+      tex: "0 \\le f(n) \\le c\\,g(n) \\quad \\text{for } n \\ge n_0",
+      label: "$f(n) = O(g(n))$, øvre grense, for en konstant $c > 0$",
+      section: "Asymptotisk notasjon",
+      id: def-o,
     }
   - {
-      tex: "T(n) = 2T(n/2) + \\Theta(n) = \\Theta(n \\lg n)",
-      label: "Balansert splitt og hersk (Merge-Sort)",
-      section: "Asymptotikk og rekurrenser",
-      id: merge-rek,
+      tex: "0 \\le c\\,g(n) \\le f(n) \\quad \\text{for } n \\ge n_0",
+      label: "$f(n) = \\Omega(g(n))$, nedre grense, for en konstant $c > 0$",
+      section: "Asymptotisk notasjon",
+      id: def-omega,
     }
   - {
-      tex: "\\Omega(n \\lg n)",
-      label: "Nedre grense for sammenligningsbasert sortering",
-      section: "Sortering",
-      id: sammenlign-nedre,
+      tex: "0 \\le c_1 g(n) \\le f(n) \\le c_2 g(n) \\quad \\text{for } n \\ge n_0",
+      label: "$f(n) = \\Theta(g(n))$, stram grense, både $O$ og $\\Omega$",
+      section: "Asymptotisk notasjon",
+      id: def-theta,
     }
   - {
-      tex: "O(n)",
-      label: "Build-Max-Heap bygger en haug i lineær tid (ikke $O(n \\lg n)$)",
-      section: "Datastrukturer",
-      id: bygg-haug,
+      tex: "\\lim_{n \\to \\infty} \\dfrac{f(n)}{g(n)} = 0",
+      label: "$f(n) = o(g(n))$, streng øvre grense. For $\\omega$ går brøken mot uendelig.",
+      section: "Asymptotisk notasjon",
+      id: def-lille-o,
     }
   - {
-      tex: "O(V + E)",
-      label: "BFS og DFS med naboliste-representasjon",
-      section: "Grafer",
-      id: graf-traversering,
+      tex: "O(n^a) + \\Omega(n^b) + \\Theta(n^c) = \\Omega(n^b + n^c)",
+      label: "Summer øvre og nedre grenser hver for seg. Står vi igjen med bare en nedre grense, skrives den med $\\Omega$.",
+      section: "Asymptotisk notasjon",
+      id: sum-grenser,
     }
   - {
-      tex: "d[v] \\leftarrow \\min\\{\\, d[v],\\; d[u] + w(u,v) \\,\\}",
-      label: "Kantoppdatering (Relax)",
-      section: "Grafer",
-      id: relax,
+      tex: "\\sum_{k=1}^{n-1} k = \\dfrac{n(n-1)}{2} = \\Theta(n^2)",
+      label: "Trekanttall, og antall forskyvninger i verste tilfelle for Insertion-Sort",
+      section: "Insertion-Sort",
+      id: trekanttall,
     }
   - {
-      tex: "O((V + E) \\lg V)",
-      label: "Dijkstra med binær min-haug",
-      section: "Grafer",
-      id: dijkstra-tid,
-    }
-  - {
-      tex: "O(V E)",
-      label: "Bellman-Ford (tåler negative kanter)",
-      section: "Grafer",
-      id: bellman-ford-tid,
-    }
-  - {
-      tex: "\\Theta(V^3)",
-      label: "Floyd-Warshall (alle-til-alle korteste veier)",
-      section: "Grafer",
-      id: floyd-warshall-tid,
-    }
-  - {
-      tex: "\\Theta(n W)",
-      label: "Binært ryggsekk-DP — pseudopolynomisk i kapasiteten $W$",
-      section: "Kompleksitet",
-      id: knapsack-dp,
+      tex: "\\Theta(n) \\;\\text{og}\\; \\Theta(n^2)",
+      label: "Insertion-Sort i beste og i verste tilfelle",
+      section: "Insertion-Sort",
+      id: insertion-sort-tid,
     }
 
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
+# Vokser med modulene, på samme vis som formlene over.
 glossary:
   - {
-      term: "Asymptotisk notasjon",
-      definition: "Et presist språk for øvre og nedre grenser på vekst. Notasjonen beskriver funksjoner, ikke bare bestemte tilfeller som worst-case: $O$ gir øvre grense, $\\Omega$ nedre, og $\\Theta$ en stram grense.",
+      term: "Problem og instans",
+      definition: "Et problem er relasjonen mellom input og output. En instans er én bestemt input. Problemstørrelsen $n$ er plassen en instans trenger, som regel antall elementer.",
       section: "Grunnlag",
     }
   - {
       term: "RAM-modellen",
-      definition: "En idealisert maskinmodell der grunnleggende operasjoner og tilgang til én celle tar konstant tid. Den gjør kjøretidsanalyse sammenlignbar på tvers av maskiner.",
+      definition: "<em>Random-access machine</em>: en idealisert maskin der aritmetikk, sammenligning, hopp og oppslag i én celle koster én tidsenhet hver, og instruksjonene utføres etter hverandre. Heltallene er om lag $c \\lg n$ bits brede.",
       section: "Grunnlag",
     }
   - {
-      term: "Problem og instans",
-      definition: "Et problem er den generelle oppgaven; en instans er én konkret input. Problemstørrelsen er målet vi analyserer kjøretiden mot.",
+      term: "Asymptotisk notasjon",
+      definition: "Et språk for vekst som ser bort fra konstantfaktorer og lavere ordens ledd. Oppfører seg som sammenligning av tall: $O$ er $\\le$, $\\Omega$ er $\\ge$, $\\Theta$ er $=$, $o$ er $<$ og $\\omega$ er $>$. De to siste krever ulikheten for enhver konstant $c > 0$, ikke bare for én.",
+      section: "Grunnlag",
+    }
+  - {
+      term: "Beste, verste og gjennomsnittlige tilfelle",
+      definition: "Tre funksjoner av $n$: kjøretiden for den billigste instansen av størrelse $n$, for den dyreste, og middelet over alle. Hvilket tilfelle det gjelder er uavhengig av hvilken asymptotisk operator som brukes på det.",
       section: "Grunnlag",
     }
   - {
       term: "Løkkeinvariant",
-      definition: "En påstand som er sann før og etter hver iterasjon. Bevises med <b>initialisering</b>, <b>vedlikehold</b> og <b>avslutning</b>, og brukes til å vise at løkken bygger riktig resultat.",
+      definition: "En påstand om tilstanden som holder ved starten av hver iterasjon. Vises med <b>initialisering</b>, <b>vedlikehold</b> og <b>terminering</b>, og er induksjonsbeviset for at løkka er korrekt.",
       section: "Grunnlag",
     }
   - {
-      term: "Induksjon",
-      definition: "Bevismetode der grunntilfeller etableres først, og større tilfeller begrunnes ved å anta at mindre tilfeller fungerer.",
+      term: "Insertion-Sort",
+      definition: "Sorterer ved å holde $A[0 : i]$ sortert og sette $A[i]$ inn på rett plass i det utsnittet. Bruker $\\Theta(n)$ i beste tilfelle og $\\Theta(n^2)$ i verste, og sorterer på plass.",
       section: "Grunnlag",
-    }
-  - {
-      term: "Reduksjon",
-      definition: "En transformasjon som lar oss løse eller sammenligne problemer ved å bruke en løsning på et annet problem. For å vise at $X$ er vanskelig reduserer vi <em>fra</em> et kjent vanskelig problem <em>til</em> $X$.",
-      section: "Grunnlag",
-    }
-  - {
-      term: "Splitt og hersk",
-      definition: "Del instansen i mindre delinstanser, løs dem rekursivt, og kombiner resultatene når det trengs.",
-      section: "Splitt og hersk",
-    }
-  - {
-      term: "Rekurrens",
-      definition: "En ligning for kjøretid uttrykt ved kjøretiden til mindre instanser. Løses med substitusjon, rekursjonstrær eller masterteoremet.",
-      section: "Splitt og hersk",
-    }
-  - {
-      term: "Nedre grense for sammenligningssortering",
-      definition: "Alle sammenligningsbaserte sorteringsalgoritmer må skille mellom $n!$ mulige rekkefølger, som krever $\\Omega(n \\lg n)$ sammenligninger i verste fall.",
-      section: "Sortering",
-    }
-  - {
-      term: "Stabil sortering",
-      definition: "Like elementer beholder relativ rekkefølge. Avgjørende når sortering gjentas på flere nøkler, som i radix-sortering.",
-      section: "Sortering",
-    }
-  - {
-      term: "Haug",
-      definition: "Et nesten komplett tre lagret kompakt i en tabell, der forelderen har prioritet over barna. Brukes ofte som prioritetskø.",
-      section: "Datastrukturer",
-    }
-  - {
-      term: "Binært søketre",
-      definition: "Et tre der alt i venstre deltre er mindre enn rota og alt i høyre deltre er større — rekursivt for alle noder.",
-      section: "Datastrukturer",
-    }
-  - {
-      term: "Dynamisk programmering",
-      definition: "Brukes når delinstanser overlapper. Vi lagrer delløsninger og beregner dem i en rekkefølge som respekterer avhengighetene i delinstansgrafen.",
-      section: "Designmetoder",
-    }
-  - {
-      term: "Grådig valg",
-      definition: "Et lokalt valg som kan inngå i en optimal løsning. Riktig grådighet krever også optimal delstruktur.",
-      section: "Designmetoder",
-    }
-  - {
-      term: "Binært ryggsekkproblem",
-      definition: "Velg hele gjenstander med verdi og vekt under en kapasitet. Den klassiske DP-en er $\\Theta(nW)$, men dette er <em>pseudopolynomisk</em> — ikke polynomisk i instansens størrelse.",
-      section: "Designmetoder",
-    }
-  - {
-      term: "Graftraversering",
-      definition: "Systematisk utforsking av noder ved å holde orden på oppdagede, men ikke ferdigbehandlede noder.",
-      section: "Grafer",
-    }
-  - {
-      term: "Bredde-først-søk",
-      definition: "Traverserer lag for lag fra startnoden. I uvektede grafer gir dette korteste veier målt i antall kanter.",
-      section: "Grafer",
-    }
-  - {
-      term: "Dybde-først-søk",
-      definition: "Følger én gren dypt før den rygger tilbake. Tidsstempler og foreldre gir struktur til topologisk sortering og sterkt sammenhengende komponenter.",
-      section: "Grafer",
-    }
-  - {
-      term: "Disjunkte mengder",
-      definition: "En datastruktur for å vedlikeholde en partisjon av elementer, med operasjonene Make-Set, Find-Set og Union. Kalles også union-find.",
-      section: "Grafer",
-    }
-  - {
-      term: "Minimalt spenntre",
-      definition: "Et sett kanter som kobler alle noder uten sykler og med lavest mulig total vekt.",
-      section: "Grafer",
-    }
-  - {
-      term: "Kantoppdatering",
-      definition: "Forsøk på å forbedre et avstandsestimat ved å gå via én kant. Dette er kjernen i Bellman-Ford, DAG-korteste veier og Dijkstra.",
-      section: "Grafer",
-    }
-  - {
-      term: "Dijkstras algoritme",
-      definition: "Velger alltid noden med lavest avstandsestimat. Korrektheten avhenger av at kantvektene ikke er negative.",
-      section: "Grafer",
-    }
-  - {
-      term: "Alle-til-alle korteste veier",
-      definition: "Finn korteste veier mellom alle par av noder. Tette grafer gjør dynamisk programmering spesielt nyttig her.",
-      section: "Grafer",
-    }
-  - {
-      term: "Maksimal flyt",
-      definition: "Send mest mulig flyt fra kilde til sluk uten å bryte kapasiteter eller flytbevaring.",
-      section: "Grafer",
-    }
-  - {
-      term: "Restnett",
-      definition: "Grafen over hvor flyt kan økes, reduseres eller flyttes. Forøkende stier finnes i restnettet, og bakoverkanter representerer muligheten til å angre tidligere flyt.",
-      section: "Grafer",
-    }
-  - {
-      term: "NP-kompletthet",
-      definition: "Et NP-komplett beslutningsproblem ligger i NP og er minst like vanskelig som alle problemer i NP under polynomiske reduksjoner.",
-      section: "Kompleksitet",
-    }
-  - {
-      term: "Karp-reduksjon",
-      definition: "En polynomisk transformasjon fra én beslutningsinstans til en annen, slik at ja/nei-svaret bevares. Kalles også mange-til-én-reduksjon.",
-      section: "Kompleksitet",
     }
 
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──
@@ -259,43 +137,43 @@ glossary:
 # page 1 of each oppgavesett ("Eksamen, <dato>") — not guessed.
 exams:
   - {
-      label: "Desember 2025 — ordinær",
+      label: "Ordinær eksamen, desember 2025",
       date: 2025-12-15,
       url: "https://algdat.idi.ntnu.no/arkiv/2025.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2025.des.tdt4120.losn.no.pdf",
     }
   - {
-      label: "August 2025 — kontinuasjon",
+      label: "Kontinuasjonseksamen, august 2025",
       date: 2025-08-05,
       url: "https://algdat.idi.ntnu.no/arkiv/2025.aug.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2025.aug.tdt4120.losn.no.pdf",
     }
   - {
-      label: "Desember 2024 — ordinær",
+      label: "Ordinær eksamen, desember 2024",
       date: 2024-12-09,
       url: "https://algdat.idi.ntnu.no/arkiv/2024.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2024.des.tdt4120.losn.no.pdf",
     }
   - {
-      label: "August 2024 — kontinuasjon",
+      label: "Kontinuasjonseksamen, august 2024",
       date: 2024-08-05,
       url: "https://algdat.idi.ntnu.no/arkiv/2024.aug.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2024.aug.tdt4120.losn.no.pdf",
     }
   - {
-      label: "Desember 2023 — ordinær",
+      label: "Ordinær eksamen, desember 2023",
       date: 2023-12-12,
       url: "https://algdat.idi.ntnu.no/arkiv/2023.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2023.des.tdt4120.losn.no.pdf",
     }
   - {
-      label: "August 2023 — kontinuasjon",
+      label: "Kontinuasjonseksamen, august 2023",
       date: 2023-08-10,
       url: "https://algdat.idi.ntnu.no/arkiv/2023.aug.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2023.aug.tdt4120.losn.no.pdf",
     }
   - {
-      label: "Desember 2022 — ordinær",
+      label: "Ordinær eksamen, desember 2022",
       date: 2022-12-19,
       url: "https://algdat.idi.ntnu.no/arkiv/2022.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2022.des.tdt4120.losn.no.pdf",
