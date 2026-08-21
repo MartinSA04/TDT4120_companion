@@ -36,9 +36,6 @@ repoUrl: "https://github.com/MartinSA04/TDT4120_companion"
 repoBranch: main
 
 # ── Upcoming exam ────────────────────────────────────────────────────────────
-# `date` is intentionally omitted until the official H2026 date is published —
-# never seed a placeholder (these pages are a source of truth). Add it as
-# `date: YYYY-MM-DD` once NTNU's exam schedule confirms it.
 # Exam metadata — verified against the NTNU emneside (…/TDT4120#tab=omEksamen),
 # the source of truth: "Vurderingsordning: Skriftlig skoleeksamen", "Varighet
 # 4 timer", "Hjelpemiddel Kode E" (= ingen hjelpemidler tillatt).
@@ -51,34 +48,12 @@ exam:
   aids: "Hjelpemiddelkode E, ingen hjelpemidler tillatt"
   formulaSheet: false # kode E (ingen hjelpemidler) — no sheet handed out at the exam
 # ── Reference formulas → Formelsamling page + inline <FormulaRef id="…"> ──────
-# Algoritmekurs: dette er definisjoner, kjøretider og grenser snarere enn
-# klassiske formler. KaTeX i YAML må dobbelt-quotes med doble bakstreker.
+# Bare identiteter og resultater du regner med. Definisjonene av O, Omega,
+# Theta, o og omega er nettopp definisjoner, ikke formler: de hører hjemme i
+# modulens <Statement kind="definition"> og i `glossary` under (AUTHORING.md §9).
+# KaTeX i YAML må dobbelt-quotes med doble bakstreker.
 # Listen vokser med modulene: her ligger bare det modulene faktisk dekker.
 formulas:
-  - {
-      tex: "0 \\le f(n) \\le c\\,g(n) \\quad \\text{for } n \\ge n_0",
-      label: "$f(n) = O(g(n))$, øvre grense, for en konstant $c > 0$",
-      section: "Asymptotisk notasjon",
-      id: def-o,
-    }
-  - {
-      tex: "0 \\le c\\,g(n) \\le f(n) \\quad \\text{for } n \\ge n_0",
-      label: "$f(n) = \\Omega(g(n))$, nedre grense, for en konstant $c > 0$",
-      section: "Asymptotisk notasjon",
-      id: def-omega,
-    }
-  - {
-      tex: "0 \\le c_1 g(n) \\le f(n) \\le c_2 g(n) \\quad \\text{for } n \\ge n_0",
-      label: "$f(n) = \\Theta(g(n))$, stram grense, både $O$ og $\\Omega$",
-      section: "Asymptotisk notasjon",
-      id: def-theta,
-    }
-  - {
-      tex: "\\lim_{n \\to \\infty} \\dfrac{f(n)}{g(n)} = 0",
-      label: "$f(n) = o(g(n))$, streng øvre grense. For $\\omega$ går brøken mot uendelig.",
-      section: "Asymptotisk notasjon",
-      id: def-lille-o,
-    }
   - {
       tex: "O(n^a) + \\Omega(n^b) + \\Theta(n^c) = \\Omega(n^b + n^c)",
       label: "Summer øvre og nedre grenser hver for seg. Står vi igjen med bare en nedre grense, skrives den med $\\Omega$.",
@@ -90,12 +65,6 @@ formulas:
       label: "Trekanttall, og antall forskyvninger i verste tilfelle for Insertion-Sort",
       section: "Insertion-Sort",
       id: trekanttall,
-    }
-  - {
-      tex: "\\Theta(n) \\;\\text{og}\\; \\Theta(n^2)",
-      label: "Insertion-Sort i beste og i verste tilfelle",
-      section: "Insertion-Sort",
-      id: insertion-sort-tid,
     }
 
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────

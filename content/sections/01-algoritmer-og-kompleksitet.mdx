@@ -3,6 +3,7 @@ order: 1
 title: Algoritmer og kompleksitet
 summary: Problem, instans og RAM-modellen, asymptotisk notasjon, forskjellen på grense og tilfelle, og Insertion-Sort med løkkeinvariant og kjøretidsanalyse.
 importance: core
+tag: "Uke 34"
 part: "Del 1: Grunnlag"
 updated: 2026-08-21
 ---
@@ -146,7 +147,8 @@ ingen øvre. $\Theta(n^c)$ gir begge, $n^c$.
 
 Summen av de nedre grensene er $0 + n^b + n^c$. Summen av de øvre er ubegrenset,
 fordi $\Omega(n^b)$ ikke setter noen tak. Vi står da igjen med en nedre grense
-alene, og en nedre grense alene skrives med $\Omega$.
+alene, og en nedre grense alene skrives med $\Omega$. Regelen står som
+<FormulaRef id="sum-grenser">én rad i Formelsamlingen</FormulaRef>.
 
 <Answer>$\Omega(n^b + n^c)$</Answer>
 </Solution>
@@ -183,7 +185,7 @@ uavhengige valg. Alle fem operatorene kan brukes på alle tre funksjonene:
   caption="Insertion-Sort, stramme grenser i hver rute. Vet vi ikke hvilken instans vi får, må den øvre grensen dekke det verste og den nedre det beste, og da finnes det ingen $\Theta$."
 />
 
-<Callout type="warning" title="Ukens snubletråd">
+<Callout type="warning" title="Snubletråd">
 Det er lov å skrive at verste tilfelle er $\Omega(n^2)$. Utsagnet sier at den
 dyreste instansen av størrelse $n$ koster minst kvadratisk tid, altså en nedre
 grense for et maksimum. Det tilsvarer å si at den høyeste i klassen er minst
@@ -266,8 +268,9 @@ iterasjonene $i = 1, \ldots, n-1$:
 
 $$\sum_{i=1}^{n-1} i \;=\; \frac{n(n-1)}{2}$$
 
-Uttrykket er et halvt rektangel med sider $n$ og $n-1$. Uten konstantfaktoren og
-det lineære leddet står vi igjen med $n^2$.
+Summen er <FormulaRef id="trekanttall">trekanttallet</FormulaRef>, et halvt
+rektangel med sider $n$ og $n-1$. Uten konstantfaktoren og det lineære leddet
+står vi igjen med $n^2$.
 
 <Answer>$n(n-1)/2$ forskyvninger, altså $\Theta(n^2)$</Answer>
 </Solution>
