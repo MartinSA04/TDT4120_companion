@@ -125,15 +125,6 @@ Hver type er et spesialtilfelle av den forrige. En Karp-reduksjon er en
 Levin-reduksjon der oversettelsen tilbake er triviell, og en Levin-reduksjon er
 en Cook-reduksjon med nøyaktig ett kall.
 
-<Figure
-  src="/figures/reduksjon.svg"
-  alt="Flytdiagram ovenfra og ned. En instans av X går inn i en boks merket algoritme for X. Inne i den lager en rød boks omform en instans av Y, en stiplet grønnblå boks orakel for Y gir en løsning for Y, og en rød boks oversett gjør den om til en løsning for X, som går ut av den ytre boksen. Omform og oversett er merket polynomisk tid, orakelet er merket antatt subrutine."
-  number={2}
-  width={560}
-  height={410}
-  caption="En reduksjon fra $X$ til $Y$, her i Levin-formen. Vårt eget arbeid er rødt og polynomisk; det stiplede orakelet er subrutinen vi later som vi har. I en Karp-reduksjon er oversettelsen triviell, og en Cook-reduksjon kan kalle orakelet flere ganger."
-/>
-
 ## Vanskegrad
 
 Reduksjoner er mer enn gjenbruk av kode; de sammenligner problemer. Å åpne en
@@ -173,17 +164,16 @@ $k + 1$ noder. Å avgjøre om svaret er $k + 1$, er dermed å avgjøre CLIQUE.
 Klikkproblemet er redusert til færrest-varianten, så den er minst like
 vanskelig.
 
-<Figure
-  src="/figures/flest-faerrest.svg"
-  alt="To grafer. Venstre, flest mulig med k lik 2: en kjerne på fem personer i ring der alle kjenner to andre, og en hale på tre som strykes med røde kryss i rekkefølgen 1, 2, 3; den første kjenner bare én, og hver stryking gir den neste for få. Høyre, færrest mulig med k lik 2: en graf der tre noder som alle kjenner hverandre, er uthevet som klikk."
-  width={560}
-  height={270}
-  caption="Til venstre strykes den som kjenner færre enn $k = 2$ av de gjenværende, og hver stryking kan gi nye kandidater; de fem som står igjen, er svaret. Til høyre er den minste gyldige gruppa en klikk med $k + 1$ noder, og å finne en slik er CLIQUE."
-/>
-
 <Answer>Flest-varianten løses i polynomisk tid ved stryking. Færrest-varianten er minst like vanskelig som CLIQUE.</Answer>
 </Solution>
 </Example>
+
+<Stepper
+  src="/steppers/stryking.js"
+  title="Flest mulig ved stryking"
+  caption="Kravet er $k = 2$: den oransje kandidaten kjenner færre enn to av de gjenværende og strykes. Én stryking kan gjøre at naboen også må strykes."
+  height={300}
+/>
 
 ## Dekomponering
 
@@ -204,7 +194,7 @@ grunntilfellet.
 <Figure
   src="/figures/dekomponering.svg"
   alt="Fire bokser i en firkant: instans øverst til venstre, svar øverst til høyre, delinstans og delsvar nederst. En stiplet grå pil fra instans til svar er merket løsning. En heltrukken pil ned fra instans til delinstans er merket dekomponer, en stiplet pil fra delinstans til delsvar er merket antatt delløsning, induksjonshypotesen, og en heltrukken pil opp fra delsvar til svar er merket kombiner."
-  number={3}
+  number={2}
   width={560}
   height={280}
   caption="Én runde i dekomponeringen: dekomponer instansen, anta at delinstansen kan løses (stiplet), og kombiner delsvaret til et svar. Det samme skjer på hvert nivå nedover, helt til grunntilfellet."

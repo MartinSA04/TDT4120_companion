@@ -129,14 +129,31 @@ fire pekertilordninger; å slette en node er to, der naboene settes til å peke
 på hverandre og noden hoppes over. Konstant tid forutsetter at du allerede står
 ved noden. Skal den først finnes, betaler du det lineære søket i tillegg.
 
-<Figure
-  src="/figures/lenket-liste.svg"
-  alt="To rader med noder. Øverst settes en ny node x inn mellom a og b: fire røde pekere kobler a til x og x til b i begge retninger, mens de gamle pekerne mellom a og b er stiplet. Nederst slettes b: to røde pekere kobler a og c direkte sammen utenom b, de gamle pekerne inn til b er stiplet, og b selv står nedtonet med pekerne sine urørt."
-  number={2}
-  width={560}
-  height={300}
-  caption="Innsetting og sletting i en dobbeltlenket liste. Røde pekere settes av operasjonen, stiplede skrives over, og den slettede noden endres ikke; den hoppes bare over. Ingen elementer flyttes."
+<CodeBlock
+  id="liste-ops"
+  title="liste.py"
+  lang="python"
+  code={`def insert_after(a, x):
+    x.prev = a
+    x.next = a.next
+    a.next.prev = x
+    a.next = x
+
+def delete(x):
+    x.prev.next = x.next
+    x.next.prev = x.prev`}
 />
+
+<Stepper
+  src="/steppers/lenket-liste.js"
+  codeId="liste-ops"
+  title="Pekerne i en dobbeltlenket liste"
+  caption="Rød peker settes i steget, oransje leses. Nodene ligger fast; det er bare pekerne som endres."
+  height={300}
+/>
+
+Grensetilfellene er sløyfet her også: står noden først eller sist i lista,
+finnes bare den ene naboen.
 
 ## Hashtabeller
 
@@ -254,7 +271,7 @@ $16 + 15 = 31$ operasjoner.
 <Figure
   src="/figures/tabelldobling.svg"
   alt="Stolpediagram med én stolpe per innsetting fra 1 til 16. Hver stolpe har en grønnblå enhet nederst for selve skrivingen. Innsettingene 2, 3, 5 og 9 har i tillegg røde enheter for kopieringen, 1, 2, 4 og 8 av dem, så toppene blir høyere, men sjeldnere. En stiplet linje ligger på 3 operasjoner."
-  number={3}
+  number={2}
   width={560}
   height={300}
   caption="Kostnaden per innsetting med tabelldobling. Grønnblått er selve skrivingen, rødt er kopieringen når tabellen dobles. Toppene vokser, men kommer halvparten så ofte for hver gang, så snittet holder seg under den stiplede grensen på 3."
