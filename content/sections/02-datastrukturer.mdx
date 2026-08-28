@@ -129,6 +129,15 @@ fire pekertilordninger; å slette en node er to, der naboene settes til å peke
 på hverandre og noden hoppes over. Konstant tid forutsetter at du allerede står
 ved noden. Skal den først finnes, betaler du det lineære søket i tillegg.
 
+<Figure
+  src="/figures/lenket-liste.svg"
+  alt="To rader med noder. Øverst settes en ny node x inn mellom a og b: fire røde pekere kobler a til x og x til b i begge retninger, mens de gamle pekerne mellom a og b er stiplet. Nederst slettes b: to røde pekere kobler a og c direkte sammen utenom b, de gamle pekerne inn til b er stiplet, og b selv står nedtonet med pekerne sine urørt."
+  number={2}
+  width={560}
+  height={300}
+  caption="Innsetting og sletting i en dobbeltlenket liste. Røde pekere settes av operasjonen, stiplede skrives over, og den slettede noden endres ikke; den hoppes bare over. Ingen elementer flyttes."
+/>
+
 ## Hashtabeller
 
 Den enkleste formen for oppslag er direkte adressering: bruk nøkkelen selv som
@@ -170,6 +179,14 @@ $12 \bmod 7 = 5$. Plass 0 får 21 og plass 1 får 36, mens 19, 5 og 12 alle
 havner på plass 5. Innsetting skjer forrest i lista, så kjeden på plass 5 blir
 $12 \to 5 \to 19$, med den sist innsatte nøkkelen først. Et søk etter 19 hasher
 til plass 5 og må gjennom hele kjeden: først 12, så 5, så 19.
+
+<Figure
+  src="/figures/hashing-kjeding.svg"
+  alt="Hashtabellen med sju plasser etter innsettingene: 21 på plass 0, 36 på plass 1, og på plass 5 kjeden 12, 5, 19 med den sist innsatte forrest. Plassene 2, 3, 4 og 6 er tomme. Til høyre står utregningene, blant annet 19 mod 7 = 5, og røde tall 1, 2, 3 over kjeden viser søkerekkefølgen for nøkkel 19."
+  width={560}
+  height={300}
+  caption="Tabellen etter de fem innsettingene. Innsetting skjer forrest, så kjeden på plass 5 står i motsatt rekkefølge av innsettingene. De røde tallene er sammenligningene i søket etter 19."
+/>
 
 <Answer>21 på plass 0, 36 på plass 1 og kjeden $12 \to 5 \to 19$ på plass 5. Søket etter 19 sammenligner tre nøkler.</Answer>
 </Solution>
@@ -233,6 +250,15 @@ $16 + 15 = 31$ operasjoner.
 <Answer>$31 = 2 \cdot 16 - 1$ operasjoner, i snitt under 2 per innsetting, altså $\Theta(1)$ amortisert.</Answer>
 </Solution>
 </Example>
+
+<Figure
+  src="/figures/tabelldobling.svg"
+  alt="Stolpediagram med én stolpe per innsetting fra 1 til 16. Hver stolpe har en grønnblå enhet nederst for selve skrivingen. Innsettingene 2, 3, 5 og 9 har i tillegg røde enheter for kopieringen, 1, 2, 4 og 8 av dem, så toppene blir høyere, men sjeldnere. En stiplet linje ligger på 3 operasjoner."
+  number={3}
+  width={560}
+  height={300}
+  caption="Kostnaden per innsetting med tabelldobling. Grønnblått er selve skrivingen, rødt er kopieringen når tabellen dobles. Toppene vokser, men kommer halvparten så ofte for hver gang, så snittet holder seg under den stiplede grensen på 3."
+/>
 
 Regnestykket skalerer: for $n$ innsettinger er kopieringsarbeidet alltid mindre
 enn $2n$, så hver innsetting koster amortisert færre enn 3 operasjoner. Merk

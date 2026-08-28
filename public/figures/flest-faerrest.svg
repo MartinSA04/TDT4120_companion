@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 270" width="560" height="270" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+  <!-- Transparent background: the Figure frame supplies the ground, and these
+       mid-tone colours hold contrast on both the light and the dark theme.
+       Left: stripping with k = 2, red crosses in stripping order, the teal
+       core survives. Right: the smallest valid group is a clique. -->
+
+  <text x="40" y="34" text-anchor="start" font-size="13" fill="#7c8795">Flest mulig, k = 2</text>
+  <text x="330" y="34" text-anchor="start" font-size="13" fill="#7c8795">Færrest mulig, k = 2</text>
+  <line x1="305" y1="48" x2="305" y2="250" stroke="#9aa0a6" stroke-opacity="0.3"/>
+
+  <!-- Left: the surviving core, a 5-cycle -->
+  <line x1="148.1" y1="100.8" x2="188.9" y2="130.2" stroke="#2f8f86" stroke-width="1.6"/>
+  <line x1="193.9" y1="145.5" x2="178.1" y2="194.5" stroke="#2f8f86" stroke-width="1.6"/>
+  <line x1="165" y1="204" x2="115" y2="204" stroke="#2f8f86" stroke-width="1.6"/>
+  <line x1="101.9" y1="194.5" x2="86.1" y2="145.5" stroke="#2f8f86" stroke-width="1.6"/>
+  <line x1="91.1" y1="130.2" x2="131.9" y2="100.8" stroke="#2f8f86" stroke-width="1.6"/>
+
+  <!-- The tail that gets stripped -->
+  <line x1="184.7" y1="206.5" x2="228.3" y2="217.5" stroke="#8d98a6" stroke-width="1.4" stroke-dasharray="4 3" opacity="0.7"/>
+  <line x1="243.5" y1="211.6" x2="266.5" y2="176.4" stroke="#8d98a6" stroke-width="1.4" stroke-dasharray="4 3" opacity="0.7"/>
+  <line x1="268.7" y1="158.6" x2="253.3" y2="115.4" stroke="#8d98a6" stroke-width="1.4" stroke-dasharray="4 3" opacity="0.7"/>
+
+  <circle cx="140" cy="95" r="8" fill="#2f8f86" fill-opacity="0.18" stroke="#2f8f86" stroke-width="1.5"/>
+  <circle cx="197" cy="136" r="8" fill="#2f8f86" fill-opacity="0.18" stroke="#2f8f86" stroke-width="1.5"/>
+  <circle cx="175" cy="204" r="8" fill="#2f8f86" fill-opacity="0.18" stroke="#2f8f86" stroke-width="1.5"/>
+  <circle cx="105" cy="204" r="8" fill="#2f8f86" fill-opacity="0.18" stroke="#2f8f86" stroke-width="1.5"/>
+  <circle cx="83" cy="136" r="8" fill="#2f8f86" fill-opacity="0.18" stroke="#2f8f86" stroke-width="1.5"/>
+
+  <circle cx="250" cy="106" r="8" fill="none" stroke="#8d98a6" stroke-dasharray="3 3" opacity="0.8"/>
+  <circle cx="272" cy="168" r="8" fill="none" stroke="#8d98a6" stroke-dasharray="3 3" opacity="0.8"/>
+  <circle cx="238" cy="220" r="8" fill="none" stroke="#8d98a6" stroke-dasharray="3 3" opacity="0.8"/>
+
+  <line x1="243" y1="99" x2="257" y2="113" stroke="#c14a3e" stroke-width="1.8"/>
+  <line x1="243" y1="113" x2="257" y2="99" stroke="#c14a3e" stroke-width="1.8"/>
+  <line x1="265" y1="161" x2="279" y2="175" stroke="#c14a3e" stroke-width="1.8"/>
+  <line x1="265" y1="175" x2="279" y2="161" stroke="#c14a3e" stroke-width="1.8"/>
+  <line x1="231" y1="213" x2="245" y2="227" stroke="#c14a3e" stroke-width="1.8"/>
+  <line x1="231" y1="227" x2="245" y2="213" stroke="#c14a3e" stroke-width="1.8"/>
+  <text x="266" y="102" text-anchor="start" font-size="12" fill="#c14a3e">1</text>
+  <text x="288" y="172" text-anchor="start" font-size="12" fill="#c14a3e">2</text>
+  <text x="254" y="238" text-anchor="start" font-size="12" fill="#c14a3e">3</text>
+
+  <text x="155" y="258" text-anchor="middle" font-size="12" fill="#8d98a6">kjenner færre enn 2: strykes</text>
+
+  <!-- Right: a clique with k + 1 nodes hidden in the graph -->
+  <line x1="399.2" y1="103.8" x2="452.8" y2="126.2" stroke="#2f8f86" stroke-width="2"/>
+  <line x1="454.1" y1="136.1" x2="415.9" y2="165.9" stroke="#2f8f86" stroke-width="2"/>
+  <line x1="405.6" y1="162.3" x2="392.4" y2="109.7" stroke="#2f8f86" stroke-width="2"/>
+
+  <line x1="399.8" y1="98.2" x2="490.2" y2="81.8" stroke="#8d98a6" stroke-width="1.4" opacity="0.7"/>
+  <line x1="503.3" y1="89.4" x2="524.7" y2="150.6" stroke="#8d98a6" stroke-width="1.4" opacity="0.7"/>
+  <line x1="471.1" y1="134.1" x2="518.9" y2="155.9" stroke="#8d98a6" stroke-width="1.4" opacity="0.7"/>
+  <line x1="400.1" y1="178.1" x2="359.9" y2="208.9" stroke="#8d98a6" stroke-width="1.4" opacity="0.7"/>
+
+  <circle cx="390" cy="100" r="8" fill="#2f8f86" fill-opacity="0.18" stroke="#2f8f86" stroke-width="1.5"/>
+  <circle cx="462" cy="130" r="8" fill="#2f8f86" fill-opacity="0.18" stroke="#2f8f86" stroke-width="1.5"/>
+  <circle cx="408" cy="172" r="8" fill="#2f8f86" fill-opacity="0.18" stroke="#2f8f86" stroke-width="1.5"/>
+  <circle cx="500" cy="80" r="8" fill="#9aa0a6" fill-opacity="0.08" stroke="#8d98a6"/>
+  <circle cx="528" cy="160" r="8" fill="#9aa0a6" fill-opacity="0.08" stroke="#8d98a6"/>
+  <circle cx="352" cy="215" r="8" fill="#9aa0a6" fill-opacity="0.08" stroke="#8d98a6"/>
+
+  <text x="440" y="258" text-anchor="middle" font-size="12" fill="#2f8f86">klikk med k + 1 = 3 noder</text>
+</svg>

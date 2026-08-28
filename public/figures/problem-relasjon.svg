@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 240" width="560" height="240" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+  <!-- Transparent background: the Figure frame supplies the ground, and these
+       mid-tone colours hold contrast on both the light and the dark theme.
+       Teal edges are the pairs in R; the faded instance has no edge. -->
+
+  <text x="280" y="28" text-anchor="middle" font-size="15" fill="#7c8795">R &#8838; I &#215; O</text>
+
+  <text x="170" y="62" text-anchor="middle" font-size="15" fill="#7c8795">I</text>
+  <text x="170" y="80" text-anchor="middle" font-size="12" fill="#8d98a6">inputs</text>
+  <text x="390" y="62" text-anchor="middle" font-size="15" fill="#7c8795">O</text>
+  <text x="390" y="80" text-anchor="middle" font-size="12" fill="#8d98a6">outputs</text>
+
+  <!-- Edges: the pairs in R -->
+  <line x1="178" y1="100" x2="382" y2="95" stroke="#2f8f86" stroke-width="1.5" opacity="0.9"/>
+  <line x1="178" y1="100" x2="382" y2="161" stroke="#2f8f86" stroke-width="1.5" opacity="0.9"/>
+  <line x1="178" y1="140" x2="382" y2="128" stroke="#2f8f86" stroke-width="1.5" opacity="0.9"/>
+  <text x="280" y="88" text-anchor="middle" font-size="13" fill="#2f8f86">(x&#8321;, y&#8321;) &#8712; R</text>
+
+  <!-- Inputs -->
+  <circle cx="170" cy="100" r="5" fill="#7c8795"/>
+  <circle cx="170" cy="140" r="5" fill="#7c8795"/>
+  <circle cx="170" cy="180" r="5" fill="#7c8795" opacity="0.45"/>
+  <text x="150" y="104" text-anchor="end" font-size="13" fill="#7c8795">x&#8321;</text>
+  <text x="150" y="144" text-anchor="end" font-size="13" fill="#7c8795">x&#8322;</text>
+  <text x="150" y="184" text-anchor="end" font-size="13" fill="#7c8795" opacity="0.6">x&#8323;</text>
+  <text x="170" y="208" text-anchor="middle" font-size="12" fill="#8d98a6">ingen akseptable svar</text>
+
+  <!-- Outputs -->
+  <circle cx="390" cy="95" r="5" fill="#7c8795"/>
+  <circle cx="390" cy="128" r="5" fill="#7c8795"/>
+  <circle cx="390" cy="161" r="5" fill="#7c8795"/>
+  <circle cx="390" cy="194" r="5" fill="#7c8795"/>
+  <text x="410" y="99" text-anchor="start" font-size="13" fill="#7c8795">y&#8321;</text>
+  <text x="410" y="132" text-anchor="start" font-size="13" fill="#7c8795">y&#8322;</text>
+  <text x="410" y="165" text-anchor="start" font-size="13" fill="#7c8795">y&#8323;</text>
+  <text x="410" y="198" text-anchor="start" font-size="13" fill="#7c8795">y&#8324;</text>
+</svg>
