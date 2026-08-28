@@ -2,11 +2,265 @@
 order: 2
 num: "02a"
 title: Datastrukturer
-summary: "Tabeller, stakker, køer, lenkede lister og hashtabeller, og hva vi vinner på å velge riktig struktur. Modulen er under arbeid."
-importance: extra
+summary: "Minne og pekere, tabeller og matriser, stakker og køer, lenkede lister og hashtabeller med kjeding, og tabelldobling analysert med amortisering."
+importance: core
+tag: "Uke 35"
 part: "Del 1: Grunnlag"
+updated: 2026-08-28
 ---
 
-<Callout type="note" title="Under arbeid">
-Denne modulen er ikke skrevet ennå.
-</Callout>
+En tabell slår opp element nummer $i$ på konstant tid, men å sette inn et
+element forrest krever at alle de andre flyttes. En lenket liste setter inn
+forrest på konstant tid, men må følge pekere for å finne element nummer $i$.
+Begge lagrer de samme elementene; det som er billig i den ene, er dyrt i den
+andre. Denne modulen handler om de grunnleggende strukturene, hva operasjonene
+koster i hver av dem, og hva vi vinner på å velge riktig.
+
+<LearningGoals>
+- Forklar hvordan tabeller og matriser ligger i minnet, og hvorfor indeksering koster konstant tid.
+- Bruk <Term name="Stakk">stakker</Term> og <Term name="Kø">køer</Term>, og implementer en kø som ringbuffer.
+- Gjør rede for <Term name="Lenket liste">lenkede lister</Term>: hva som koster konstant og hva som koster lineær tid.
+- Forklar <Term name="Hashtabell">hashtabeller</Term> med kjeding, og hva forventet konstant søketid forutsetter.
+- Gjør rede for <Term name="Perfekt hashing">perfekt hashing</Term> for statiske datasett.
+- Analyser <Term name="Tabelldobling">tabelldobling</Term> med aggregert, <Term name="Amortisert analyse">amortisert analyse</Term>.
+</LearningGoals>
+
+## Minne, pekere og tabeller
+
+Minnet er én lang rekke celler med hver sin adresse. En peker er en variabel
+som inneholder en slik adresse, altså bare et heltall som tolkes som en
+posisjon i minnet.
+
+En endimensjonal tabell ligger som en sammenhengende blokk. Har blokken
+startadresse $a$, elementbredde $b$ og startindeks $s$, ligger element $i$ på
+adresse $a + b(i - s)$. Oppslaget er ett gangestykke og én addisjon uansett hvor
+stor tabellen er, og det er derfor indeksering koster konstant tid i
+<Term name="RAM-modellen" />.
+
+En matrise må også ned i det samme endimensjonale minnet. Radvis lagring legger
+rad 1, så rad 2, og så videre, slik at $M[i, j]$ i en matrise med $c$ kolonner
+ligger på plass $c(i - 1) + (j - 1) + 1$. Kolonnevis lagring legger kolonnene
+etter hverandre i stedet. Et tredje alternativ er én tabell per rad, med en
+tabell av pekere øverst; da kan radene ha ulik lengde, såkalte jagged arrays.
+Alle strategiene kan utvides til flere dimensjoner.
+
+<Figure
+  src="/figures/radvis-kolonnevis.svg"
+  alt="En to ganger tre-matrise med verdiene 1 til 6, og de samme verdiene lagt ut i to endimensjonale tabeller: radvis som 1 2 3 4 5 6, kolonnevis som 1 4 2 5 3 6. Rad 1 og rad 2 har hver sin farge, og kolonnevis lagring fletter fargene."
+  number={1}
+  width={560}
+  height={220}
+  caption="Samme matrise i minnet på to vis. Fargen følger raden: radvis lagring holder radene samlet, kolonnevis lagring fletter dem."
+/>
+
+## Stakker og køer
+
+En stakk er sist inn, først ut: alt skjer på toppen. Strukturen er en tabell og
+en toppindeks, der `Push` legger et element på toppen og `Pop` tar av det
+øverste, begge i konstant tid. `Push` på en full tabell gir overflyt, `Pop` på
+en tom gir underflyt. Kallstakken i et kjørende program er nettopp en slik
+stakk.
+
+En kø er først inn, først ut, med innsetting bakerst og uttak forrest. Legger
+vi køen i en tabell rett fram, må alt flyttes hver gang noen går ut forrest.
+Ringbufferen unngår det med to indekser som rykker fremover: `head` peker på
+den første i køen og `tail` på neste ledige plass, og når en av dem passerer
+enden, går den rundt til starten igjen. Boka skriver dette med 1-indeksering og
+en egen test for enden; i Python med 0-indeksering gjør modulo jobben.
+
+<CodeBlock
+  id="ko-ring"
+  title="ko.py"
+  lang="python"
+  code={`class Queue:
+    def __init__(self, m):
+        self.A = [None] * m
+        self.head = 0  # først i køen
+        self.tail = 0  # neste ledige plass
+
+    def enqueue(self, x):
+        self.A[self.tail] = x
+        self.tail = (self.tail + 1) % len(self.A)
+
+    def dequeue(self):
+        x = self.A[self.head]
+        self.head = (self.head + 1) % len(self.A)
+        return x`}
+/>
+
+<Stepper
+  src="/steppers/ringbuffer-ko.js"
+  codeId="ko-ring"
+  title="Kø som ringbuffer"
+  caption="Grønn pil er head, første i køen; rød pil er tail, neste ledige plass. En verdi som er tatt ut, blir stående nedtonet til plassen brukes igjen."
+  height={340}
+/>
+
+Testene for over- og underflyt er sløyfet her, som i læreboka. De trengs i
+praksis: med bare `head` og `tail` ser en helt full kø ellers lik ut som en
+tom.
+
+## Dynamiske mengder
+
+Mange algoritmer trenger bare å holde styr på en samling elementer med nøkler:
+sett inn, slett og søk, og når nøklene har en ordning, også minste, største,
+forgjenger og etterfølger. Dette kalles en <Term name="Dynamisk mengde">dynamisk
+mengde</Term>, og det er funksjonalitet, ikke en bestemt datastruktur. Finnes
+ikke det vi spør etter, returneres NIL. Problemstørrelsen er vanligvis antallet
+elementer i mengden.
+
+En vanlig tabell kan levere funksjonaliteten, med priser som avhenger av om vi
+holder den sortert. Usortert er innsetting og sletting konstant tid, mens søk
+og minimum må gjennom alt. Sortert blir søket logaritmisk med binærsøk og
+minimum konstant, men innsetting og sletting må flytte elementer og blir
+lineære. Resten av modulen handler om å gjøre det bedre: lenkede lister gjør
+innsetting og sletting billig der du står, og hashtabeller gjør søket forventet
+konstant. For de ordnede operasjonene er søketrær verktøyet.
+
+## Lenkede lister
+
+En lenket liste består av noder som peker på neste node, og i en dobbeltlenket
+liste også på forrige. Lista selv er bare en peker til hodet.
+
+Søk følger pekerne fra hodet til nøkkelen dukker opp eller lista tar slutt, og
+koster $\Theta(n)$ i verste fall. Til gjengjeld er innsetting og sletting
+konstant tid, for ingenting må flyttes. Å sette inn en node etter en annen er
+fire pekertilordninger; å slette en node er to, der naboene settes til å peke
+på hverandre og noden hoppes over. Konstant tid forutsetter at du allerede står
+ved noden. Skal den først finnes, betaler du det lineære søket i tillegg.
+
+## Hashtabeller
+
+Den enkleste formen for oppslag er direkte adressering: bruk nøkkelen selv som
+indeks, slik at $T[k]$ inneholder elementet med nøkkel $k$. Søk, innsetting og
+sletting er én tabelloperasjon hver. Prisen er at tabellen må være like stor
+som mengden av *mulige* nøkler, ikke antallet vi faktisk lagrer.
+
+En <Term name="Hashtabell">hashtabell</Term> beholder ideen, men kjører
+nøkkelen gjennom en hashfunksjon $h$ som krymper den til en gyldig indeks
+$0, \ldots, m-1$. Den enkleste er $h(k) = k \bmod m$. I praksis brukes gjerne
+funksjoner som blander bitene bedre, som multipliser-og-skift, og strenger
+hashes ved å kombinere tegnene aritmetisk. Det viktige er at samme nøkkel
+alltid gir samme indeks, at indeksene ser tilfeldig fordelt ut, og at
+utregningen tar konstant tid.
+
+Med flere mulige nøkler enn plasser må to nøkler før eller siden dele indeks,
+en kollisjon. Kjeding løser det ved å la hver plass i tabellen holde en lenket
+liste. Innsetting setter elementet forrest i lista på plass $h(k)$ og koster
+$\Theta(1)$; søk hasher nøkkelen og leter lineært gjennom lista på plassen.
+
+<Statement kind="theorem" name="Forventet søketid med kjeding">
+La <Term name="Belastningsfaktor">belastningsfaktoren</Term> være
+$\alpha = n/m$, antall elementer per plass. Fordeler hashfunksjonen nøklene
+jevnt og uavhengig, tar et søk forventet $\Theta(1 + \alpha)$ tid. Holdes
+$m = \Theta(n)$, er $\alpha$ konstant, og søket tar forventet konstant tid.
+</Statement>
+
+Forventningen er ingen garanti. Ingenting hindrer at alle $n$ nøklene havner på
+samme plass, og da er søket et lineært søk i én liste, $\Theta(n)$.
+
+<Example title="Kjeding med $h(k) = k \bmod 7$">
+Sett inn nøklene 19, 36, 5, 21 og 12, i den rekkefølgen, i en tom hashtabell
+med $m = 7$ plasser og kjeding. Hvor havner nøklene, og hvor mange nøkler må et
+søk etter 19 sammenligne?
+
+<Solution>
+$19 \bmod 7 = 5$, $36 \bmod 7 = 1$, $5 \bmod 7 = 5$, $21 \bmod 7 = 0$ og
+$12 \bmod 7 = 5$. Plass 0 får 21 og plass 1 får 36, mens 19, 5 og 12 alle
+havner på plass 5. Innsetting skjer forrest i lista, så kjeden på plass 5 blir
+$12 \to 5 \to 19$, med den sist innsatte nøkkelen først. Et søk etter 19 hasher
+til plass 5 og må gjennom hele kjeden: først 12, så 5, så 19.
+
+<Answer>21 på plass 0, 36 på plass 1 og kjeden $12 \to 5 \to 19$ på plass 5. Søket etter 19 sammenligner tre nøkler.</Answer>
+</Solution>
+</Example>
+
+Er nøkkelmengden statisk, kjent på forhånd og uforanderlig, kan hashfunksjonen
+skreddersys til akkurat de nøklene, slik at ingen kolliderer. Det kalles
+<Term name="Perfekt hashing">perfekt hashing</Term> og gir søk i garantert
+konstant tid, ikke bare forventet. Et typisk bruksområde er de reserverte
+ordene i en kompilator.
+
+Kostnadene så langt, samlet:
+
+<Table
+  columns={["Struktur", "Søk", "Innsetting", "Sletting", "Minimum"]}
+  rows={[
+    ["Usortert tabell", "$\\Theta(n)$", "$\\Theta(1)$", "$\\Theta(1)$", "$\\Theta(n)$"],
+    ["Sortert tabell", "$\\Theta(\\lg n)$", "$\\Theta(n)$", "$\\Theta(n)$", "$\\Theta(1)$"],
+    ["Lenket liste", "$\\Theta(n)$", "$\\Theta(1)$", "$\\Theta(1)$", "$\\Theta(n)$"],
+    ["Hashtabell med kjeding", "$\\Theta(1+\\alpha)$ forventet", "$\\Theta(1)$", "$\\Theta(1)$", "$\\Theta(n)$"],
+  ]}
+  align={["left", "left", "left", "left", "left"]}
+  caption="Verste tilfelle der ikke annet er sagt. Sletting forutsetter at du står ved elementet; å finne det først koster et søk. Hashtabellens søk er $\Theta(n)$ i verste tilfelle."
+/>
+
+## Dynamiske tabeller
+
+Blir en stakk, en kø eller en hashtabell full, må den få mer plass: alloker en
+større tabell, kopier alt over, og fortsett der. Kopieringen tar lineær tid, så
+vi vil gjøre den sjelden. Med <Term name="Tabelldobling">tabelldobling</Term>
+allokerer vi dobbelt så stor plass hver gang tabellen er full.
+
+Én enkelt innsetting kan da koste lineær tid, men de dyre innsettingene blir
+sjeldnere jo større tabellen blir, så kjøretiden per operasjon er et misvisende
+mål. <Term name="Amortisert analyse">Amortisert analyse</Term> ser i stedet på
+en hel operasjonsfølge under ett. Den enkleste varianten er aggregert analyse:
+regn ut det totale arbeidet og del på antallet operasjoner.
+
+`Multipop`, som popper inntil $k$ elementer av en stakk, er
+oppvarmingseksemplet. Én `Multipop` kan koste $\Theta(n)$, så $n$ operasjoner
+ser ut som $O(n^2)$. Men hvert element må pushes før det kan poppes, så $n$
+`Push` og `Multipop` gjør totalt $\Theta(n)$ arbeid, amortisert $\Theta(1)$ per
+operasjon.
+
+<Example title="Seksten innsettinger med tabelldobling">
+En dynamisk tabell starter med plass til ett element og dobles hver gang den er
+full. Tell operasjonene for $n = 16$ innsettinger, med én operasjon per
+innsetting og én per kopiert element.
+
+<Solution>
+Hver innsetting skriver ett element: 16 operasjoner. Kopiering skjer når
+tabellen er full, ved størrelsene 1, 2, 4 og 8, og koster like mange
+operasjoner som størrelsen:
+
+$$1 + 2 + 4 + 8 = 15$$
+
+Summen er <FormulaRef id="toerpotenser">toerpotens-summen</FormulaRef>, som
+alltid er én mindre enn neste toerpotens, her $16 - 1$. Totalt blir det
+$16 + 15 = 31$ operasjoner.
+
+<Answer>$31 = 2 \cdot 16 - 1$ operasjoner, i snitt under 2 per innsetting, altså $\Theta(1)$ amortisert.</Answer>
+</Solution>
+</Example>
+
+Regnestykket skalerer: for $n$ innsettinger er kopieringsarbeidet alltid mindre
+enn $2n$, så hver innsetting koster amortisert færre enn 3 operasjoner. Merk
+hva som ikke ble antatt. Ingen sannsynlighet, ingen snill input; amortisert
+kjøretid er et snitt over operasjonene i en følge, i verste fall.
+Gjennomsnittstilfellet er noe annet, et snitt over instanser med en
+sannsynlighetsfordeling. For en hashtabell som dobles, må elementene settes inn
+på nytt med en hashfunksjon tilpasset den nye størrelsen, og analysen holder
+fortsatt.
+
+## Sjekk deg selv
+
+<Quiz
+  question="Du søker etter en nøkkel i en hashtabell med kjeding. Hva vet du om kjøretiden?"
+  options={[
+    "Forventet $\\Theta(1+\\alpha)$, men $\\Theta(n)$ i verste tilfelle",
+    "Garantert $\\Theta(1)$ så lenge tabellen er stor nok",
+    "$\\Theta(\\lg n)$, fordi kjedene halveres for hver sammenligning",
+  ]}
+  answer={0}
+  explanation="Jevn fordeling gir korte kjeder i snitt, men ingenting hindrer at alle nøklene hasher til samme plass; da er søket et lineært søk i én lenket liste. Garantert konstant tid krever perfekt hashing, og den forutsetter at nøkkelmengden er statisk."
+/>
+
+<KeyTakeaways>
+- En tabell ligger sammenhengende i minnet, og adressen $a + b(i - s)$ gjør indeksering konstant. Matriser lagres radvis, kolonnevis eller med én tabell per rad.
+- Stakk er sist inn, først ut; kø er først inn, først ut. Ringbufferen gir kø i en fast tabell: `head` og `tail` rykker fremover og går rundt med modulo.
+- En lenket liste setter inn og sletter i konstant tid ved noden, men søk følger pekerne og er lineært.
+- En dynamisk mengde er funksjonalitet; strukturen som leverer den, setter prisene på operasjonene.
+- Kjeding gir forventet $\Theta(1+\alpha)$ søk og $\Theta(n)$ i verste tilfelle. Perfekt hashing gir garantert konstant søk for statiske nøkkelmengder.
+- Tabelldobling koster $2n - 1$ operasjoner for $n$ innsettinger, amortisert konstant per innsetting.
+</KeyTakeaways>

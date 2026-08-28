@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 220" width="560" height="220" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+  <!-- Transparent background: the Figure frame supplies the ground, and these
+       mid-tone colours hold contrast on both the light and the dark theme.
+       Row 1 is teal, row 2 is red, so the two linearisations read off the
+       colour pattern alone. -->
+
+  <!-- Matrix M[i, j] -->
+  <text x="74" y="56" text-anchor="middle" font-size="9" fill="#7c8795">1</text>
+  <text x="118" y="56" text-anchor="middle" font-size="9" fill="#7c8795">2</text>
+  <text x="162" y="56" text-anchor="middle" font-size="9" fill="#7c8795">3</text>
+  <text x="182" y="56" text-anchor="start" font-size="9" fill="#7c8795">j</text>
+  <text x="44" y="88" text-anchor="end" font-size="9" fill="#7c8795">1</text>
+  <text x="44" y="120" text-anchor="end" font-size="9" fill="#7c8795">2</text>
+  <text x="44" y="140" text-anchor="end" font-size="9" fill="#7c8795">i</text>
+
+  <rect x="52" y="64" width="44" height="32" fill="#2f8f86" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="96" y="64" width="44" height="32" fill="#2f8f86" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="140" y="64" width="44" height="32" fill="#2f8f86" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="52" y="96" width="44" height="32" fill="#c14a3e" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="96" y="96" width="44" height="32" fill="#c14a3e" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="140" y="96" width="44" height="32" fill="#c14a3e" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+
+  <text x="74" y="85" text-anchor="middle" font-size="12" fill="#2f8f86">1</text>
+  <text x="118" y="85" text-anchor="middle" font-size="12" fill="#2f8f86">2</text>
+  <text x="162" y="85" text-anchor="middle" font-size="12" fill="#2f8f86">3</text>
+  <text x="74" y="117" text-anchor="middle" font-size="12" fill="#c14a3e">4</text>
+  <text x="118" y="117" text-anchor="middle" font-size="12" fill="#c14a3e">5</text>
+  <text x="162" y="117" text-anchor="middle" font-size="12" fill="#c14a3e">6</text>
+
+  <text x="118" y="152" text-anchor="middle" font-size="10" fill="#7c8795">M[i, j]</text>
+
+  <!-- Row-major -->
+  <text x="300" y="40" text-anchor="start" font-size="10" fill="#7c8795">Radvis («row-major»)</text>
+  <rect x="300" y="48" width="36" height="30" fill="#2f8f86" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="336" y="48" width="36" height="30" fill="#2f8f86" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="372" y="48" width="36" height="30" fill="#2f8f86" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="408" y="48" width="36" height="30" fill="#c14a3e" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="444" y="48" width="36" height="30" fill="#c14a3e" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="480" y="48" width="36" height="30" fill="#c14a3e" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <text x="318" y="67" text-anchor="middle" font-size="12" fill="#2f8f86">1</text>
+  <text x="354" y="67" text-anchor="middle" font-size="12" fill="#2f8f86">2</text>
+  <text x="390" y="67" text-anchor="middle" font-size="12" fill="#2f8f86">3</text>
+  <text x="426" y="67" text-anchor="middle" font-size="12" fill="#c14a3e">4</text>
+  <text x="462" y="67" text-anchor="middle" font-size="12" fill="#c14a3e">5</text>
+  <text x="498" y="67" text-anchor="middle" font-size="12" fill="#c14a3e">6</text>
+  <text x="318" y="94" text-anchor="middle" font-size="9" fill="#7c8795">1</text>
+  <text x="354" y="94" text-anchor="middle" font-size="9" fill="#7c8795">2</text>
+  <text x="390" y="94" text-anchor="middle" font-size="9" fill="#7c8795">3</text>
+  <text x="426" y="94" text-anchor="middle" font-size="9" fill="#7c8795">4</text>
+  <text x="462" y="94" text-anchor="middle" font-size="9" fill="#7c8795">5</text>
+  <text x="498" y="94" text-anchor="middle" font-size="9" fill="#7c8795">6</text>
+
+  <!-- Column-major -->
+  <text x="300" y="132" text-anchor="start" font-size="10" fill="#7c8795">Kolonnevis («column-major»)</text>
+  <rect x="300" y="140" width="36" height="30" fill="#2f8f86" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="336" y="140" width="36" height="30" fill="#c14a3e" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="372" y="140" width="36" height="30" fill="#2f8f86" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="408" y="140" width="36" height="30" fill="#c14a3e" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="444" y="140" width="36" height="30" fill="#2f8f86" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <rect x="480" y="140" width="36" height="30" fill="#c14a3e" fill-opacity="0.12" stroke="#8d98a6" stroke-opacity="0.55"/>
+  <text x="318" y="159" text-anchor="middle" font-size="12" fill="#2f8f86">1</text>
+  <text x="354" y="159" text-anchor="middle" font-size="12" fill="#c14a3e">4</text>
+  <text x="390" y="159" text-anchor="middle" font-size="12" fill="#2f8f86">2</text>
+  <text x="426" y="159" text-anchor="middle" font-size="12" fill="#c14a3e">5</text>
+  <text x="462" y="159" text-anchor="middle" font-size="12" fill="#2f8f86">3</text>
+  <text x="498" y="159" text-anchor="middle" font-size="12" fill="#c14a3e">6</text>
+  <text x="318" y="186" text-anchor="middle" font-size="9" fill="#7c8795">1</text>
+  <text x="354" y="186" text-anchor="middle" font-size="9" fill="#7c8795">2</text>
+  <text x="390" y="186" text-anchor="middle" font-size="9" fill="#7c8795">3</text>
+  <text x="426" y="186" text-anchor="middle" font-size="9" fill="#7c8795">4</text>
+  <text x="462" y="186" text-anchor="middle" font-size="9" fill="#7c8795">5</text>
+  <text x="498" y="186" text-anchor="middle" font-size="9" fill="#7c8795">6</text>
+</svg>

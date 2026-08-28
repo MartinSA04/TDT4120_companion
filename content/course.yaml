@@ -66,6 +66,12 @@ formulas:
       section: "Insertion-Sort",
       id: trekanttall,
     }
+  - {
+      tex: "\\sum_{i=0}^{h-1} 2^i = 2^h - 1",
+      label: "Toerpotens-summen: $1 + 2 + 4 + \\cdots + n/2 = n - 1$ når $n = 2^h$. Det totale kopieringsarbeidet i tabelldobling.",
+      section: "Tabelldobling",
+      id: toerpotenser,
+    }
 
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
@@ -99,6 +105,81 @@ glossary:
       term: "Insertion-Sort",
       definition: "Sorterer ved å holde $A[0 : i]$ sortert og sette $A[i]$ inn på rett plass i det utsnittet. Bruker $\\Theta(n)$ i beste tilfelle og $\\Theta(n^2)$ i verste, og sorterer på plass.",
       section: "Grunnlag",
+    }
+  - {
+      term: "Stakk",
+      definition: "Sist inn, først ut (LIFO). Alt skjer på toppen: <code>Push</code> legger på og <code>Pop</code> tar av, begge i konstant tid. Implementeres med en tabell og en toppindeks.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Kø",
+      definition: "Først inn, først ut (FIFO). <code>Enqueue</code> legger til bakerst og <code>Dequeue</code> tar ut forrest, begge i konstant tid. Implementeres gjerne som ringbuffer: en tabell der indeksene <code>head</code> og <code>tail</code> rykker fremover og går rundt til starten når de passerer enden.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Lenket liste",
+      definition: "Noder som peker på neste node, og i en dobbeltlenket liste også på forrige. Innsetting og sletting koster konstant tid når du står ved noden; søk følger pekerne og koster lineær tid.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Dynamisk mengde",
+      definition: "Funksjonalitet, ikke en bestemt struktur: hold en mengde elementer med nøkler, og støtt <code>Search</code>, <code>Insert</code> og <code>Delete</code>, for ordnede nøkler også <code>Minimum</code>, <code>Maximum</code>, <code>Successor</code> og <code>Predecessor</code>. Finnes ikke svaret, returneres NIL.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Hashtabell",
+      definition: "Oppslagstabell der en hashfunksjon regner indeksen ut fra nøkkelen, for eksempel $h(k) = k \\bmod m$. To nøkler kan få samme indeks, en kollisjon; med kjeding får hver plass en lenket liste som tar imot alle sine nøkler.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Belastningsfaktor",
+      definition: "$\\alpha = n/m$: antall elementer delt på antall plasser i hashtabellen. Med kjeding og jevn fordeling er forventet søketid $\\Theta(1 + \\alpha)$, så tabellen bør vokse i takt med datamengden.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Perfekt hashing",
+      definition: "For en statisk nøkkelmengde kan hashfunksjonen skreddersys slik at ingen nøkler kolliderer. Søk tar da konstant tid selv i verste fall.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Amortisert analyse",
+      definition: "Snitt per operasjon over en hel operasjonsfølge, i verste fall. Aggregert analyse: regn ut totalt arbeid og del på antall operasjoner. Ingen sannsynlighet er involvert, i motsetning til gjennomsnittstilfellet, som er et snitt over instanser.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Tabelldobling",
+      definition: "Når tabellen er full: alloker en dobbelt så stor, kopier alt over og fortsett. Én innsetting kan koste lineær tid, men $n$ innsettinger koster totalt $2n - 1$ operasjoner, altså amortisert konstant per innsetting.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Søkeproblem",
+      definition: "Gitt en instans $x$: finn en løsning $y$ slik at $(x, y) \\in R$. Finnes ingen, feiler søket.",
+      section: "Problemer og reduksjoner",
+    }
+  - {
+      term: "Beslutningsproblem",
+      definition: "Gitt en instans $x$: avgjør om det finnes en løsning $y$ med $(x, y) \\in R$. Svaret er ja eller nei, og problemet kan ses som mengden av ja-instanser.",
+      section: "Problemer og reduksjoner",
+    }
+  - {
+      term: "Optimeringsproblem",
+      definition: "Blant de akseptable løsningene til en instans: finn en som er best mulig etter et gitt mål, for eksempel størst, kortest eller billigst.",
+      section: "Problemer og reduksjoner",
+    }
+  - {
+      term: "Sertifikat",
+      definition: "En påstått løsning som verifiseres: gitt $x$ og sertifikatet $y$, sjekk om $(x, y) \\in R$. Å verifisere er ofte langt billigere enn å finne løsningen selv.",
+      section: "Problemer og reduksjoner",
+    }
+  - {
+      term: "Orakel",
+      definition: "En hypotetisk subrutine som antas å løse et gitt problem. Reduksjoner beskrives med orakler: det som gjenstår etter omformingen av instansen, overlates til oraklet.",
+      section: "Problemer og reduksjoner",
+    }
+  - {
+      term: "Reduksjon",
+      definition: "Å løse problem $X$ ved å omforme instansen og bruke et orakel for problem $Y$. Cook-reduksjoner tillater mange orakelkall, Levin-reduksjoner ett kall med oversettelse av løsningen tilbake, og Karp-reduksjoner ett kall der ja/nei-svaret går uendret gjennom. En billig reduksjon fra $X$ til $Y$ viser at $Y$ er minst like vanskelig som $X$.",
+      section: "Problemer og reduksjoner",
     }
 
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──

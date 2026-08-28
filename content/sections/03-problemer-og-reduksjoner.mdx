@@ -2,11 +2,221 @@
 order: 3
 num: "02b"
 title: Problemer og reduksjoner
-summary: "Søkeproblemer, beslutningsproblemer og optimeringsproblemer, og hvordan en reduksjon flytter en løsning fra ett problem til et annet. Modulen er under arbeid."
-importance: extra
+summary: "Problemer som relasjoner, søke-, beslutnings- og optimeringsproblemer, verifisering med sertifikat, Cook-, Levin- og Karp-reduksjoner, og dekomponering begrunnet med induksjon."
+importance: core
+tag: "Uke 35"
 part: "Del 1: Grunnlag"
+updated: 2026-08-28
 ---
 
-<Callout type="note" title="Under arbeid">
-Denne modulen er ikke skrevet ennå.
-</Callout>
+«Du skal velge ut flest mulig blant $n$ personer slik at alle kjenner minst $k$
+av de andre.» Det var en eksamensoppgave i august 2010. En oppgave fra august
+2011 byttet ut ett ord: velg ut *færrest* mulig. Den første har en enkel,
+effektiv løsning. Den andre er, så vidt noen vet, ikke mulig å løse effektivt i
+det hele tatt. Ordlyden røper ikke forskjellen. Denne modulen gir begrepene som
+gjør den synlig: hva et problem er, hvilke typer problemer vi møter, og hvordan
+reduksjoner sammenligner vanskegrad ved å oversette ett problem til et annet.
+
+<LearningGoals>
+- Skill mellom spesifikke og generelle problemer, og se et problem som en relasjon mellom input og output.
+- Definer <Term name="Søkeproblem">søkeproblemer</Term>, <Term name="Beslutningsproblem">beslutningsproblemer</Term> og <Term name="Optimeringsproblem">optimeringsproblemer</Term>, og verifisering med <Term name="Sertifikat">sertifikat</Term>.
+- Forklar Cook-, Levin- og Karp-<Term name="Reduksjon">reduksjoner</Term> og forholdet mellom dem.
+- Bruk reduksjoner til å sammenligne vanskegrad: det du reduserer til, er minst like vanskelig som det du reduserer fra.
+- Design algoritmer ved dekomponering, og begrunn dem med induksjon over delinstanser.
+</LearningGoals>
+
+## Hva et problem er
+
+Et spesifikt problem er en beskrivelse av akseptable løsninger for én bestemt
+input, som å sortere $\langle 5, 2, 4, 6, 1, 3 \rangle$. Et generelt problem er
+en familie av spesifikke problemer, og det er det vi vanligvis mener med ordet
+problem. Hvert medlem av familien er en <Term name="Problem og instans">instans</Term>.
+
+Formelt er et problem en binær relasjon $R \subseteq I \times O$ mellom en
+mengde inputs $I$ og en mengde outputs $O$: $R$ angir hvilke outputs som er
+riktige svar på hvilke inputs. Én instans kan ha mange riktige svar, og noen
+instanser har ingen; dem kan vi se på som ugyldige. Vil vi være helt konkrete,
+koder vi input og output som bitstrenger, altså
+$R \subseteq \{0,1\}^* \times \{0,1\}^*$.
+
+<Statement kind="definition" name="Problemtyper">
+Gitt en relasjon $R$ og en instans $x$ kan vi <b>søke</b>: finn en $y$ slik at
+$(x, y) \in R$; <b>beslutte</b>: avgjør om en slik $y$ finnes; eller
+<b>optimere</b>: finn en akseptabel $y$ som er best mulig etter et gitt mål. Å
+<b>verifisere</b> er å sjekke, gitt både $x$ og $y$, om $(x, y) \in R$.
+</Statement>
+
+Verifisering er ofte langt billigere enn søk. Å sjekke at en foreslått
+permutasjon $\pi$ sorterer tabellen $A$ er én gjennomgang: sammenlign
+$A[\pi[i]]$ med $A[\pi[i+1]]$ for hver $i$. Det tar lineær tid. Å *finne* $\pi$ krever
+derimot $\Omega(n \lg n)$ sammenligninger i verste fall. Den foreslåtte
+løsningen som verifiseres, kalles et <Term name="Sertifikat">sertifikat</Term>.
+
+Klikkproblemet CLIQUE viser alle variantene på én gang. En instans er en
+urettet graf $G$ og et positivt heltall $k$; en akseptabel løsning er en
+komplett delgraf med $k$ noder, en klikk.
+
+<Compare>
+<CompareCol title="Søkeproblem">
+Finn en klikk med $k$ noder i $G$. Søket feiler hvis ingen finnes.
+</CompareCol>
+<CompareCol title="Beslutningsproblem">
+Har $G$ en klikk med $k$ noder? Svaret er ja eller nei, og et nei tilsvarer at
+søket feiler.
+</CompareCol>
+<CompareCol title="Optimeringsproblem">
+Finn en størst mulig klikk i $G$. Beslutningsvarianten spør om optimum er minst
+$k$.
+</CompareCol>
+</Compare>
+
+Verifiseringen er enkel i alle variantene: gitt et sertifikat $H$, sjekk at $H$
+består av $k$ noder fra $G$ og at alle par er naboer. Å finne en klikk virker
+derimot svært vanskelig, og det er faktisk et åpent spørsmål om det egentlig
+*er* vanskeligere enn å verifisere en.
+
+## Reduksjoner
+
+Vi vil avgjøre om alle elementene i en tabell er forskjellige. I stedet for å
+angripe det direkte kan vi omforme problemet:
+
+```python
+def unique(A, n):
+    insertion_sort(A, n)
+    for i in range(n - 1):
+        if A[i] == A[i + 1]:
+            return False
+    return True
+```
+
+Etter sorteringen står like verdier ved siden av hverandre, så det holder å
+sjekke naboene. Sorteringen har redusert unikhetsproblemet til noe enklere.
+Slik kan vi tenke helt generelt: gjør noe arbeid som omformer instansen, og
+overlat resten til en subrutine vi later som vi har. En slik hypotetisk
+subrutine kalles et <Term name="Orakel">orakel</Term>, og konstruksjonen er en
+<Term name="Reduksjon">reduksjon</Term> fra det ene problemet til det andre.
+Reduksjonene deles inn etter hvor mye de får lov til å gjøre:
+
+<Compare>
+<CompareCol title="Cook">
+Turing-reduksjon i polynomisk tid: løs $X$ med vilkårlig eget arbeid og så
+mange orakelkall for $Y$ du vil. Dette er den minst restriktive formen.
+</CompareCol>
+<CompareCol title="Levin">
+Omform instansen, gjør ett orakelkall, og oversett løsningen tilbake til en
+løsning for $X$.
+</CompareCol>
+<CompareCol title="Karp">
+For beslutningsproblemer: omform instansen og gjør ett orakelkall. Ja/nei-svaret
+går uendret gjennom.
+</CompareCol>
+</Compare>
+
+Hver type er et spesialtilfelle av den forrige. En Karp-reduksjon er en
+Levin-reduksjon der oversettelsen tilbake er triviell, og en Levin-reduksjon er
+en Cook-reduksjon med nøyaktig ett kall.
+
+## Vanskegrad
+
+Reduksjoner er mer enn gjenbruk av kode; de sammenligner problemer. Å åpne en
+skattekiste kan reduseres til å dirke opp låsen: får du opp låsen, får du opp
+kista. Er låsen rusten og lett å dirke, er kista lett å åpne. Kista kan også
+være lett å åpne av helt andre grunner, selv med en solid lås. Det eneste
+umulige er at kista er vanskeligere enn låsen, for gjennom låsen går det alltid
+én vei inn.
+
+<Statement kind="principle" name="Reduksjoner og vanskegrad">
+La $X$ kunne reduseres til $Y$ med en billig reduksjon. Da er $Y$ minst like
+vanskelig som $X$: en effektiv algoritme for $Y$ gir en effektiv algoritme for
+$X$, og kan $X$ ikke løses effektivt, kan heller ikke $Y$.
+</Statement>
+
+Prinsippet virker begge veier. Reduserer du til noe du vet er lett, har du
+funnet en algoritme. Reduserer du fra noe du vet er vanskelig, har du vist at
+målet er minst like vanskelig.
+
+<Example title="Flest mulig og færrest mulig">
+Velg ut flest mulig blant $n$ personer slik at alle i utvalget kjenner minst
+$k$ av de andre i utvalget. Deretter: velg ut færrest mulig, men minst én, med
+samme krav. Hvorfor er den første oppgaven lett og den andre vanskelig?
+
+<Solution>
+Flest mulig: stryk en person som kjenner færre enn $k$ av de gjenværende, og
+gjenta til ingen flere kan strykes. Ingen gyldig gruppe mister noe medlem på
+veien: så lenge hele gruppa står, kjenner hvert medlem minst $k$ innenfor
+gruppa, og dermed minst $k$ blant de gjenværende, så ingen av dem strykes
+først. De som står igjen, er derfor den største gyldige gruppa, og hele
+prosessen er polynomisk.
+
+Færrest mulig: alle i gruppa skal kjenne minst $k$ andre i gruppa, så gruppa må
+ha minst $k + 1$ personer. En gruppe med nøyaktig $k + 1$ personer er gyldig
+bare når alle kjenner alle, altså når bekjentskapsgrafen har en klikk med
+$k + 1$ noder. Å avgjøre om svaret er $k + 1$, er dermed å avgjøre CLIQUE.
+Klikkproblemet er redusert til færrest-varianten, så den er minst like
+vanskelig.
+
+<Answer>Flest-varianten løses i polynomisk tid ved stryking. Færrest-varianten er minst like vanskelig som CLIQUE.</Answer>
+</Solution>
+</Example>
+
+## Dekomponering
+
+Reduksjonene over oversetter mellom forskjellige problemer. Like ofte reduserer
+vi et problem til mindre instanser av seg selv: vi dekomponerer. En rekursiv
+prosedyre er nettopp dette, en prosedyre som bruker seg selv som orakel på
+mindre delinstanser.
+
+At dette gir riktige svar, er matematisk induksjon, og oppskriften har tre
+deler. Grunntilfellet er instansene som løses direkte, uten dekomponering, og
+det er ofte trivielt: ett element, én node, en tom mengde.
+Induksjonshypotesen er antagelsen om at delinstansene kan løses, det induktive
+premisset for trinnet vårt. Induksjonssteget viser at dekomponeringen og
+kombinasjonen av delsvar gir et riktig svar for hele instansen. I tillegg må
+dekomponeringen krympe instansen, slik at rekursjonen terminerer i
+grunntilfellet.
+
+<Figure
+  src="/figures/dekomponering.svg"
+  alt="Fire bokser i en firkant: instans øverst til venstre, svar øverst til høyre, delinstans og delsvar nederst. En stiplet grå pil fra instans til svar er merket løsning. En heltrukken pil ned fra instans til delinstans er merket dekomponer, en stiplet pil fra delinstans til delsvar er merket antatt delløsning, induksjonshypotesen, og en heltrukken pil opp fra delsvar til svar er merket kombiner."
+  number={1}
+  width={560}
+  height={280}
+  caption="Én runde i dekomponeringen: dekomponer instansen, anta at delinstansen kan løses (stiplet), og kombiner delsvaret til et svar. Det samme skjer på hvert nivå nedover, helt til grunntilfellet."
+/>
+
+Er grunntilfellet riktig, og bevarer hvert trinn riktigheten, forplanter
+riktigheten seg oppover nivåene. En <Term name="Løkkeinvariant">løkkeinvariant</Term>
+er det samme beviset sett fra en løkke: initialisering er grunntilfellet, og
+vedlikehold er induksjonssteget.
+
+<Term name="Insertion-Sort" /> er den enkleste bruken, det læreboka kaller den
+inkrementelle metoden. Dekomponer ved å kutte av det siste elementet.
+Induksjonshypotesen sier at resten kan sorteres. Kombinasjonen setter det siste
+elementet inn på rett plass i den sorterte resten. Dekomponeringen er nesten
+gratis, så alt arbeidet ligger i kombinasjonen. Speilbildet finnes også: gjør
+hovedarbeidet i dekomponeringen ved å ta ut det største elementet, så blir
+kombinasjonen triviell, legg det bakerst. Det er sortering ved utvelgelse,
+selection sort. Rikere dekomponeringer, som å dele instansen i to halvdeler,
+er grunnlaget for splitt og hersk.
+
+## Sjekk deg selv
+
+<Quiz
+  question="En algoritme for problem $X$ omformer instansen, kaller en subrutine for beslutningsproblemet $Y$ én gang, og returnerer ja/nei-svaret uendret. Hva slags reduksjon er dette?"
+  options={[
+    "En Karp-reduksjon",
+    "En Cook-reduksjon, og ikke noe mer spesifikt",
+    "En Levin-reduksjon som også oversetter løsningen tilbake",
+  ]}
+  answer={0}
+  explanation="Ett kall der svaret går rett gjennom er nettopp Karp-reduksjonen. Den er samtidig en Levin- og en Cook-reduksjon, siden hver type er et spesialtilfelle av den neste, men Karp er den strammeste beskrivelsen."
+/>
+
+<KeyTakeaways>
+- Et generelt problem er en relasjon $R \subseteq I \times O$; en instans er én input, og noen instanser har ingen løsning.
+- Søk: finn en $y$ med $(x, y) \in R$. Beslutning: avgjør om en slik $y$ finnes. Optimering: finn en best mulig $y$. Verifisering av et sertifikat er ofte langt billigere enn søk.
+- En reduksjon løser $X$ med et orakel for $Y$. Cook tillater mange kall, Levin ett kall med oversettelse av løsningen, Karp ett kall der ja/nei går rett gjennom.
+- Reduserer du $X$ til $Y$, er $Y$ minst like vanskelig som $X$.
+- «Flest mulig»-oppgaven løses ved stryking; «færrest mulig»-varianten er minst like vanskelig som CLIQUE.
+- Dekomponering er induksjon: grunntilfelle, antatt delløsning og et riktig kombinasjonstrinn, pluss terminering.
+</KeyTakeaways>
