@@ -2,11 +2,422 @@
 order: 4
 num: "03"
 title: Splitt og hersk
-summary: "Rekursiv dekomponering: del instansen, løs delene rekursivt, kombiner. Merge-Sort, Quicksort og rekurrensregning. Modulen er under arbeid."
+summary: "Splitt og hersk som rekursiv dekomponering, binærsøk, Merge-Sort og Quicksort, og rekurrensregning med iterasjon, rekursjonstrær, substitusjon og masterteoremet."
 importance: core
+tag: "Uke 36"
 part: "Del 2: Sortering og datastrukturer"
+updated: 2026-09-07
 ---
 
-<Callout type="note" title="Under arbeid">
-Denne modulen er ikke skrevet ennå.
+Del tabellen på midten, sorter hver halvdel, og flett de to sorterte halvdelene
+sammen. Det er hele Merge-Sort, og den bruker $\Theta(n \lg n)$ tid der
+<Term name="Insertion-Sort" /> bruker $\Theta(n^2)$. Beskrivelsen er kort fordi
+den lener seg på seg selv: «sorter hver halvdel» er et rekursivt kall. Denne
+modulen handler om å designe slike algoritmer, om å stole på at de virker, og om
+å regne ut hva de koster. Regningen har samme form som designet.
+
+<LearningGoals>
+- Forklar <Term name="Splitt og hersk">splitt og hersk</Term> som rekursiv dekomponering, og begrunn korrektheten med induksjon over delinstansene.
+- Gjør rede for <Term name="Binærsøk">binærsøk</Term>, <Term name="Merge-Sort" /> og <Term name="Quicksort" />, og pek på hva som er kjernen i hver av dem.
+- Still opp en <Term name="Rekurrens">rekurrens</Term> for kjøretiden til en rekursiv algoritme.
+- Løs rekurrenser med <Term name="Iterasjonsmetoden">iterasjonsmetoden</Term> og <Term name="Rekursjonstre">rekursjonstrær</Term>, og verifiser løsningen med <Term name="Substitusjonsmetoden">substitusjon</Term>.
+- Bruk <Term name="Masterteoremet">masterteoremet</Term> på rekurrenser av formen $T(n) = aT(n/b) + f(n)$.
+- Forklar hvorfor Randomized-Quicksort har <Term name="Forventet kjøretid">forventet kjøretid</Term> $\Theta(n \lg n)$, og hva som skiller forventning fra gjennomsnittstilfellet.
+</LearningGoals>
+
+## Splitt og hersk
+
+Dekomponering reduserer en instans til mindre instanser av samme problem.
+Insertion-Sort kutter av ett element om gangen. Splitt og hersk deler i stedet
+instansen i flere uavhengige deler, gjerne to like store, løser hver del
+rekursivt og kombinerer delsvarene.
+
+<Steps>
+<Step title="Grunntilfelle">
+Er instansen liten nok, gjerne ett element, løses den direkte. Løsningen er som
+regel triviell.
+</Step>
+<Step title="Del">
+Del instansen i to eller flere delinstanser som ikke overlapper.
+</Step>
+<Step title="Løs rekursivt">
+Kall algoritmen på hver delinstans for seg.
+</Step>
+<Step title="Kombiner">
+Sett delsvarene sammen til et svar for hele instansen.
+</Step>
+</Steps>
+
+Delingen og kombinasjonen er kjernen i designet, og som regel ligger arbeidet i
+bare én av dem. I Merge-Sort er delingen triviell og all jobben ligger i
+flettingen. I Quicksort er det motsatt. Resten av algoritmen er den samme hver
+gang og skriver seg selv.
+
+Korrektheten er induksjon over problemstørrelsen, akkurat som for annen
+dekomponering. Grunntilfellet løses direkte. Induksjonshypotesen sier at
+algoritmen svarer riktig på alle mindre instanser, og delinstansene er mindre,
+så den gjelder for dem. Induksjonssteget viser at delingen og kombinasjonen gir
+riktig svar når delsvarene er riktige. Alle de induktive trinnene er like, så
+det holder å se på ett av dem.
+
+## Rekurrenser
+
+Kjøretiden til en rekursiv algoritme har samme form som algoritmen. Gjør
+Merge-Sort $n$ operasjoner selv og kaller seg to ganger på halve instansen, er
+$T(n) = 2T(n/2) + n$. Det er en rekurrens: en ligning der funksjonen står på
+begge sider, med mindre argument til høyre. Ligningen bestemmer $T$ fullstendig
+så snart grunntilfellet er kjent, men den sier ikke direkte hva $T(n)$ er. Å
+løse rekurrensen er å bli kvitt $T$ på høyresiden.
+
+Grunntilfellet er konstant, $T(n) = \Theta(1)$ for $n$ under en grense $n_0$,
+og rekursjonen stopper etter endelig mange kall. Læreboka kaller dette en
+algoritmisk rekurrens, og vi antar det når ikke annet er sagt. Vi ser også bort
+fra avrunding og skriver $n/2$ for $\lfloor n/2 \rfloor$, som om $n$ var en
+toerpotens. Det endrer ikke den asymptotiske løsningen.
+
+Tre metoder finner løsningen. Iterasjonsmetoden ekspanderer den rekursive
+forekomsten gjentatte ganger til et mønster viser seg. Rekursjonstreet er samme
+regning tegnet som et tre, ett nivå per ekspansjon, med kostnaden summert nivå
+for nivå. Masterteoremet er en oppslagstabell for rekurrenser på formen
+$aT(n/b) + f(n)$. Substitusjonsmetoden finner ingenting selv, men verifiserer
+en løsning med induksjon.
+
+Iterasjonsmetoden på $T(n) = T(n-1) + 1$ med $T(0) = 0$:
+
+<Steps>
+<Step title="Ekspander">
+Rekurrensen gjelder også for $n - 1$, så $T(n-1) = T(n-2) + 1$. Sett inn:
+$T(n) = T(n-2) + 2$.
+</Step>
+<Step title="Finn mønsteret">
+Etter $i$ ekspansjoner er $T(n) = T(n-i) + i$.
+</Step>
+<Step title="Treff grunntilfellet">
+Velg $i$ slik at argumentet blir grunntilfellet. $n - i = 0$ gir $i = n$.
+</Step>
+<Step title="Sett inn">
+$T(n) = T(0) + n = n$.
+</Step>
+</Steps>
+
+<Callout type="warning" title="Snubletråd">
+Substitusjon er induksjon: anta at løsningen holder for mindre argumenter, og
+vis at den da holder for $n$. Fra $T(n) = T(n-1) + 1$ og antagelsen
+$T(n-1) = O(1)$ får vi $T(n) \le c + 1$, og $c + 1$ er også en konstant, så
+$T(n) = O(1)$. Konklusjonen er gal, for $T(n) = n$. Konstanten i hypotesen var
+$c$, mens den i konklusjonen er $c + 1$. Induksjon krever at påstanden er
+nøyaktig den samme før og etter, konstanten inkludert, så gjør
+induksjonssteget med eksplisitte konstanter.
 </Callout>
+
+## Binærsøk
+
+Søk etter $v$ i en sortert tabell. Se på elementet i midten. Er det $v$, er vi
+ferdige. Er $v$ mindre, ligger den i venstre halvdel, ellers i høyre, og vi søker
+rekursivt der. Delingen er kjernen, og kombinasjonen finnes ikke: svaret fra det
+rekursive kallet returneres uendret.
+
+<CodeBlock
+  id="bisect"
+  title="bisect.py"
+  lang="python"
+  code={`def bisect(A, p, r, v):
+    if p > r:
+        return None
+    q = (p + r) // 2
+    if v == A[q]:
+        return q
+    elif v < A[q]:
+        return bisect(A, p, q - 1, v)
+    else:
+        return bisect(A, q + 1, r, v)
+
+def bisect_iter(A, p, r, v):
+    while p <= r:
+        q = (p + r) // 2
+        if v == A[q]:
+            return q
+        elif v < A[q]:
+            r = q - 1
+        else:
+            p = q + 1
+    return None`}
+/>
+
+Korrektheten følger ved induksjon over lengden på segmentet. Et tomt segment
+gir NIL, og ett element svarer direkte. Er segmentet lengre, er begge halvdelene
+kortere, så hypotesen gjelder for dem, og testen i midten velger den halvdelen
+$v$ må ligge i. Det rekursive kallet er det siste som skjer i prosedyren, så den
+kan skrives som en løkke som flytter $p$ eller $r$ i stedet. Bevis og kjøretid
+er de samme.
+
+Ett kall på halve instansen pluss konstant arbeid gir $T(n) = T(n/2) + 1$.
+Iterasjon halverer argumentet for hver ekspansjon, så det trengs $\lg n$
+ekspansjoner for å nå $T(1) = 1$:
+
+$$
+\begin{aligned}
+T(n) &= T(n/2) + 1 = T(n/4) + 2 = \cdots \\
+     &= T(n/2^i) + i = T(1) + \lg n = \lg n + 1
+\end{aligned}
+$$
+
+Binærsøk bruker $\Theta(\lg n)$ tid.
+
+## Merge-Sort
+
+Merge-Sort deler på midten og sorterer halvdelene rekursivt. Kjernen er
+flettingen: det minste elementet forrest i de to sorterte halvdelene flyttes
+til neste ledige plass, om og om igjen. Halvdelene kopieres først til to
+hjelpetabeller $L$ og $R$, hver med en vaktpost $\infty$ bakerst, slik at ingen
+av dem går tom før den andre. Hver runde i løkka plasserer ett element, så
+flettingen bruker $\Theta(n)$ tid.
+
+<CodeBlock
+  id="merge-sort"
+  title="merge_sort.py"
+  lang="python"
+  code={`inf = float("inf")
+
+def merge_sort(A, p, r):
+    if p >= r:
+        return
+    q = (p + r) // 2
+    merge_sort(A, p, q)
+    merge_sort(A, q + 1, r)
+    merge(A, p, q, r)
+
+def merge(A, p, q, r):
+    L = A[p : q + 1] + [inf]
+    R = A[q + 1 : r + 1] + [inf]
+    i = j = 0
+    for k in range(p, r + 1):
+        if L[i] <= R[j]:
+            A[k] = L[i]
+            i = i + 1
+        else:
+            A[k] = R[j]
+            j = j + 1`}
+/>
+
+<Stepper
+  src="/steppers/merge-sort.js"
+  codeId="merge-sort"
+  title="Merge-Sort som rekursjonstre"
+  caption="Hver rad er ett nivå i rekursjonen. Delingen går nedover uten arbeid; flettingen fyller raden over fra de to sorterte halvdelene under, ett element per steg. Oransje er elementene som sammenlignes, og $\infty$ er vaktposten."
+  height={300}
+/>
+
+Læreboka skriver flettingen uten vaktposter, med en egen test for at en
+halvdel er tom. Resultatet er det samme.
+
+To kall på halve instansen pluss $n$ arbeid til flettingen gir
+$T(n) = 2T(n/2) + n$. Rekursjonstreet har $n$ på rota, to noder med $n/2$
+under, fire med $n/4$ under der igjen, og hvert nivå summerer til $n$. Treet
+har $\lg n + 1$ nivåer:
+
+$$
+\begin{aligned}
+T(n) &= n + 2T(n/2) = n + n + 4T(n/4) = \cdots \\
+     &= n \cdot \lg n + n \cdot T(1) = n \lg n + n
+\end{aligned}
+$$
+
+Merge-Sort bruker $\Theta(n \lg n)$ i alle tilfeller. Den deler på midten
+uansett hvordan inputen ser ut.
+
+<Example title="Verifiser med substitusjon">
+Vis at $T(n) = n \lg n + n$ løser $T(n) = 2T(n/2) + n$ med $T(1) = 1$.
+
+<Solution>
+Grunntilfellet: $1 \cdot \lg 1 + 1 = 1$. Anta at $T(k) = k \lg k + k$ for
+alle $k < n$. Halvdelen $n/2$ er mindre enn $n$, så antagelsen gjelder for den:
+
+$$
+\begin{aligned}
+T(n) &= 2\Big(\frac{n}{2} \lg \frac{n}{2} + \frac{n}{2}\Big) + n \\
+     &= n(\lg n - 1) + n + n = n \lg n + n
+\end{aligned}
+$$
+
+<Answer>Løsningen stemmer i grunntilfellet og bevares i induksjonssteget, så $T(n) = n \lg n + n$ for alle $n$.</Answer>
+</Solution>
+</Example>
+
+## Quicksort
+
+Quicksort legger arbeidet i delingen, og kombinasjonen er ingenting. Partition
+velger det siste elementet $x$ som splittelement, pivot, og ordner resten slik
+at alt som er mindre enn eller lik $x$ ligger til venstre og alt større til
+høyre. Så settes $x$ mellom de to delene. Der står den på sin endelige plass og
+flyttes aldri igjen, og Quicksort sorterer de to delene rekursivt.
+
+Løkka i Partition holder tre soner. Elementene fra $p$ til og med $i$ er små,
+fra $i + 1$ til og med $j - 1$ store, og fra $j$ og utover ikke sett ennå. Et
+lite element $A[j]$ bytter plass med det første store, $A[i+1]$, og grensen
+$i$ rykker ett hakk. Et stort element blir stående. Hver runde ser på ett nytt
+element, så Partition bruker $\Theta(n)$ tid.
+
+<CodeBlock
+  id="partition"
+  title="quicksort.py"
+  lang="python"
+  code={`def partition(A, p, r):
+    x = A[r]
+    i = p - 1
+    for j in range(p, r):
+        if A[j] <= x:
+            i = i + 1
+            A[i], A[j] = A[j], A[i]
+    A[i + 1], A[r] = A[r], A[i + 1]
+    return i + 1
+
+def quicksort(A, p, r):
+    if p < r:
+        q = partition(A, p, r)
+        quicksort(A, p, q - 1)
+        quicksort(A, q + 1, r)`}
+/>
+
+<Stepper
+  src="/steppers/partition.js"
+  codeId="partition"
+  title="Partition"
+  caption="Den stiplede linja er pivoten $x$. Grønt er sonen med små elementer, oransje sonen med store, og grått er ikke sett ennå. Et lite element bytter plass med det første store, så begge sonene vokser mot høyre."
+  height={250}
+/>
+
+Deler pivoten jevnt, er rekurrensen den samme som for Merge-Sort, og
+kjøretiden $\Theta(n \lg n)$. Havner pivoten helt ytterst hver gang, slik den
+gjør når tabellen allerede er sortert, får det ene kallet $n - 1$ elementer og
+det andre ingen. Da er $T(n) = T(n-1) + n$, og iterasjon gir summen
+$n + (n-1) + \cdots + 1 = n(n+1)/2$, altså $\Theta(n^2)$.
+
+Snittet over alle instanser er likevel $\Theta(n \lg n)$. En ujevn deling
+koster lite på den lille siden, og selv om annethvert nivå deler helt ujevnt,
+koster to slike nivåer til sammen ikke mer enn én jevn deling. Treet får
+dobbelt så mange nivåer, og det er fortsatt $\Theta(\lg n)$.
+
+Sortert input er vanlig input, så det verste tilfellet er ikke bare teori.
+Randomized-Partition bytter et tilfeldig valgt element inn på plass $r$ før
+delingen, slik at ingen instans alltid er dårlig. Randomized-Quicksort har
+forventet kjøretid $\Theta(n \lg n)$ for enhver input. Verste tilfelle er
+fortsatt $\Theta(n^2)$, men det krever uflaks med de tilfeldige valgene, og
+ingen input er mer utsatt enn andre.
+
+<Compare>
+<CompareCol title="Gjennomsnittstilfelle">
+Snitt over instansene av størrelse $n$, med en sannsynlighetsfordeling over
+input. Quicksort med fast pivot: $\Theta(n \lg n)$ når alle rekkefølger er
+like sannsynlige.
+</CompareCol>
+<CompareCol title="Amortisert">
+Snitt over operasjonene i én følge, i verste fall og uten sannsynlighet.
+Tabelldobling: $\Theta(1)$ per innsetting.
+</CompareCol>
+<CompareCol title="Forventet">
+Snitt over algoritmens egne tilfeldige valg, for én fast instans.
+Randomized-Quicksort: $\Theta(n \lg n)$ for enhver input.
+</CompareCol>
+</Compare>
+
+## Masterteoremet
+
+Mange splitt og hersk-algoritmer gjør $a$ rekursive kall på instanser av
+størrelse $n/b$ og bruker $f(n)$ på deling og kombinasjon:
+$T(n) = aT(n/b) + f(n)$. Rekursjonstreet har $\log_b n$ nivåer under rota,
+nivå $i$ har $a^i$ noder av størrelse $n/b^i$, og nederst står $a^{\log_b n}$
+løvnoder. Antallet løvnoder skrives om med
+<FormulaRef id="log-bytte">$a^{\log_b n} = n^{\log_b a}$</FormulaRef>.
+Summert nivå for nivå:
+
+$$
+T(n) = f(n) + a f(n/b) + a^2 f(n/b^2) + \cdots + \Theta(n^{\log_b a})
+$$
+
+Læreboka kaller $f(n)$ den drivende funksjonen og $n^{\log_b a}$
+vannskillefunksjonen. Kjøretiden avgjøres av hvilken av dem som vokser raskest,
+for det bestemmer om rota, løvnodene eller alle nivåene like mye dominerer summen.
+
+<Simulation
+  src="/sims/rekursjonstre.js"
+  host="dom"
+  title="Rekursjonstreet nivå for nivå"
+  caption="Hver stolpe er det samlede arbeidet på ett nivå i treet for $T(n) = aT(n/b) + n^k$, med $n = b^5$. Velg $a$, $b$ og $k$, og se om stolpene vokser nedover, krymper nedover eller er like lange."
+  height={280}
+/>
+
+<Statement kind="theorem" name="Masterteoremet">
+La $a \ge 1$ og $b > 1$ være konstanter, og la $T(n) = aT(n/b) + f(n)$ være en
+algoritmisk rekurrens.
+<br />
+<b>Tilfelle 1.</b> Er $f(n) = O(n^{\log_b a - \epsilon})$ for en konstant
+$\epsilon > 0$, er $T(n) = \Theta(n^{\log_b a})$.
+<br />
+<b>Tilfelle 2.</b> Er $f(n) = \Theta(n^{\log_b a} \lg^k n)$ for en konstant
+$k \ge 0$, er $T(n) = \Theta(n^{\log_b a} \lg^{k+1} n)$.
+<br />
+<b>Tilfelle 3.</b> Er $f(n) = \Omega(n^{\log_b a + \epsilon})$ for en konstant
+$\epsilon > 0$, og $a f(n/b) \le c f(n)$ for en konstant $c < 1$ og alle store
+$n$, er $T(n) = \Theta(f(n))$.
+</Statement>
+
+I tilfelle 1 vokser nivåkostnaden geometrisk nedover, og løvnodene dominerer. I
+tilfelle 2 koster alle nivåene like mye, og det er $\Theta(\lg n)$ av dem. I
+tilfelle 3 krymper nivåkostnaden nedover, og rota dominerer. I tilfelle 1 og 3
+må avstanden til vannskillefunksjonen være polynomisk, en faktor $n^\epsilon$.
+En logaritmisk faktor havner i tilfelle 2 med $k > 0$. Betingelsen i tilfelle 3
+kalles regularitet og holder for alle polynomer.
+
+<Example title="Bruk masterteoremet">
+Løs $T(n) = 9T(n/3) + n$ og $T(n) = 2T(n/2) + n \lg n$.
+
+<Solution>
+Første rekurrens: $a = 9$, $b = 3$ og $f(n) = n$. Vannskillefunksjonen er
+$n^{\log_3 9} = n^2$, og $f(n) = n = O(n^{2 - 1})$ er polynomisk mindre. Tilfelle
+1 gir $T(n) = \Theta(n^2)$.
+
+Andre rekurrens: $a = 2$, $b = 2$ og $f(n) = n \lg n$. Vannskillefunksjonen er
+$n^{\log_2 2} = n$, og $f(n) = \Theta(n \lg^1 n)$. Avstanden er bare en
+logaritmisk faktor, så dette er tilfelle 2 med $k = 1$, og
+$T(n) = \Theta(n \lg^2 n)$.
+
+<Answer>$\Theta(n^2)$ og $\Theta(n \lg^2 n)$.</Answer>
+</Solution>
+</Example>
+
+<Table
+  columns={["Rekurrens", "$n^{\\log_b a}$", "Løsning"]}
+  rows={[
+    ["$T(n/2) + 1$", "$n^0 = 1$", "tilfelle 2, $k = 0$: $\\Theta(\\lg n)$"],
+    ["$2T(n/2) + n$", "$n$", "tilfelle 2, $k = 0$: $\\Theta(n \\lg n)$"],
+    ["$4T(n/2) + n$", "$n^2$", "tilfelle 1: $\\Theta(n^2)$"],
+    ["$2T(n/2) + n^2$", "$n$", "tilfelle 3: $\\Theta(n^2)$"],
+    ["$T(n-1) + n$", "ikke på formen", "iterasjon: $\\Theta(n^2)$"],
+  ]}
+  align={["left", "left", "left"]}
+  caption="De første to er binærsøk og Merge-Sort. Den siste er Quicksort i verste tilfelle; masterteoremet krever at instansen deles på en konstant faktor $b > 1$, og $n - 1$ er ingen slik deling."
+/>
+
+## Sjekk deg selv
+
+<Quiz
+  question="En algoritme gjør fire rekursive kall på halve instansen og bruker $\\Theta(n^2)$ på å dele og kombinere. Hva er kjøretiden?"
+  options={[
+    "$\\Theta(n^2 \\lg n)$",
+    "$\\Theta(n^2)$",
+    "$\\Theta(n^3)$",
+  ]}
+  answer={0}
+  explanation="$T(n) = 4T(n/2) + n^2$ har vannskillefunksjon $n^{\\log_2 4} = n^2$, og $f(n) = n^2$ er den samme funksjonen. Det er tilfelle 2 med $k = 0$: alle nivåene koster $n^2$, og det er $\\lg n + 1$ av dem."
+/>
+
+<KeyTakeaways>
+- Splitt og hersk deler instansen i uavhengige deler, løser dem rekursivt og kombinerer. Arbeidet ligger som regel i delingen eller kombinasjonen, og korrektheten er induksjon over problemstørrelsen.
+- En rekurrens som $T(n) = 2T(n/2) + n$ er kjøretiden på algoritmens egen form. Iterasjon og rekursjonstrær finner løsningen, substitusjon verifiserer den, og masterteoremet slår den opp.
+- Binærsøk: $T(n) = T(n/2) + 1 = \Theta(\lg n)$. Merge-Sort: $T(n) = 2T(n/2) + n = \Theta(n \lg n)$ i alle tilfeller.
+- Partition setter pivoten på sin endelige plass i $\Theta(n)$ tid. Quicksort er $\Theta(n \lg n)$ ved jevn deling og $\Theta(n^2)$ når pivoten står alene, som på sortert input.
+- Randomized-Quicksort velger pivoten tilfeldig og har forventet kjøretid $\Theta(n \lg n)$ for enhver input. Forventning er et snitt over algoritmens valg, gjennomsnittstilfellet et snitt over instanser.
+- Masterteoremet sammenligner $f(n)$ med $n^{\log_b a}$: løvnodene dominerer, alle nivåene er like, eller rota dominerer. Avstanden må være polynomisk i tilfelle 1 og 3.
+- Et substitusjonsbevis må bruke nøyaktig samme påstand før og etter, konstanten inkludert.
+</KeyTakeaways>

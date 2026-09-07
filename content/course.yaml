@@ -73,6 +73,37 @@ formulas:
       id: toerpotenser,
     }
 
+  - {
+      tex: "a^{\\log_b n} = n^{\\log_b a}",
+      label: "Antall løvnoder i rekursjonstreet til $T(n) = aT(n/b) + f(n)$, skrevet som en potens av $n$. Ta logaritmen på begge sider: $\\log_b n \\cdot \\log a = \\log_b a \\cdot \\log n$.",
+      section: "Splitt og hersk",
+      id: log-bytte,
+    }
+  - {
+      tex: "T(n) = T(n/2) + 1 = \\lg n + 1 = \\Theta(\\lg n)",
+      label: "Binærsøk: ett kall på halve instansen pluss konstant arbeid. Argumentet halveres per ekspansjon, så det trengs $\\lg n$ ekspansjoner.",
+      section: "Splitt og hersk",
+      id: binaersok-rekurrens,
+    }
+  - {
+      tex: "T(n) = 2T(n/2) + n = n \\lg n + n = \\Theta(n \\lg n)",
+      label: "Merge-Sort: rekursjonstreet har $\\lg n + 1$ nivåer som hvert koster $n$.",
+      section: "Splitt og hersk",
+      id: merge-sort-rekurrens,
+    }
+  - {
+      tex: "T(n) = T(n-1) + n = \\dfrac{n(n+1)}{2} = \\Theta(n^2)",
+      label: "Quicksort i verste tilfelle: pivoten står alene på hvert nivå, og nivåkostnadene $n, n-1, \\ldots, 1$ summerer til trekanttallet.",
+      section: "Splitt og hersk",
+      id: quicksort-verste,
+    }
+  - {
+      tex: "T(n) = aT(n/b) + f(n) \\implies T(n) = \\begin{cases} \\Theta(n^{\\log_b a}) & f(n) = O(n^{\\log_b a - \\epsilon}) \\\\ \\Theta(n^{\\log_b a} \\lg^{k+1} n) & f(n) = \\Theta(n^{\\log_b a} \\lg^{k} n) \\\\ \\Theta(f(n)) & f(n) = \\Omega(n^{\\log_b a + \\epsilon}) \\end{cases}",
+      label: "Masterteoremet. Sammenlign $f(n)$ med vannskillefunksjonen $n^{\\log_b a}$; avstanden må være en faktor $n^\\epsilon$ i tilfelle 1 og 3, og tilfelle 3 krever i tillegg $a f(n/b) \\le c f(n)$ for en $c < 1$.",
+      section: "Splitt og hersk",
+      id: masterteoremet,
+    }
+
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
 glossary:
@@ -180,6 +211,57 @@ glossary:
       term: "Reduksjon",
       definition: "Å løse problem $X$ ved å omforme instansen og bruke et orakel for problem $Y$. Cook-reduksjoner tillater mange orakelkall, Levin-reduksjoner ett kall med oversettelse av løsningen tilbake, og Karp-reduksjoner ett kall der ja/nei-svaret går uendret gjennom. En billig reduksjon fra $X$ til $Y$ viser at $Y$ er minst like vanskelig som $X$.",
       section: "Problemer og reduksjoner",
+    }
+
+  - {
+      term: "Splitt og hersk",
+      definition: "Designmetode: løs grunntilfellet direkte, ellers del instansen i uavhengige delinstanser, løs dem rekursivt og kombiner delsvarene. Arbeidet ligger som regel i enten delingen eller kombinasjonen. Korrektheten vises ved induksjon over problemstørrelsen.",
+      section: "Splitt og hersk",
+    }
+  - {
+      term: "Rekurrens",
+      definition: "En ligning som definerer en funksjon ved hjelp av seg selv på mindre argumenter, for eksempel $T(n) = 2T(n/2) + n$. Kjøretiden til en rekursiv algoritme har denne formen. En <b>algoritmisk rekurrens</b> har konstant grunntilfelle for små $n$ og terminerer, og det antas når ikke annet er sagt.",
+      section: "Splitt og hersk",
+    }
+  - {
+      term: "Iterasjonsmetoden",
+      definition: "Løser en rekurrens ved å ekspandere den rekursive forekomsten gjentatte ganger til et mønster viser seg, velge antall ekspansjoner slik at argumentet treffer grunntilfellet, og summere.",
+      section: "Splitt og hersk",
+    }
+  - {
+      term: "Rekursjonstre",
+      definition: "Iterasjonsmetoden tegnet som et tre: rota er $f(n)$, nivå $i$ har $a^i$ noder av størrelse $n/b^i$, og kjøretiden er summen av nivåkostnadene. Antall løvnoder er $a^{\\log_b n} = n^{\\log_b a}$.",
+      section: "Splitt og hersk",
+    }
+  - {
+      term: "Substitusjonsmetoden",
+      definition: "Verifiserer en gjettet eller funnet løsning med induksjon: anta at løsningen holder for mindre argumenter, sett inn i rekurrensen og vis at den holder for $n$. Sjekk grunntilfellet. Påstanden må være nøyaktig den samme før og etter, konstanten inkludert; $O(1)$ i hypotesen og $O(1)$ i konklusjonen kan skjule to ulike konstanter.",
+      section: "Splitt og hersk",
+    }
+  - {
+      term: "Masterteoremet",
+      definition: "Løser $T(n) = aT(n/b) + f(n)$ ved å sammenligne den drivende funksjonen $f(n)$ med vannskillefunksjonen $n^{\\log_b a}$. Er $f$ polynomisk mindre, dominerer løvnodene: $\\Theta(n^{\\log_b a})$. Er $f = \\Theta(n^{\\log_b a} \\lg^k n)$, koster alle nivåene like mye: $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$. Er $f$ polynomisk større og regulær, dominerer rota: $\\Theta(f(n))$.",
+      section: "Splitt og hersk",
+    }
+  - {
+      term: "Binærsøk",
+      definition: "Søk i en sortert tabell ved å sammenligne med midtelementet og søke rekursivt i den halvdelen verdien må ligge i. $T(n) = T(n/2) + 1$, altså $\\Theta(\\lg n)$. Det rekursive kallet er det siste i prosedyren, så algoritmen skrives like gjerne som en løkke.",
+      section: "Splitt og hersk",
+    }
+  - {
+      term: "Merge-Sort",
+      definition: "Del på midten, sorter halvdelene rekursivt og flett dem. Flettingen kopierer halvdelene til $L$ og $R$ med en vaktpost $\\infty$ bakerst og flytter det minste forreste elementet til neste ledige plass, i $\\Theta(n)$ tid. $T(n) = 2T(n/2) + n = \\Theta(n \\lg n)$ i alle tilfeller.",
+      section: "Splitt og hersk",
+    }
+  - {
+      term: "Quicksort",
+      definition: "Partition velger siste element som pivot og ordner resten med små elementer til venstre og store til høyre, i $\\Theta(n)$ tid; pivoten havner på sin endelige plass. Delene sorteres rekursivt. $\\Theta(n \\lg n)$ ved jevn deling og i snitt, $\\Theta(n^2)$ når pivoten står alene, som på sortert input. Randomized-Quicksort bytter et tilfeldig element inn som pivot og har forventet $\\Theta(n \\lg n)$ for enhver input.",
+      section: "Splitt og hersk",
+    }
+  - {
+      term: "Forventet kjøretid",
+      definition: "Snitt over algoritmens egne tilfeldige valg, for én fast instans. Skiller seg fra gjennomsnittstilfellet, som er et snitt over instanser, og fra amortisert kjøretid, som er et snitt over operasjonene i en følge.",
+      section: "Splitt og hersk",
     }
 
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──
