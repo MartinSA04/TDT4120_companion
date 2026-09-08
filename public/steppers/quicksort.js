@@ -24,10 +24,10 @@
  * The segment being partitioned is shaded, and inside it the three zones of
  * the loop invariant are the colours: A[p .. i] small (green), A[i+1 .. j-1]
  * large (orange), A[j .. r-1] not seen yet (grey), the pivot A[r] in the accent
- * colour. Outside the segment, accent bars are elements that have reached
+ * colour. Outside the segment, green bars are elements that have reached
  * their final place (placed pivots and one-element segments) and faint bars
- * are segments still waiting for their call. Indices are 0-based, as in the
- * Python. Empty segments get no frame of their own; the caller's step text
+ * are segments still waiting for their call, so the green grows until the
+ * last frame is all green. Indices are 0-based, as in the Python. Empty segments get no frame of their own; the caller's step text
  * says the side is empty.
  *
  * Colours are framework tokens only, so frames re-theme on the light/dark
@@ -205,16 +205,20 @@ export default {
       const cx = x + barW / 2;
       const bh = (v / maxV) * chartH;
 
+      // Inside the segment being partitioned the invariant's zones win: the
+      // pivot is settled the moment it is placed, but keeps the accent colour
+      // until its call returns. Everywhere else, settled bars are green
+      // (sorted) and segments still waiting for their call are faint.
       let fill = "color-mix(in srgb, var(--fg) 16%, transparent)";
       let opacity = 1;
       if (frame.done) fill = "var(--green)";
-      else if (settled.has(idx)) fill = "var(--accent)";
+      else if (inSeg(idx) && frame.x != null) {
+        if (idx === frame.pivot) fill = "var(--accent)";
+        else if (frame.split) fill = idx < frame.pivot ? "var(--green)" : "var(--orange)";
+        else if (idx <= frame.i) fill = "var(--green)";
+        else if (frame.j != null && idx < frame.j) fill = "var(--orange)";
+      } else if (settled.has(idx)) fill = "var(--green)";
       else if (!inSeg(idx)) opacity = 0.45;
-      else if (frame.x == null) fill = "color-mix(in srgb, var(--fg) 16%, transparent)";
-      else if (idx === frame.pivot) fill = "var(--accent)";
-      else if (frame.split) fill = idx < frame.pivot ? "var(--green)" : "var(--orange)";
-      else if (idx <= frame.i) fill = "var(--green)";
-      else if (frame.j != null && idx < frame.j) fill = "var(--orange)";
 
       svg +=
         `<rect x="${x.toFixed(1)}" y="${(baseY - bh).toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" ` +
