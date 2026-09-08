@@ -22,12 +22,11 @@
  *   15         quicksort(A, q + 1, r)
  *
  * The segment being partitioned is shaded, and inside it the three zones of
- * the loop invariant are the colours: A[p .. i] small (green), A[i+1 .. j-1]
+ * the loop invariant are the colours: A[p .. i] small (yellow), A[i+1 .. j-1]
  * large (orange), A[j .. r-1] not seen yet (grey), the pivot A[r] in the accent
- * colour. Outside the segment, green bars are elements that have reached
- * their final place (placed pivots and one-element segments) and faint bars
- * are segments still waiting for their call, so the green grows until the
- * last frame is all green. Indices are 0-based, as in the Python. Empty segments get no frame of their own; the caller's step text
+ * colour. Green is reserved for elements that are finished: placed pivots and
+ * one-element segments, outside the segment. Faint bars are segments still
+ * waiting for their call. The green grows until the last frame is all green. Indices are 0-based, as in the Python. Empty segments get no frame of their own; the caller's step text
  * says the side is empty.
  *
  * Colours are framework tokens only, so frames re-theme on the light/dark
@@ -214,8 +213,8 @@ export default {
       if (frame.done) fill = "var(--green)";
       else if (inSeg(idx) && frame.x != null) {
         if (idx === frame.pivot) fill = "var(--accent)";
-        else if (frame.split) fill = idx < frame.pivot ? "var(--green)" : "var(--orange)";
-        else if (idx <= frame.i) fill = "var(--green)";
+        else if (frame.split) fill = idx < frame.pivot ? "var(--yellow)" : "var(--orange)";
+        else if (idx <= frame.i) fill = "var(--yellow)";
         else if (frame.j != null && idx < frame.j) fill = "var(--orange)";
       } else if (settled.has(idx)) fill = "var(--green)";
       else if (!inSeg(idx)) opacity = 0.45;
@@ -244,7 +243,7 @@ export default {
     if (frame.x != null && !frame.done) {
       if (frame.split) ptr(frame.pivot, "q", "var(--accent)");
       else {
-        if (frame.i != null && frame.i >= sp) ptr(frame.i, "i", "var(--green)");
+        if (frame.i != null && frame.i >= sp) ptr(frame.i, "i", "var(--yellow)");
         if (frame.j != null && frame.j < sr) ptr(frame.j, "j", "var(--orange)");
       }
     }
