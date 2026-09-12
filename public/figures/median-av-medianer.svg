@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" width="560" height="260" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+  <!-- Transparent background: the Figure frame supplies the ground, and these
+       mid-tone colours hold contrast on both the light and the dark theme.
+       Seven groups of five as columns, each sorted with the largest on top and
+       the columns ordered by their median (the middle row, red outline). x is
+       the median of the medians. Teal region: elements known to be >= x; red
+       region: elements known to be <= x. Circles are elements. -->
+
+  <!-- Regions behind the circles -->
+  <rect x="258" y="22" width="238" height="120" rx="12" fill="#2f8f86" fill-opacity="0.13" stroke="#2f8f86" stroke-width="1.2"/>
+  <rect x="64" y="102" width="238" height="120" rx="12" fill="#c14a3e" fill-opacity="0.10" stroke="#c14a3e" stroke-width="1.2" stroke-dasharray="4 3"/>
+
+  <!-- Columns: x = 90 + 63*c, rows y = 40 + 40*r -->
+  <g fill="#7c8795" fill-opacity="0.55">
+    <circle cx="90" cy="40" r="9"/><circle cx="90" cy="80" r="9"/><circle cx="90" cy="160" r="9"/><circle cx="90" cy="200" r="9"/>
+    <circle cx="153" cy="40" r="9"/><circle cx="153" cy="80" r="9"/><circle cx="153" cy="160" r="9"/><circle cx="153" cy="200" r="9"/>
+    <circle cx="216" cy="40" r="9"/><circle cx="216" cy="80" r="9"/><circle cx="216" cy="160" r="9"/><circle cx="216" cy="200" r="9"/>
+    <circle cx="279" cy="40" r="9"/><circle cx="279" cy="80" r="9"/><circle cx="279" cy="160" r="9"/><circle cx="279" cy="200" r="9"/>
+    <circle cx="342" cy="40" r="9"/><circle cx="342" cy="80" r="9"/><circle cx="342" cy="160" r="9"/><circle cx="342" cy="200" r="9"/>
+    <circle cx="405" cy="40" r="9"/><circle cx="405" cy="80" r="9"/><circle cx="405" cy="160" r="9"/><circle cx="405" cy="200" r="9"/>
+    <circle cx="468" cy="40" r="9"/><circle cx="468" cy="80" r="9"/><circle cx="468" cy="160" r="9"/><circle cx="468" cy="200" r="9"/>
+  </g>
+
+  <!-- Medians: the middle row -->
+  <g fill="none" stroke="#c14a3e" stroke-width="2">
+    <circle cx="90" cy="120" r="9"/><circle cx="153" cy="120" r="9"/><circle cx="216" cy="120" r="9"/>
+    <circle cx="342" cy="120" r="9"/><circle cx="405" cy="120" r="9"/><circle cx="468" cy="120" r="9"/>
+  </g>
+  <circle cx="279" cy="120" r="10" fill="#c14a3e"/>
+  <text x="279" y="124" text-anchor="middle" font-size="12" fill="#ffffff">x</text>
+
+  <!-- Vertical order inside a column -->
+  <line x1="34" y1="52" x2="34" y2="188" stroke="#8d98a6" stroke-width="1.2"/>
+  <path d="M34 48 L30 56 L38 56 z" fill="#8d98a6"/>
+  <text x="34" y="36" text-anchor="middle" font-size="12" fill="#8d98a6">st&#248;rst</text>
+  <text x="34" y="214" text-anchor="middle" font-size="12" fill="#8d98a6">minst</text>
+
+  <!-- Labels for the two regions -->
+  <text x="500" y="14" text-anchor="end" font-size="13" fill="#2f8f86">&#8805; x: minst 3n/10</text>
+  <text x="68" y="238" text-anchor="start" font-size="13" fill="#c14a3e">&#8804; x: minst 3n/10</text>
+  <text x="556" y="124" text-anchor="end" font-size="12" fill="#c14a3e">medianer</text>
+
+  <text x="300" y="254" text-anchor="middle" font-size="12" fill="#8d98a6">grupper p&#229; 5, ordnet etter median</text>
+</svg>

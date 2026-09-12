@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 250" width="560" height="250" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+  <!-- Transparent background: the Figure frame supplies the ground, and these
+       mid-tone colours hold contrast on both the light and the dark theme.
+       The decision tree for Insertion-Sort on three elements (CLRS fig. 8.1):
+       grey nodes compare a_i and a_j, teal leaves are the six orderings, and
+       the red path is the run on the input <6, 8, 3>. -->
+
+  <text x="14" y="22" text-anchor="start" font-size="13" fill="#c14a3e">&#10216;a&#8321;, a&#8322;, a&#8323;&#10217; = &#10216;6, 8, 3&#10217;</text>
+
+  <!-- Edges (drawn first so nodes cover their ends) -->
+  <line x1="280" y1="41" x2="150" y2="75" stroke="#c14a3e" stroke-width="2"/>
+  <line x1="280" y1="41" x2="410" y2="75" stroke="#8d98a6" stroke-width="1.4"/>
+  <line x1="150" y1="101" x2="70" y2="138" stroke="#8d98a6" stroke-width="1.4"/>
+  <line x1="150" y1="101" x2="215" y2="137" stroke="#c14a3e" stroke-width="2"/>
+  <line x1="410" y1="101" x2="340" y2="138" stroke="#8d98a6" stroke-width="1.4"/>
+  <line x1="410" y1="101" x2="470" y2="137" stroke="#8d98a6" stroke-width="1.4"/>
+  <line x1="215" y1="163" x2="160" y2="203" stroke="#8d98a6" stroke-width="1.4"/>
+  <line x1="215" y1="163" x2="270" y2="203" stroke="#c14a3e" stroke-width="2"/>
+  <line x1="470" y1="163" x2="415" y2="203" stroke="#8d98a6" stroke-width="1.4"/>
+  <line x1="470" y1="163" x2="520" y2="203" stroke="#8d98a6" stroke-width="1.4"/>
+
+  <!-- Edge labels -->
+  <text x="204" y="54" text-anchor="middle" font-size="12" fill="#c14a3e">&#8804;</text>
+  <text x="356" y="54" text-anchor="middle" font-size="12" fill="#8d98a6">&gt;</text>
+  <text x="98" y="115" text-anchor="middle" font-size="12" fill="#8d98a6">&#8804;</text>
+  <text x="194" y="115" text-anchor="middle" font-size="12" fill="#c14a3e">&gt;</text>
+  <text x="365" y="115" text-anchor="middle" font-size="12" fill="#8d98a6">&#8804;</text>
+  <text x="452" y="115" text-anchor="middle" font-size="12" fill="#8d98a6">&gt;</text>
+  <text x="176" y="180" text-anchor="middle" font-size="12" fill="#8d98a6">&#8804;</text>
+  <text x="254" y="180" text-anchor="middle" font-size="12" fill="#c14a3e">&gt;</text>
+  <text x="431" y="180" text-anchor="middle" font-size="12" fill="#8d98a6">&#8804;</text>
+  <text x="507" y="180" text-anchor="middle" font-size="12" fill="#8d98a6">&gt;</text>
+
+  <!-- Comparison nodes -->
+  <rect x="257" y="15" width="46" height="26" rx="6" fill="none" stroke="#c14a3e" stroke-width="1.6"/>
+  <text x="280" y="33" text-anchor="middle" font-size="14" fill="#c14a3e">1:2</text>
+
+  <rect x="127" y="75" width="46" height="26" rx="6" fill="none" stroke="#c14a3e" stroke-width="1.6"/>
+  <text x="150" y="93" text-anchor="middle" font-size="14" fill="#c14a3e">2:3</text>
+  <rect x="387" y="75" width="46" height="26" rx="6" fill="none" stroke="#7c8795" stroke-width="1.4"/>
+  <text x="410" y="93" text-anchor="middle" font-size="14" fill="#7c8795">1:3</text>
+
+  <rect x="192" y="137" width="46" height="26" rx="6" fill="none" stroke="#c14a3e" stroke-width="1.6"/>
+  <text x="215" y="155" text-anchor="middle" font-size="14" fill="#c14a3e">1:3</text>
+  <rect x="447" y="137" width="46" height="26" rx="6" fill="none" stroke="#7c8795" stroke-width="1.4"/>
+  <text x="470" y="155" text-anchor="middle" font-size="14" fill="#7c8795">2:3</text>
+
+  <!-- Leaves: the six orderings -->
+  <rect x="36" y="138" width="68" height="24" rx="5" fill="#2f8f86" fill-opacity="0.12" stroke="#2f8f86" stroke-width="1.2"/>
+  <text x="70" y="155" text-anchor="middle" font-size="13" fill="#2f8f86">&#10216;1,2,3&#10217;</text>
+  <rect x="306" y="138" width="68" height="24" rx="5" fill="#2f8f86" fill-opacity="0.12" stroke="#2f8f86" stroke-width="1.2"/>
+  <text x="340" y="155" text-anchor="middle" font-size="13" fill="#2f8f86">&#10216;2,1,3&#10217;</text>
+
+  <rect x="126" y="203" width="68" height="24" rx="5" fill="#2f8f86" fill-opacity="0.12" stroke="#2f8f86" stroke-width="1.2"/>
+  <text x="160" y="220" text-anchor="middle" font-size="13" fill="#2f8f86">&#10216;1,3,2&#10217;</text>
+  <rect x="236" y="203" width="68" height="24" rx="5" fill="#c14a3e" fill-opacity="0.12" stroke="#c14a3e" stroke-width="1.6"/>
+  <text x="270" y="220" text-anchor="middle" font-size="13" fill="#c14a3e">&#10216;3,1,2&#10217;</text>
+  <rect x="381" y="203" width="68" height="24" rx="5" fill="#2f8f86" fill-opacity="0.12" stroke="#2f8f86" stroke-width="1.2"/>
+  <text x="415" y="220" text-anchor="middle" font-size="13" fill="#2f8f86">&#10216;2,3,1&#10217;</text>
+  <rect x="486" y="203" width="68" height="24" rx="5" fill="#2f8f86" fill-opacity="0.12" stroke="#2f8f86" stroke-width="1.2"/>
+  <text x="520" y="220" text-anchor="middle" font-size="13" fill="#2f8f86">&#10216;3,2,1&#10217;</text>
+
+  <text x="280" y="245" text-anchor="middle" font-size="12" fill="#8d98a6">3! = 6 l&#248;vnoder, h&#248;yde 3 &#8805; lg 6</text>
+</svg>

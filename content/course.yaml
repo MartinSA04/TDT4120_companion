@@ -104,6 +104,37 @@ formulas:
       id: masterteoremet,
     }
 
+  - {
+      tex: "n! > (n/e)^n \\implies \\lg n! > n \\lg n - n \\lg e = \\Omega(n \\lg n)",
+      label: "Sorteringsgrensen. Et beslutningstre med $n!$ løvnoder har høyde minst $\\lg n!$, og Stirlings formel gir $n! > (n/e)^n$. Enhver sammenligningsbasert sortering bruker $\\Omega(n \\lg n)$ sammenligninger i verste tilfelle.",
+      section: "Rangering i lineær tid",
+      id: sorteringsgrensen,
+    }
+  - {
+      tex: "T(n) = T(n/2) + n = 2n - 1 = \\Theta(n)",
+      label: "Randomized-Select når pivoten deler på midten: ett kall på halve instansen pluss lineært arbeid, en geometrisk sum $n + n/2 + \\cdots + 1$. Forventet kjøretid er $\\Theta(n)$ for enhver input; verste tilfelle er $\\Theta(n^2)$.",
+      section: "Rangering i lineær tid",
+      id: randomized-select-rekurrens,
+    }
+  - {
+      tex: "T(n) \\le T(n/5) + T(7n/10) + \\Theta(n) = \\Theta(n)",
+      label: "Select. Medianen av gruppemedianene garanterer at minst $3n/10$ elementer ligger på hver side av pivoten, så det rekursive kallet får høyst $7n/10$. Kallene får til sammen $9n/10 < n$, og rota dominerer.",
+      section: "Rangering i lineær tid",
+      id: select-rekurrens,
+    }
+  - {
+      tex: "T(n) = \\Theta(n + k)",
+      label: "Counting-Sort på $n$ heltall i området $0 .. k$: to løkker over $A$ og én over $C$. Lineær når $k = O(n)$.",
+      section: "Rangering i lineær tid",
+      id: counting-sort-kjoretid,
+    }
+  - {
+      tex: "T(n) = \\Theta(d(n + k))",
+      label: "Radix-Sort: $d$ siffer, hvert med $k + 1$ mulige verdier, sortert stabilt ett siffer om gangen med Counting-Sort.",
+      section: "Rangering i lineær tid",
+      id: radix-sort-kjoretid,
+    }
+
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
 glossary:
@@ -262,6 +293,57 @@ glossary:
       term: "Forventet kjøretid",
       definition: "Snitt over algoritmens egne tilfeldige valg, for én fast instans. Skiller seg fra gjennomsnittstilfellet, som er et snitt over instanser, og fra amortisert kjøretid, som er et snitt over operasjonene i en følge.",
       section: "Splitt og hersk",
+    }
+
+  - {
+      term: "Sammenligningsbasert sortering",
+      definition: "Sortering som bare får informasjon om elementene gjennom parvise tester $a_i \\le a_j$. Insertion-Sort, Merge-Sort og Quicksort er sammenligningsbaserte; Counting-Sort, Radix-Sort og Bucket-Sort er det ikke.",
+      section: "Rangering i lineær tid",
+    }
+  - {
+      term: "Beslutningstre",
+      definition: "Modell for en sammenligningsbasert algoritme på $n$ elementer: hver indre node er en sammenligning med to utfall, hver løvnode en ferdig rekkefølge, og én kjøring er en sti fra rota. Sortering krever minst $n!$ løvnoder, så høyden, antall sammenligninger i verste tilfelle, er minst $\\lg n! = \\Omega(n \\lg n)$.",
+      section: "Rangering i lineær tid",
+    }
+  - {
+      term: "Sorteringsgrensen",
+      definition: "Enhver sammenligningsbasert sorteringsalgoritme bruker $\\Omega(n \\lg n)$ sammenligninger i verste tilfelle. Grensen sier ingenting om beste tilfelle, som kan være $\\Theta(n)$. Den smitter over på et annet problem bare gjennom en reduksjon fra sortering med kjøretid $o(n \\lg n)$.",
+      section: "Rangering i lineær tid",
+    }
+  - {
+      term: "Rang",
+      definition: "Det $i$-ende minste elementet i en tabell har rang $i$. Rang 1 er minimum, rang $n$ maksimum, og medianen har rang $\\lfloor (n+1)/2 \\rfloor$, den nederste av de to midterste når $n$ er partall.",
+      section: "Rangering i lineær tid",
+    }
+  - {
+      term: "Randomized-Select",
+      definition: "Finner elementet med rang $i$ som Quicksort med ett rekursivt kall: Randomized-Partition setter pivoten på plass $q$ med rang $k = q - p + 1$ i segmentet. Er $i = k$, er pivoten svaret; er $i < k$, søkes rang $i$ blant de små, ellers rang $i - k$ blant de store. Forventet $\\Theta(n)$ for enhver input, $\\Theta(n^2)$ i verste tilfelle.",
+      section: "Rangering i lineær tid",
+    }
+  - {
+      term: "Select",
+      definition: "Rangering i garantert $\\Theta(n)$. Pivoten er medianen av medianene til grupper på fem, funnet med et rekursivt kall, og minst $3n/10$ elementer havner på hver side av den. $T(n) \\le T(n/5) + T(7n/10) + \\Theta(n) = \\Theta(n)$. Gir også de $k$ minste elementene i lineær tid: finn rang $k$ og del rundt det.",
+      section: "Rangering i lineær tid",
+    }
+  - {
+      term: "Stabil sortering",
+      definition: "En sorteringsalgoritme er stabil når like nøkler står i samme innbyrdes rekkefølge i output som i input. Insertion-Sort, Merge-Sort og Counting-Sort er stabile; Quicksort er det ikke. Radix-Sort krever en stabil subrutine.",
+      section: "Rangering i lineær tid",
+    }
+  - {
+      term: "Counting-Sort",
+      definition: "Sorterer $n$ heltall i området $0 .. k$ uten sammenligninger: tell forekomstene av hver verdi i $C$, gjør $C$ kumulativ slik at $C[v]$ er antall elementer $\\le v$, og gå baklengs gjennom $A$: trekk én fra $C[A[j]]$ og legg $A[j]$ på den plassen i $B$. Baklengs gjør den stabil. $\\Theta(n + k)$.",
+      section: "Rangering i lineær tid",
+    }
+  - {
+      term: "Radix-Sort",
+      definition: "Sorterer $d$-sifrede tall stabilt på ett siffer om gangen, det minst signifikante først, med Counting-Sort som subrutine. Etter pass $i$ er tallene sortert på de $i$ siste sifrene; stabiliteten er induksjonssteget. $\\Theta(d(n + k))$ når hvert siffer har $k + 1$ verdier.",
+      section: "Rangering i lineær tid",
+    }
+  - {
+      term: "Bucket-Sort",
+      definition: "Antar input uniformt fordelt i $[0, 1)$. Legg $A[j]$ i bøtte $\\lfloor n \\cdot A[j] \\rfloor$ av $n$, sorter hver bøtte med Insertion-Sort, og sett bøttene etter hverandre. Forventet $\\Theta(n)$ som et snitt over inputer, $\\Theta(n^2)$ i verste tilfelle.",
+      section: "Rangering i lineær tid",
     }
 
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──
