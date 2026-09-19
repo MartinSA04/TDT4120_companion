@@ -130,9 +130,9 @@ Iterasjonsmetoden: rull ut ett steg om gangen ned til grunntilfellet.
 $$
 \begin{aligned}
 T(n) &= (2n - 1) + T(n - 1) \\
-     &= (2n - 1) + (2(n - 1) - 1) + T(n - 2) \\
-     &= \sum_{i=1}^{n} (2i - 1) + T(0) \\
-     &= 2 \cdot \frac{n(n + 1)}{2} - n = n^2.
+     &= (2n - 1) + (2n - 3) \\
+     &\qquad + \cdots + 3 + 1 + T(0) \\
+     &= \sum_{i=1}^{n} (2i - 1) = n^2.
 \end{aligned}
 $$
 
@@ -284,9 +284,13 @@ rett og slett utfører to andre sorteringsalgoritmer etter hverandre:
 
 <CodeBlock
   lang="text"
-  code={`Lurvik-Sort(A, n)          Smartnes-Sort(A, n)
-1 Insertion-Sort(A, n)     1 Merge-Sort(A, 1, n)
-2 Merge-Sort(A, 1, n)      2 Insertion-Sort(A, n)`}
+  code={`Lurvik-Sort(A, n)
+1 Insertion-Sort(A, n)
+2 Merge-Sort(A, 1, n)
+
+Smartnes-Sort(A, n)
+1 Merge-Sort(A, 1, n)
+2 Insertion-Sort(A, n)`}
 />
 
 Hvilken av dem har best kjøretid i verste tilfelle? Forklar kort.
@@ -474,7 +478,7 @@ unntatt $n^2$ og grunntilfellet faller bort:
 $$
 \begin{aligned}
 T(n) &= n^2 - (n - 1)^2 + T(n - 1) \\
-     &= n^2 - (n - 1)^2 + (n - 1)^2 - (n - 2)^2 + T(n - 2) \\
+     &= n^2 - (n - 2)^2 + T(n - 2) \\
      &= n^2 - (n - i)^2 + T(n - i) \\
      &= n^2 + T(0) = \Theta(n^2).
 \end{aligned}
