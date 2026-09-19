@@ -100,6 +100,31 @@ Testene for over- og underflyt er sløyfet her, som i læreboka. De trengs i
 praksis: med bare `head` og `tail` ser en helt full kø ellers lik ut som en
 tom.
 
+<Example label="Eksamensoppgave" title="Den sensurerte linja i Enqueue">
+<ExamRef id="2024-aug-kont" task="1" />
+
+Det følgende er hentet fra Enqueue:
+
+<CodeBlock
+  lang="text"
+  code={`1 Q[Q.tail] = x
+2 if Q.tail == Q.size
+3
+4 else Q.tail = Q.tail + 1`}
+/>
+
+Hva skal den sensurerte biten være?
+
+<Solution>
+Linje 2 tester om `tail` står på siste plass i tabellen. Da er neste ledige
+plass den første, så `tail` skal gå rundt til starten. Boka bruker
+1-indeksering, så starten er 1. Det er den samme jobben som
+`(self.tail + 1) % len(self.A)` gjør i Python-versjonen over.
+
+<Answer>`Q.tail = 1`</Answer>
+</Solution>
+</Example>
+
 ## Dynamiske mengder
 
 Mange algoritmer trenger bare å holde styr på en samling elementer med nøkler:
@@ -154,6 +179,29 @@ def delete(x):
 
 Grensetilfellene er sløyfet her også: står noden først eller sist i lista,
 finnes bare den ene naboen.
+
+<Example label="Eksamensoppgave" title="Lenkede lister mot tabeller">
+<ExamRef id="2025-aug-kont" task="1" />
+
+Sammenlign lenkede lister (linked lists) med tabeller (arrays). Hvilke fordeler
+og ulemper har de, sammenlignet med hverandre? Forklar.
+
+<Solution>
+En tabell ligger sammenhengende i minnet, så element nummer $i$ finnes med et
+regnestykke på adressen, i konstant tid. Prisen er at innsetting og sletting
+inne i tabellen må flytte alle elementene bak, altså $\Theta(n)$ i verste
+tilfelle, og at størrelsen er fast: blir tabellen full, må en større
+allokeres og alt kopieres.
+
+En lenket liste holder elementene som noder med pekere. Har du en peker til
+noden, setter du inn eller sletter i konstant tid uten å flytte noe, og lista
+vokser fritt. Til gjengjeld finnes ikke element nummer $i$ uten å følge $i$
+pekere, så oppslag og søk er $\Theta(n)$, og hver node koster ekstra minne til
+pekerne.
+
+<Answer>Tabell: konstant oppslag, men dyr innsetting midt i og fast størrelse. Lenket liste: konstant innsetting og sletting der du står, men lineært oppslag og pekere som koster minne.</Answer>
+</Solution>
+</Example>
 
 ## Hashtabeller
 
@@ -228,6 +276,30 @@ Kostnadene så langt, samlet:
   align={["left", "left", "left", "left", "left"]}
   caption="Verste tilfelle der ikke annet er sagt. Sletting forutsetter at du står ved elementet; å finne det først koster et søk. Hashtabellens søk er $\Theta(n)$ i verste tilfelle."
 />
+
+<Example label="Eksamensoppgave" title="Vurder en hashfunksjon">
+<ExamRef id="2024-des" task="3" />
+
+Hvordan vurderer du følgende hashfunksjon? Forklar kort.
+
+$
+h(k) = \min\{m, 2^k\}
+$
+
+Spørsmålet er altså hvor god eller dårlig hashfunksjonen er, og hvorfor. Her
+er $k$ et positivt heltall og $m$ er størrelsen på hashtabellen.
+
+<Solution>
+En god hashfunksjon sprer nøklene jevnt over alle $m$ posisjonene. Denne gjør
+det motsatte. $2^k$ vokser så fort at bare nøklene med $k < \lg m$ får hver
+sin posisjon, og det er færre enn $\lg m$ av dem. Alle nøkler med
+$k \ge \lg m$ får $h(k) = m$ og kolliderer i samme posisjon. Nesten hele
+tabellen står tom mens én lenke får nesten alle elementene, og søk blir
+$\Theta(n)$ i stedet for forventet konstant tid.
+
+<Answer>Dårlig: høyst $\lg m$ posisjoner brukes, og alle nøkler med $k \ge \lg m$ havner i posisjon $m$.</Answer>
+</Solution>
+</Example>
 
 ## Dynamiske tabeller
 

@@ -200,6 +200,60 @@ er fortsatt lineært. Det finnes søketrær som balanserer seg selv etter hver
 innsetting og sletting i logaritmisk tid, for eksempel rød-svarte trær, og de
 garanterer $h = \Theta(\lg n)$. Detaljene er ikke pensum.
 
+<Example label="Eksamensoppgave" title="Tree-Insert og Inorder-Tree-Walk">
+<ExamRef id="2022-des" task="8" />
+
+Start med et tomt binært søketre, og sett så inn følgende verdier, i
+rekkefølge, med Tree-Insert:
+
+$
+\langle 7, 1, 0, 5, 4, 8, 3, 2, 9, 6 \rangle
+$
+
+Utfør deretter Inorder-Tree-Walk på rotnoden i det resulterende treet. Hva
+skriver algoritmen ut?
+
+Du skal her kun svare med output fra algoritmen.
+
+<Solution>
+Du kan bygge treet: 7 blir rot, 1 går til venstre, 0 til venstre for 1, 5 til
+høyre for 1, og så videre. Men det trengs ikke. Inorder-traversering av et
+binært søketre besøker alltid nodene i sortert rekkefølge, uansett hvilken
+rekkefølge de ble satt inn i.
+
+<Answer>0 1 2 3 4 5 6 7 8 9</Answer>
+</Solution>
+</Example>
+
+<Example label="Eksamensoppgave" title="Søk i et tre du har bygd selv">
+<ExamRef id="2025-aug-kont" task="4" />
+
+Om du bygger et binært søketre av $n$ elementer, hva blir kjøretiden til søk
+i treet etterpå, i beste og verste tilfelle, og i gjennomsnitt? Forklar.
+
+Du bruker altså Tree-Insert for å sette inn ett og ett element, der treet til
+å begynne med er tomt, og vi er ute etter kjøretiden til Tree-Search på det
+ferdige treet (best-case, worst-case og average-case). Du kan anta at
+elementene er tallene $1 \ldots n$ i en (uniformt) tilfeldig rekkefølge.
+
+<Solution>
+Søk koster $O(h)$, der $h$ er høyden, og det avgjør alt.
+
+Beste tilfelle er $\Theta(1)$ uansett form på treet: nøkkelen vi søker etter
+kan sitte i rota.
+
+Verste tilfelle er et helt ubalansert tre, som når elementene kom i sortert
+rekkefølge, og da er høyden $n - 1$. Et søk etter en av de nederste nodene
+koster $\Theta(n)$.
+
+I gjennomsnitt, med tilfeldig innsettingsrekkefølge, er høyden
+$\Theta(\lg n)$, og de fleste nodene ligger nær bunnen, så et søk koster
+$\Theta(\lg n)$.
+
+<Answer>Beste $\Theta(1)$, verste $\Theta(n)$, gjennomsnitt $\Theta(\lg n)$.</Answer>
+</Solution>
+</Example>
+
 ## Hauger
 
 En <Term name="Haug">haug</Term> er et binærtre som er komplett ned til nest
@@ -436,6 +490,29 @@ beste tilfelle er $\Theta(n)$.
   rowHeader={false}
   caption="Sorteringsalgoritmene så langt. For Quicksort er snittet forventet kjøretid over algoritmens egne tilfeldige valg; for Bucket-Sort er det et gjennomsnitt over uniformt fordelt input."
 />
+
+<Example label="Eksamensoppgave" title="Første iterasjon av Heapsort">
+<ExamRef id="2023-aug-kont" task="13" />
+
+Tabellen $A = \langle 9, 8, 5, 7, 1, 3, 2, 4, 6 \rangle$ representerer en
+haug. Hvordan ser tabellen ut etter første iterasjon av Heapsort?
+
+Du skal altså utføre den første av $n - 1$ iterasjoner. Svar ved å liste opp
+elementene i tabellen. Oppgi hele tabellen, inkludert deler som ikke lenger
+er en del av haugen.
+
+<Solution>
+Første iterasjon bytter rota med siste element og krymper haugen med én:
+$\langle 6, 8, 5, 7, 1, 3, 2, 4, 9 \rangle$ med haugstørrelse 8. Så synker 6
+med Max-Heapify. Barna til 6 er 8 og 5, så 6 bytter med 8:
+$\langle 8, 6, 5, 7, 1, 3, 2, 4 \rangle$. Barna til 6 er nå 7 og 1, så 6
+bytter med 7: $\langle 8, 7, 5, 6, 1, 3, 2, 4 \rangle$. Barna til 6 på plass
+4 ville vært plass 8 og 9. Plass 9 er utenfor haugen og 4 er mindre enn 6,
+så 6 blir stående.
+
+<Answer>$\langle 8, 7, 5, 6, 1, 3, 2, 4, 9 \rangle$</Answer>
+</Solution>
+</Example>
 
 ## Sjekk deg selv
 

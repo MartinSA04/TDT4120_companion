@@ -110,6 +110,38 @@ nøyaktig den samme før og etter, konstanten inkludert, så gjør
 induksjonssteget med eksplisitte konstanter.
 </Callout>
 
+<Example label="Eksamensoppgave" title="Løs rekurrensen eksakt">
+<ExamRef id="2025-des" task="14" />
+
+Løs følgende rekurrens eksakt:
+
+$
+\begin{aligned}
+T(n) &= T(n - 1) + 2n - 1 \\
+T(0) &= 0
+\end{aligned}
+$
+
+Oppgi svaret uten asymptotisk notasjon. Forklar kort.
+
+<Solution>
+Iterasjonsmetoden: rull ut ett steg om gangen ned til grunntilfellet.
+
+$
+\begin{aligned}
+T(n) &= (2n - 1) + T(n - 1) \\
+     &= (2n - 1) + (2(n - 1) - 1) + T(n - 2) \\
+     &= \sum_{i=1}^{n} (2i - 1) + T(0) \\
+     &= 2 \cdot \frac{n(n + 1)}{2} - n = n^2.
+\end{aligned}
+$
+
+Summen av de $n$ første oddetallene er $n^2$, og $T(0) = 0$ bidrar ikke.
+
+<Answer>$T(n) = n^2$</Answer>
+</Solution>
+</Example>
+
 ## Binærsøk
 
 Søk etter $v$ i en sortert tabell. Se på elementet i midten. Er det $v$, er vi
@@ -241,6 +273,33 @@ T(n) &= 2\Big(\frac{n}{2} \lg \frac{n}{2} + \frac{n}{2}\Big) + n \\
 $$
 
 <Answer>Løsningen stemmer i grunntilfellet og bevares i induksjonssteget, så $T(n) = n \lg n + n$ for alle $n$.</Answer>
+</Solution>
+</Example>
+
+<Example label="Eksamensoppgave" title="Lurvik-Sort mot Smartnes-Sort">
+<ExamRef id="2023-aug-kont" task="7" />
+
+Dine venner Lurvik og Smartnes har laget hver sin sorteringsalgoritme, som
+rett og slett utfører to andre sorteringsalgoritmer etter hverandre:
+
+<CodeBlock
+  lang="text"
+  code={`Lurvik-Sort(A, n)          Smartnes-Sort(A, n)
+1 Insertion-Sort(A, n)     1 Merge-Sort(A, 1, n)
+2 Merge-Sort(A, 1, n)      2 Insertion-Sort(A, n)`}
+/>
+
+Hvilken av dem har best kjøretid i verste tilfelle? Forklar kort.
+
+<Solution>
+Merge-Sort bruker $\Theta(n \lg n)$ uansett hvordan inputen ser ut. Kjører
+den først, er tabellen sortert når Insertion-Sort begynner, og det er beste
+tilfelle for Insertion-Sort: $\Theta(n)$. Smartnes-Sort bruker dermed
+$\Theta(n \lg n)$ i verste tilfelle. Lurvik-Sort kjører Insertion-Sort på
+usortert input, og der er verste tilfelle $\Theta(n^2)$, som dominerer
+$\Theta(n \lg n)$ fra Merge-Sort etterpå.
+
+<Answer>Smartnes-Sort, med $\Theta(n \lg n)$ mot $\Theta(n^2)$.</Answer>
 </Solution>
 </Example>
 
@@ -398,6 +457,37 @@ $T(n) = \Theta(n \lg^2 n)$.
   align={["left", "left", "left"]}
   caption="De første to er binærsøk og Merge-Sort. Den siste er Quicksort i verste tilfelle; masterteoremet krever at instansen deles på en konstant faktor $b > 1$, og $n - 1$ er ingen slik deling."
 />
+
+<Example label="Eksamensoppgave" title="To rekurrenser">
+<ExamRef id="2023-des" task="3" />
+
+Løs følgende rekurrenser. Oppgi svaret i $\Theta$-notasjon.
+
+a) $T(n) = T(n - 1) + n^2 - (n - 1)^2$
+
+b) $T(n) = 2T(n/4) + \sqrt{n}\,\lg^2 n$
+
+<Solution>
+a) Leddet $n^2 - (n - 1)^2$ gjør at utrullingen blir en teleskopsum der alt
+unntatt $n^2$ og grunntilfellet faller bort:
+
+$
+\begin{aligned}
+T(n) &= n^2 - (n - 1)^2 + T(n - 1) \\
+     &= n^2 - (n - 1)^2 + (n - 1)^2 - (n - 2)^2 + T(n - 2) \\
+     &= n^2 - (n - i)^2 + T(n - i) \\
+     &= n^2 + T(0) = \Theta(n^2).
+\end{aligned}
+$
+
+b) Masterteoremet med $a = 2$ og $b = 4$ gir $n^{\log_b a} = n^{1/2} =
+\sqrt{n}$. Funksjonen $f(n) = \sqrt{n}\,\lg^2 n$ er $n^{\log_b a}$ ganger
+$\lg^k n$ med $k = 2$, altså tilfelle 2, og da får $T(n)$ én logaritmefaktor
+til.
+
+<Answer>a) $\Theta(n^2)$, b) $\Theta(\sqrt{n}\,\lg^3 n)$</Answer>
+</Solution>
+</Example>
 
 ## Sjekk deg selv
 

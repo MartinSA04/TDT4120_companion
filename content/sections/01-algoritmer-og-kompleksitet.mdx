@@ -154,6 +154,56 @@ alene, og en nedre grense alene skrives med $\Omega$. Regelen står som
 </Solution>
 </Example>
 
+<Example label="Eksamensoppgave" title="Velg én beskrivelse av kjøretiden">
+<ExamRef id="2025-des" task="2" />
+
+Din venn Lurvik har klart å vise at to av følgende beskrivelser av kjøretiden
+til en algoritme er korrekte, men han husker ikke hvilke to:
+
+1. $T(n) = O(n^3)$
+2. $T(n) = \Omega(n^3)$
+3. $T(n) = \Theta(n^3)$
+
+Sjefen hans har bedt ham velge ut én av beskrivelsene, og nå har Lurvik bedt
+deg om hjelp. Hvilken av de tre velger du (nummer 1, 2 eller 3)? Forklar kort
+hvorfor dette er et godt valg.
+
+<Solution>
+$\Theta$ betyr «både $O$ og $\Omega$». Har Lurvik vist to av de tre, er enten
+nummer 3 en av dem, eller så har han vist både 1 og 2, og de to til sammen er
+nettopp nummer 3. Uansett stemmer $T(n) = \Theta(n^3)$, og det er den mest
+informative beskrivelsen, siden den gir både en øvre og en nedre grense.
+
+<Answer>Nummer 3, $T(n) = \Theta(n^3)$.</Answer>
+</Solution>
+</Example>
+
+<Example label="Eksamensoppgave" title="Kjøretiden til Fung-Sort">
+<ExamRef id="2023-aug-kont" task="1" />
+
+Algoritme 1 sorterer tabellen $A[1 : n]$. Hva er kjøretiden, som funksjon av
+$n$? Oppgi svaret i asymptotisk notasjon.
+
+<CodeBlock
+  title="Algoritme 1"
+  lang="text"
+  code={`Fung-Sort(A, n)
+1 for i = 1 to n
+2     for j = 1 to n
+3         if A[i] < A[j]
+4             swap A[i] and A[j]`}
+/>
+
+<Solution>
+Den ytre løkka kjører $n$ ganger, og for hver av dem kjører den indre løkka
+$n$ ganger. Kroppen er en sammenligning og eventuelt et bytte, begge konstant
+tid. Ingen av løkkene har en betingelse som kan stoppe dem tidlig, så antallet
+iterasjoner er $n \cdot n$ uansett hvordan inputen ser ut.
+
+<Answer>$\Theta(n^2)$</Answer>
+</Solution>
+</Example>
+
 ## Grenser og tilfeller
 
 For hver $n$ finnes det mange instanser, og de koster ulikt, så størrelsen alene
@@ -286,6 +336,33 @@ står vi igjen med $n^2$.
   align={["left", "left", "left"]}
   caption="Minnebruken er $O(1)$ ut over selve tabellen, og like elementer beholder rekkefølgen sin."
 />
+
+<Example label="Eksamensoppgave" title="Gjennomsnittet kan være lik ett av ytterpunktene">
+<ExamRef id="2025-des" task="4" />
+
+Lurvik og Smartnes har en heftig diskusjon. Smartnes mener man kan ha en
+algoritme med ulik asymptotisk kjøretid i beste og verste tilfelle, der den
+gjennomsnittlige kjøretiden likevel er lik én av de to. Lurvik mener dette er
+umulig, siden gjennomsnittet $y$ av $x$ og $z$ alltid vil ligge imellom dem,
+altså $x < y < z$.
+
+Bruk et eksempel fra pensum for å vise at Smartnes har rett. Forklar kort
+hvorfor det er mulig.
+
+Smartnes mener altså at average-case kan være lik enten best-case eller
+worst-case, selv om best-case og worst-case er forskjellige.
+
+<Solution>
+Insertion-Sort er eksempelet: beste tilfelle er $\Theta(n)$, verste tilfelle
+er $\Theta(n^2)$, og gjennomsnittet er også $\Theta(n^2)$. Lurviks innvending
+holder for tall, men ikke for vekstrater. Målt i antall operasjoner ligger
+gjennomsnittet for Insertion-Sort omtrent på halvparten av verste tilfelle,
+og den faktoren forsvinner i notasjonen. $\Theta$ skjuler konstantfaktorer, så
+to kjøretider som er ulike som tall kan ha samme asymptotiske vekst.
+
+<Answer>Insertion-Sort: $\Theta(n)$ i beste tilfelle, $\Theta(n^2)$ i både gjennomsnittlig og verste tilfelle. Notasjonen skjuler konstantfaktoren mellom de to siste.</Answer>
+</Solution>
+</Example>
 
 ## Sjekk deg selv
 

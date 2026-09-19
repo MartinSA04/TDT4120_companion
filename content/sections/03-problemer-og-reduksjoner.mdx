@@ -175,6 +175,23 @@ vanskelig.
   height={300}
 />
 
+<Example label="Eksamensoppgave" title="Hvilken vei reduserer du?">
+<ExamRef id="2025-des" task="9" />
+
+Du studerer et problem $P$, og vil sammenligne det med et annet, kjent
+problem $Q$ ved å finne en effektiv reduksjon. Hvilken vei vil du redusere
+for å vise hva? Forklar kort.
+
+<Solution>
+Det kommer an på hva du vet om $Q$. Er $Q$ vanskelig, reduserer du fra $Q$
+til $P$: da kan enhver instans av $Q$ løses ved hjelp av $P$, så $P$ er minst
+like vanskelig. Er $Q$ lett, reduserer du fra $P$ til $Q$: da har du en
+algoritme for $P$ som går veien om $Q$, så $P$ er også lett.
+
+<Answer>Fra $Q$ til $P$ for å vise at $P$ er vanskelig, fra $P$ til $Q$ for å vise at $P$ er lett.</Answer>
+</Solution>
+</Example>
+
 ## Dekomponering
 
 Reduksjonene over oversetter mellom forskjellige problemer. Like ofte reduserer

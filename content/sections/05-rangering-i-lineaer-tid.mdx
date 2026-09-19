@@ -76,6 +76,34 @@ raskere. En reduksjon den andre veien, fra problemet til sortering, sier
 ingenting om hvor vanskelig problemet er.
 </Callout>
 
+<Example label="Eksamensoppgave" title="Kjøretiden til Init">
+<ExamRef id="2024-des" task="10" />
+
+De følgende to trinnene utgjør tilsammen en sammenligningsbasert
+sorteringsalgoritme (comparison sort), som sorterer en tabell $A$ med $n$
+elementer:
+
+<CodeBlock
+  lang="text"
+  code={`1 Init(A, n)
+2 Main(A, n)`}
+/>
+
+Kjøretiden til Main er $O(n)$. Hva er kjøretiden til Init i verste tilfelle?
+
+Om du har en usortert tabell $A$ av lengde $n$ og først kjører Init($A$, $n$)
+og deretter Main($A$, $n$), vil altså $A$ ende opp sortert, og både Init og
+Main baserer seg kun på å sammenligne elementene i $A$.
+
+<Solution>
+Init og Main til sammen er en sammenligningsbasert sortering, så summen av
+kjøretidene deres er $\Omega(n \lg n)$ i verste tilfelle. Main bidrar bare
+med $O(n)$, som er mindre enn det. Resten må Init stå for.
+
+<Answer>$\Omega(n \lg n)$</Answer>
+</Solution>
+</Example>
+
 ## Randomized-Select
 
 Det $i$-ende minste elementet i en tabell har <Term name="Rang">rang</Term>
@@ -154,6 +182,47 @@ det samme: <Term name="Forventet kjøretid">forventet</Term> $\Theta(n)$ for
 enhver input. Verste tilfelle er som for Quicksort. Havner pivoten ytterst
 hver gang, er $T(n) = T(n-1) + n = \Theta(n^2)$, men det krever uflaks med de
 tilfeldige valgene, og ingen input er mer utsatt enn andre.
+
+<Example label="Eksamensoppgave" title="Lurviks Randomized-Select">
+<ExamRef id="2022-des" task="15" />
+
+Din venn Lurvik har prøvd å skrive ned pseudokode for randomized select etter
+hukommelsen. Resultatet (algoritme 1) er ikke helt rett. Beskriv hva som må
+fikses for at algoritmen skal bli korrekt.
+
+<CodeBlock
+  title="Algoritme 1 Lurviks versjon av randomized select"
+  lang="text"
+  code={`Randomized-Select(A, p, r, i)
+1 if r ⩽ p
+2     return A[p]
+3 q = Randomized-Partition(A, p, r)
+4 k = q − p + 1
+5 if i == k
+6     return A[q]
+7 elseif i < k
+8     Randomized-Select(A, p, q − 1, i)
+9     Randomized-Select(A, q + 1, r, i − k)`}
+/>
+
+<Solution>
+De rekursive kallene på linje 8 og 9 kaster bort svaret sitt: verdien som
+kommer tilbake, må returneres, så begge linjene trenger `return` foran.
+Dessuten mangler linje 9 `else`. Uten det kjøres begge kallene etter
+hverandre når $i < k$, i stedet for at bare den riktige delen undersøkes.
+
+<CodeBlock
+  lang="text"
+  code={`8     return Randomized-Select(A, p, q − 1, i)
+9 else return Randomized-Select(A, q + 1, r, i − k)`}
+/>
+
+Betingelsen på linje 1 kan også strammes til `if p == r`, men den er ikke
+feil slik den står.
+
+<Answer>`return` foran begge de rekursive kallene, og `else` først på linje 9.</Answer>
+</Solution>
+</Example>
 
 ## Select
 
@@ -268,6 +337,23 @@ venstre for den. Rekkefølgen fra $A$ er bevart. Kjøretiden er $\Theta(n + k)$,
 to løkker over $A$ og én over $C$. Er $k = O(n)$, er det lineært. Grensen
 brytes ikke, for ingen elementer sammenlignes. Verdiene brukes som indekser, og
 det krever at de er små heltall.
+
+<Example label="Eksamensoppgave" title="Snu løkka i Counting-Sort">
+<ExamRef id="2024-aug-kont" task="3" />
+
+En av løkkene i Counting-Sort går fra $n$ ned til 1 (for $j = n$ downto 1).
+Hva er konsekvensen av å skifte retning på løkka (for $j = 1$ to $n$)?
+
+Merk: Her kreves ingen forklaring.
+
+<Solution>
+Den siste løkka plasserer elementene bakfra, og det er det som gjør at like
+nøkler beholder rekkefølgen sin fra $A$. Snur du løkka, plasseres like nøkler
+i motsatt rekkefølge av den de kom i.
+
+<Answer>Sorteringen blir ustabil.</Answer>
+</Solution>
+</Example>
 
 ## Radix-Sort
 

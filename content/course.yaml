@@ -434,42 +434,49 @@ glossary:
 exams:
   - {
       label: "Ordinær eksamen, desember 2025",
+      id: "2025-des",
       date: 2025-12-15,
       url: "https://algdat.idi.ntnu.no/arkiv/2025.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2025.des.tdt4120.losn.no.pdf",
     }
   - {
       label: "Kontinuasjonseksamen, august 2025",
+      id: "2025-aug-kont",
       date: 2025-08-05,
       url: "https://algdat.idi.ntnu.no/arkiv/2025.aug.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2025.aug.tdt4120.losn.no.pdf",
     }
   - {
       label: "Ordinær eksamen, desember 2024",
+      id: "2024-des",
       date: 2024-12-09,
       url: "https://algdat.idi.ntnu.no/arkiv/2024.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2024.des.tdt4120.losn.no.pdf",
     }
   - {
       label: "Kontinuasjonseksamen, august 2024",
+      id: "2024-aug-kont",
       date: 2024-08-05,
       url: "https://algdat.idi.ntnu.no/arkiv/2024.aug.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2024.aug.tdt4120.losn.no.pdf",
     }
   - {
       label: "Ordinær eksamen, desember 2023",
+      id: "2023-des",
       date: 2023-12-12,
       url: "https://algdat.idi.ntnu.no/arkiv/2023.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2023.des.tdt4120.losn.no.pdf",
     }
   - {
       label: "Kontinuasjonseksamen, august 2023",
+      id: "2023-aug-kont",
       date: 2023-08-10,
       url: "https://algdat.idi.ntnu.no/arkiv/2023.aug.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2023.aug.tdt4120.losn.no.pdf",
     }
   - {
       label: "Ordinær eksamen, desember 2022",
+      id: "2022-des",
       date: 2022-12-19,
       url: "https://algdat.idi.ntnu.no/arkiv/2022.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2022.des.tdt4120.losn.no.pdf",
