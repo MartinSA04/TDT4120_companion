@@ -115,26 +115,26 @@ induksjonssteget med eksplisitte konstanter.
 
 Løs følgende rekurrens eksakt:
 
-$
+$$
 \begin{aligned}
 T(n) &= T(n - 1) + 2n - 1 \\
 T(0) &= 0
 \end{aligned}
-$
+$$
 
 Oppgi svaret uten asymptotisk notasjon. Forklar kort.
 
 <Solution>
 Iterasjonsmetoden: rull ut ett steg om gangen ned til grunntilfellet.
 
-$
+$$
 \begin{aligned}
 T(n) &= (2n - 1) + T(n - 1) \\
      &= (2n - 1) + (2(n - 1) - 1) + T(n - 2) \\
      &= \sum_{i=1}^{n} (2i - 1) + T(0) \\
      &= 2 \cdot \frac{n(n + 1)}{2} - n = n^2.
 \end{aligned}
-$
+$$
 
 Summen av de $n$ første oddetallene er $n^2$, og $T(0) = 0$ bidrar ikke.
 
@@ -471,14 +471,14 @@ b) $T(n) = 2T(n/4) + \sqrt{n}\,\lg^2 n$
 a) Leddet $n^2 - (n - 1)^2$ gjør at utrullingen blir en teleskopsum der alt
 unntatt $n^2$ og grunntilfellet faller bort:
 
-$
+$$
 \begin{aligned}
 T(n) &= n^2 - (n - 1)^2 + T(n - 1) \\
      &= n^2 - (n - 1)^2 + (n - 1)^2 - (n - 2)^2 + T(n - 2) \\
      &= n^2 - (n - i)^2 + T(n - i) \\
      &= n^2 + T(0) = \Theta(n^2).
 \end{aligned}
-$
+$$
 
 b) Masterteoremet med $a = 2$ og $b = 4$ gir $n^{\log_b a} = n^{1/2} =
 \sqrt{n}$. Funksjonen $f(n) = \sqrt{n}\,\lg^2 n$ er $n^{\log_b a}$ ganger
