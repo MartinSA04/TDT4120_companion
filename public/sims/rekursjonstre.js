@@ -137,7 +137,7 @@ export default function init({ stage, controls, getSize, onResize, signal }) {
         `så løvnodene dominerer og T(n) = Θ(${water}) = Θ(n${sup(fmtExp(a, b))}).`;
     } else if (caseNo === 2) {
       const ans = k === 0 ? "lg n" : `${POW[k]} lg n`;
-      tail = `er tilfelle 2: alle nivåene koster like mye, og det er lg n + 1 av dem, så T(n) = Θ(${ans}).`;
+      tail = `er tilfelle 2: alle nivåene koster like mye, og det er log<sub>${b}</sub> n + 1 av dem, så T(n) = Θ(${ans}).`;
     } else {
       tail =
         `er tilfelle 3: nivåkostnaden krymper med faktoren ${a}/${b ** k} nedover, ` +

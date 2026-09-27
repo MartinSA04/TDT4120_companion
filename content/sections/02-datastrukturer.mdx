@@ -6,7 +6,7 @@ summary: "Minne og pekere, tabeller og matriser, stakker og køer, lenkede liste
 importance: core
 tag: "Uke 35"
 part: "Del 1: Grunnlag"
-updated: 2026-08-28
+updated: 2026-09-27
 ---
 
 En tabell slår opp element nummer $i$ på konstant tid, men å sette inn et
@@ -379,5 +379,5 @@ fortsatt.
 - En lenket liste setter inn og sletter i konstant tid ved noden, men søk følger pekerne og er lineært.
 - En dynamisk mengde er funksjonalitet; strukturen som leverer den, setter prisene på operasjonene.
 - Kjeding gir forventet $\Theta(1+\alpha)$ søk og $\Theta(n)$ i verste tilfelle. Perfekt hashing gir garantert konstant søk for statiske nøkkelmengder.
-- Tabelldobling koster $2n - 1$ operasjoner for $n$ innsettinger, amortisert konstant per innsetting.
+- Tabelldobling koster under $3n$ operasjoner for $n$ innsettinger, og nøyaktig $2n - 1$ når $n$ er en toerpotens. Det er amortisert konstant per innsetting.
 </KeyTakeaways>

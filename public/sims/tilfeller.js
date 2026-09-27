@@ -215,8 +215,8 @@ export default function init({ stage, controls, getSize, onResize, signal }) {
     const b = BOUNDS[boundKey];
     readout.innerHTML =
       `<b>${CASES[caseKey].label.toLowerCase()} tilfelle = ${b.label}(${orderTex})</b>: ` +
-      `den ${caseKey === "best" ? "billigste" : caseKey === "worst" ? "dyreste" : "gjennomsnittlige"} ` +
-      `instansen av størrelse n koster ${b.word} ${orderTex}, opp til en konstant. ` +
+      `${caseKey === "best" ? "den billigste instansen" : caseKey === "worst" ? "den dyreste instansen" : "snittet over instansene"} ` +
+      `av størrelse n koster ${b.word} ${orderTex}, opp til en konstant. ` +
       `Alle ni kombinasjonene er lovlige utsagn.`;
   }
 

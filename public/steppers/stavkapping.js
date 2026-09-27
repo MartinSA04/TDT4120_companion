@@ -169,9 +169,11 @@ export default {
 
     const best = aux(0);
     const skipped = state.filter((s) => s === "pruned").length;
+    const never =
+      skipped === 0 ? "" : skipped === 1 ? " Det stiplede kallet skjedde aldri." : ` De ${skipped} stiplede kallene skjedde aldri.`;
     snap(
       5,
-      `Ferdig: r[${n}] = ${best} kr. aux ble kalt ${calls} ganger, ${n + 1} beregninger og ${hits} oppslag. De ${skipped} stiplede kallene skjedde aldri.`,
+      `Ferdig: r[${n}] = ${best} kr. aux ble kalt ${calls} ganger, ${n + 1} beregninger og ${hits} oppslag.${never}`,
       { n, "r[n]": best },
       { done: true },
     );

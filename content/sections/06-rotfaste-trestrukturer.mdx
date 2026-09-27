@@ -6,7 +6,7 @@ summary: "Binære søketrær og hauger er rotfaste trær med hver sin egenskap: 
 importance: core
 tag: "Uke 38"
 part: "Del 2: Sortering og datastrukturer"
-updated: 2026-09-19
+updated: 2026-09-27
 ---
 
 Et rotfast tre er en rekursiv dekomponering: hver node er rota i sitt eget
@@ -53,11 +53,11 @@ lenket liste som starter i første barn.
 
 <Figure
   src="/figures/forste-barn-neste-sosken.svg"
-  alt="Det samme treet tegnet to ganger. Node 7 har barna 5 og 6, og 5 har barna 1, 2, 3 og 4. Til venstre går en grå pil fra hver forelder til hvert barn. Til høyre går en teal pil fra 7 til første barn 5 og fra 5 til første barn 1, og røde piler fra 5 til søsken 6 og fra 1 til 2, 2 til 3 og 3 til 4."
+  alt="Det samme treet tegnet to ganger. Node 7 har barna 5 og 6, og 5 har barna 1, 2, 3 og 4. Til venstre går en grå pil fra hver forelder til hvert barn. Til høyre går en grønnblå pil fra 7 til første barn 5 og fra 5 til første barn 1, og røde piler fra 5 til søsken 6 og fra 1 til 2, 2 til 3 og 3 til 4."
   number={1}
   width={560}
   height={244}
-  caption="Samme tre med to representasjoner. Til venstre har hver node én peker per barn, og 5 trenger fire. Til høyre har hver node to: første barn nedover og neste søsken bortover, så 7 finner alle barna til 5 ved å følge søskenpekerne fra 1."
+  caption="Samme tre med to representasjoner. Til venstre har hver node én peker per barn, og 5 trenger fire. Til høyre har hver node to: første barn nedover og neste søsken bortover, så 5 finner alle barna sine ved å følge søskenpekerne fra 1."
 />
 
 ## Binære søketrær
@@ -488,7 +488,7 @@ beste tilfelle er $\Theta(n)$.
   ]}
   align={["left", "left", "left", "left"]}
   rowHeader={false}
-  caption="Sorteringsalgoritmene så langt. For Quicksort er snittet forventet kjøretid over algoritmens egne tilfeldige valg; for Bucket-Sort er det et gjennomsnitt over uniformt fordelt input."
+  caption="Sorteringsalgoritmene så langt. Snitt er gjennomsnittet over input, for Quicksort over alle rekkefølger og for Bucket-Sort over uniformt fordelt input. Randomized-Quicksort har forventet $\Theta(n \lg n)$ over sine egne tilfeldige valg, for enhver input."
 />
 
 <Example label="Eksamensoppgave" title="Første iterasjon av Heapsort">

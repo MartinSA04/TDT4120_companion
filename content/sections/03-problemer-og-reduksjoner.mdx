@@ -6,7 +6,7 @@ summary: "Problemer som relasjoner, søke-, beslutnings- og optimeringsproblemer
 importance: core
 tag: "Uke 35"
 part: "Del 1: Grunnlag"
-updated: 2026-08-28
+updated: 2026-09-27
 ---
 
 «Du skal velge ut flest mulig blant $n$ personer slik at alle kjenner minst $k$
@@ -79,10 +79,12 @@ $k$.
 </CompareCol>
 </Compare>
 
-Verifiseringen er enkel i alle variantene: gitt et sertifikat $H$, sjekk at $H$
-består av $k$ noder fra $G$ og at alle par er naboer. Å finne en klikk virker
-derimot svært vanskelig, og det er faktisk et åpent spørsmål om det egentlig
-*er* vanskeligere enn å verifisere en.
+Verifiseringen er enkel i søke- og beslutningsvarianten: gitt et sertifikat
+$H$, sjekk at $H$ består av $k$ noder fra $G$ og at alle par er naboer. Å finne
+en klikk virker derimot svært vanskelig, og det er faktisk et åpent spørsmål om
+det egentlig *er* vanskeligere enn å verifisere en. I optimeringsvarianten
+sjekkes det på samme måte at $H$ er en klikk, men ikke at ingen større klikk
+finnes.
 
 ## Reduksjoner
 

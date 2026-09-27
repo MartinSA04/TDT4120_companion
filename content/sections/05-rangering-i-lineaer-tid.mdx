@@ -6,7 +6,7 @@ summary: "Hvorfor sammenligningsbasert sortering må bruke Ω(n lg n) i verste t
 importance: core
 tag: "Uke 37"
 part: "Del 2: Sortering og datastrukturer"
-updated: 2026-09-12
+updated: 2026-09-27
 ---
 
 Merge-Sort bruker $\Theta(n \lg n)$ tid, og ingen algoritme som bare
@@ -61,7 +61,7 @@ derfor asymptotisk optimal blant dem.
 </Statement>
 
 Grensen er en nedre grense for verste tilfelle. Den sier at den dyreste
-instansen koster minst $n \lg n$, og ikke mer enn det. En algoritme kan gjerne
+instansen koster minst $n \lg n$. Mer sier den ikke. En algoritme kan gjerne
 være verre, og i beste tilfelle kan den være bedre: Insertion-Sort bruker
 $\Theta(n)$ på sortert input. Beste tilfelle er $\Omega(n)$ uansett, for hvert
 element må leses. Gjennomsnittet er $\Omega(n \lg n)$ som det verste, for en
@@ -451,7 +451,7 @@ en sterkere garanti.
 
 <KeyTakeaways>
 - Et beslutningstre for sammenligningsbasert sortering har minst $n!$ løvnoder og dermed høyde minst $\lg n! = \Omega(n \lg n)$. Grensen gjelder verste tilfelle, og Merge-Sort når den.
-- Randomized-Select er Quicksort med ett rekursivt kall: pivoten har rang $k = q - p + 1$, og søket fortsetter bare på siden med rang $i$. Forventet $T(n) = T(n/2) + n = \Theta(n)$, verste $\Theta(n^2)$.
+- Randomized-Select er Quicksort med ett rekursivt kall: pivoten har rang $k = q - p + 1$, og søket fortsetter bare på siden med rang $i$. Deler pivoten på midten, er $T(n) = T(n/2) + n = \Theta(n)$. Forventet kjøretid er også $\Theta(n)$ for enhver input, og verste tilfelle $\Theta(n^2)$.
 - Select velger medianen av gruppemedianene som pivot. Minst $3n/10$ elementer havner på hver side, $T(n) \le T(n/5) + T(7n/10) + \Theta(n) = \Theta(n)$ garantert, og de $k$ minste finnes i lineær tid.
 - En stabil sortering bevarer rekkefølgen på like nøkler. Counting-Sort er stabil fordi den går baklengs gjennom $A$ med kumulative tellinger, og bruker $\Theta(n + k)$.
 - Radix-Sort sorterer stabilt på ett siffer om gangen, det minst signifikante først. Invarianten er at tallene er sortert på sifrene som er behandlet, og den krever både rekkefølgen og stabiliteten. $\Theta(d(n + k))$.

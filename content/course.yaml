@@ -222,7 +222,7 @@ glossary:
     }
   - {
       term: "Insertion-Sort",
-      definition: "Sorterer ved å holde $A[0 : i]$ sortert og sette $A[i]$ inn på rett plass i det utsnittet. Bruker $\\Theta(n)$ i beste tilfelle og $\\Theta(n^2)$ i verste, og sorterer på plass.",
+      definition: "Sorterer ved å holde $A[0 .. i - 1]$ sortert og sette $A[i]$ inn på rett plass i det utsnittet. Bruker $\\Theta(n)$ i beste tilfelle og $\\Theta(n^2)$ i verste, og sorterer på plass.",
       section: "Grunnlag",
     }
   - {
@@ -267,7 +267,7 @@ glossary:
     }
   - {
       term: "Tabelldobling",
-      definition: "Når tabellen er full: alloker en dobbelt så stor, kopier alt over og fortsett. Én innsetting kan koste lineær tid, men $n$ innsettinger koster totalt $2n - 1$ operasjoner, altså amortisert konstant per innsetting.",
+      definition: "Når tabellen er full: alloker en dobbelt så stor, kopier alt over og fortsett. Én innsetting kan koste lineær tid, men $n$ innsettinger koster totalt under $3n$ operasjoner, og nøyaktig $2n - 1$ når $n$ er en toerpotens. Det er amortisert konstant per innsetting.",
       section: "Datastrukturer",
     }
   - {
@@ -466,7 +466,7 @@ glossary:
     }
   - {
       term: "Delinstansgraf",
-      definition: "Én node per forskjellig delinstans, og en kant fra $u$ til $v$ når svaret for $v$ bygger på svaret for $u$. Må være asyklisk, og hver kjede av avhengigheter må ende i et grunntilfelle. Kalltreet til en rekursiv løsning har én node per sti i grafen. Kjøretiden til dynamisk programmering er som regel lineær i antall noder og kanter.",
+      definition: "Én node per forskjellig delinstans, og en kant fra $u$ til $v$ når svaret for $v$ bygger på svaret for $u$. Må være asyklisk, og hver kjede av avhengigheter må ende i et grunntilfelle. Kalltreet til en rekursiv løsning har én node per sti i grafen som ender i instansen. Kjøretiden til dynamisk programmering er som regel lineær i antall noder og kanter.",
       section: "Dynamisk programmering",
     }
   - {
