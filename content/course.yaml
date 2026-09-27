@@ -2,9 +2,10 @@
 # course.yaml — TDT4120 Algoritmer og datastrukturer
 #
 # The spine of the course: identity, the upcoming exam, the reference formula
-# set, the glossary, and the past-exam archive. Prose lives in sections/*.mdx;
-# everything data-driven (Formelsamling, Begreper, Eksamen, Flashcards) is
-# generated from this file. See AUTHORING.md in the framework repo.
+# set, the symbols, the glossary, and the past-exam archive. Prose lives in
+# sections/*.mdx; everything data-driven (Formelsamling, Symboler, Begreper,
+# Eksamen, Flashcards) is generated from this file. See AUTHORING.md in the
+# framework repo.
 # ─────────────────────────────────────────────────────────────────────────────
 
 schemaVersion: 4
@@ -191,6 +192,75 @@ formulas:
       section: "Dynamisk programmering",
       id: pseudopolynomisk,
     }
+
+# ── Symbols → Symboler page ──────────────────────────────────────────────────
+# Bokstavene modulene bruker, gruppert som modulene. En bokstav med flere
+# betydninger får én rad per betydning, med en advarsel i `note`. Algoritmer har
+# ingen enheter, så `unit` står tom. Vokser med modulene.
+symbols:
+  # ── Grunnlag ──
+  - { tex: "n", meaning: "Problemstørrelsen, som regel antall elementer", section: "Grunnlag", term: "Problem og instans", id: n, note: "I stavkapping er $n$ lengden på staven, i LCS lengden av $Y$ og i ryggsekkproblemet antall gjenstander." }
+  - { tex: "T(n)", meaning: "Kjøretiden som funksjon av $n$", section: "Grunnlag", note: "Står på begge sider i en rekurrens, som $T(n) = 2T(n/2) + n$. For Cut-Rod er $T(n)$ antall kall." }
+  - { tex: "O(g(n))", meaning: "Øvre grense: vokser høyst så raskt som $g(n)$", section: "Grunnlag", term: "Asymptotisk notasjon", id: store-o, note: "Som $a \\le b$ for tall. Kan brukes på hvilket som helst tilfelle, også det beste." }
+  - { tex: "\\Omega(g(n))", meaning: "Nedre grense: vokser minst så raskt som $g(n)$", section: "Grunnlag", term: "Asymptotisk notasjon", note: "Som $a \\ge b$ for tall." }
+  - { tex: "\\Theta(g(n))", meaning: "Stram grense: vokser like raskt som $g(n)$", section: "Grunnlag", term: "Asymptotisk notasjon", id: theta, note: "Som $a = b$ for tall. Både $O$ og $\\Omega$: $c_1\\,g(n) \\le f(n) \\le c_2\\,g(n)$ for $n \\ge n_0$." }
+  - { tex: "o(g(n))", meaning: "Øvre grense som ikke er stram: vokser strengt saktere enn $g(n)$", section: "Grunnlag", term: "Asymptotisk notasjon", note: "Som $a < b$ for tall. Ulikheten må holde for enhver $c > 0$, så $f(n)/g(n)$ går mot null." }
+  - { tex: "\\omega(g(n))", meaning: "Nedre grense som ikke er stram: vokser strengt raskere enn $g(n)$", section: "Grunnlag", term: "Asymptotisk notasjon", note: "Som $a > b$ for tall. $f(n)/g(n)$ vokser over alle grenser." }
+  - { tex: "f(n),\\ g(n)", meaning: "Funksjonene som sammenlignes, som i $f(n) = O(g(n))$", section: "Grunnlag", note: "I masterteoremet er $f(n)$ den drivende funksjonen." }
+  - { tex: "c,\\ n_0", meaning: "Konstantene i definisjonene av grensene", section: "Grunnlag", note: "$f(n) = O(g(n))$ når $0 \\le f(n) \\le c\\,g(n)$ for alle $n \\ge n_0$. Ikke tabellen $c[i, j]$ i LCS." }
+  - { tex: "\\lg n", meaning: "Toerlogaritmen, $\\log_2 n$", section: "Grunnlag", id: lg, note: "Andre grunntall skrives ut, som $\\log_b n$. $\\lg^k n$ betyr $(\\lg n)^k$." }
+  - { tex: "\\lfloor x \\rfloor,\\ \\lceil x \\rceil", meaning: "Tallet $x$ rundet ned og rundet opp til et heltall", section: "Grunnlag", note: "Rekurrenser skriver $n/2$ for $\\lfloor n/2 \\rfloor$. Det endrer ikke den asymptotiske løsningen." }
+  - { tex: "\\langle a_1, \\ldots, a_n \\rangle", meaning: "En sekvens, som instansen $\\langle 6, 8, 3, 5 \\rangle$", section: "Grunnlag", note: "I beslutningstreet tester noden $i\\!:\\!j$ om $a_i \\le a_j$." }
+  - { tex: "A[i]", meaning: "Element nummer $i$ i tabellen $A$", section: "Grunnlag", note: "Læreboka teller fra 1, Python fra 0. Hauger regnes fra 1 i teksten og fra 0 i koden." }
+  - { tex: "A[p .. r]", meaning: "Segmentet $A[p], \\ldots, A[r]$, begge ender med", section: "Grunnlag", id: segment, note: "Læreboka og forelesningene skriver $A[p : r]$ for det samme. I Python er slutten ikke med, så segmentet er <code>A[p : r + 1]</code>." }
+  # ── Datastrukturer ──
+  - { tex: "a + b(i - s)", meaning: "Adressen til element $i$: startadresse $a$, elementbredde $b$ og startindeks $s$", section: "Datastrukturer", note: "Ikke $a$ og $b$ i masterteoremet." }
+  - { tex: "k", meaning: "En nøkkel, i hashtabeller og søketrær", section: "Datastrukturer", note: "Ikke eksponenten $k$ i masterteoremet eller den største verdien $k$ i Counting-Sort." }
+  - { tex: "h(k)", meaning: "Hashfunksjonen: plassen nøkkelen $k$ hører til, en av $0, \\ldots, m - 1$", section: "Datastrukturer", term: "Hashtabell", note: "Den enkleste er $h(k) = k \\bmod m$. Ikke høyden $h$ i et tre." }
+  - { tex: "m", meaning: "Antall plasser i hashtabellen", section: "Datastrukturer", note: "I LCS er $m$ lengden av $X$, og for ryggsekken antall bits i $W$." }
+  - { tex: "\\alpha", meaning: "Belastningsfaktoren, $n/m$", section: "Datastrukturer", term: "Belastningsfaktor", id: alfa, note: "Med kjeding og jevn fordeling tar et søk forventet $\\Theta(1 + \\alpha)$." }
+  # ── Problemer og reduksjoner ──
+  - { tex: "R \\subseteq I \\times O", meaning: "Et problem, som relasjonen mellom mengden inputs $I$ og mengden outputs $O$", section: "Problemer og reduksjoner", term: "Problem og instans", note: "$O$ er her en mengde, ikke $O$-notasjonen, og $R$ er ikke hjelpetabellen i Merge-Sort." }
+  - { tex: "x,\\ y", meaning: "En instans og en løsning: $(x, y) \\in R$ når $y$ er et riktig svar på $x$", section: "Problemer og reduksjoner", term: "Søkeproblem", note: "Et sertifikat er en påstått løsning $y$ som verifiseres." }
+  - { tex: "X,\\ Y", meaning: "To problemer i en reduksjon: $X$ løses med et orakel for $Y$", section: "Problemer og reduksjoner", term: "Reduksjon", note: "Er reduksjonen billig, er $Y$ minst like vanskelig som $X$. Ikke sekvensene $X$ og $Y$ i LCS." }
+  - { tex: "G,\\ k", meaning: "Grafen og antall noder i klikken i CLIQUE", section: "Problemer og reduksjoner", note: "En klikk er en komplett delgraf." }
+  # ── Splitt og hersk ──
+  - { tex: "a", meaning: "Antall rekursive kall i $T(n) = aT(n/b) + f(n)$", section: "Splitt og hersk", formula: masterteoremet, note: "Nivå $i$ i rekursjonstreet har $a^i$ noder av størrelse $n/b^i$." }
+  - { tex: "b", meaning: "Faktoren instansen krymper med: hvert kall får $n/b$", section: "Splitt og hersk", formula: masterteoremet, note: "Masterteoremet krever konstanter $a \\ge 1$ og $b > 1$, så $T(n - 1)$ er ikke på formen." }
+  - { tex: "f(n)", meaning: "Den drivende funksjonen, arbeidet med å dele og kombinere", section: "Splitt og hersk", formula: masterteoremet }
+  - { tex: "n^{\\log_b a}", meaning: "Vannskillefunksjonen, antall løvnoder i rekursjonstreet", section: "Splitt og hersk", term: "Masterteoremet", formula: log-bytte, id: vannskille, note: "Kjøretiden avgjøres av om $f(n)$ vokser raskere enn den, like raskt eller saktere." }
+  - { tex: "k", meaning: "Eksponenten til $\\lg n$ i tilfelle 2 av masterteoremet, en konstant $k \\ge 0$", section: "Splitt og hersk", formula: masterteoremet, note: "Gir $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$. I simuleringen av rekursjonstreet er $k$ i stedet eksponenten i $f(n) = n^k$." }
+  - { tex: "\\epsilon", meaning: "Avstanden i tilfelle 1 og 3: $f(n)$ skiller seg fra $n^{\\log_b a}$ med en faktor $n^\\epsilon$", section: "Splitt og hersk", formula: masterteoremet, id: epsilon, note: "En konstant $\\epsilon > 0$. Tilfelle 3 krever i tillegg $a f(n/b) \\le c f(n)$ for en konstant $c < 1$." }
+  - { tex: "x", meaning: "Pivoten, splittelementet", section: "Splitt og hersk", term: "Quicksort", note: "Partition bruker det siste elementet, $x = A[r]$. I Select er $x$ medianen av gruppemedianene." }
+  - { tex: "q", meaning: "Plassen segmentet deles ved: midten, eller pivotens endelige plass etter Partition", section: "Splitt og hersk" }
+  - { tex: "L,\\ R", meaning: "Venstre og høyre halvdel, kopiert ut før flettingen i Merge-Sort", section: "Splitt og hersk", term: "Merge-Sort", note: "Ikke relasjonen $R$ i et problem." }
+  - { tex: "\\infty", meaning: "Vaktposten bakerst i $L$ og $R$, så ingen av halvdelene går tom", section: "Splitt og hersk", note: "$-\\infty$ markerer en delinstans som ikke er løst i memo-tabellen $r$, og er nøkkelen et nytt element får i Max-Heap-Insert før den økes." }
+  # ── Rangering i lineær tid ──
+  - { tex: "n!", meaning: "Antall rekkefølger av $n$ elementer, og dermed det minste antallet løvnoder i beslutningstreet", section: "Rangering i lineær tid", term: "Beslutningstre", formula: sorteringsgrensen, note: "Høyden, antall sammenligninger i verste tilfelle, er minst $\\lg n! = \\Omega(n \\lg n)$." }
+  - { tex: "i", meaning: "Rangen som søkes: det $i$-ende minste elementet", section: "Rangering i lineær tid", term: "Rang", note: "Rang 1 er minimum og rang $n$ maksimum. Medianen har rang $\\lfloor (n+1)/2 \\rfloor$." }
+  - { tex: "k", meaning: "Rangen til pivoten i segmentet, $q - p + 1$", section: "Rangering i lineær tid", term: "Randomized-Select", note: "Er $i < k$, søkes rang $i$ blant de små, ellers rang $i - k$ blant de store." }
+  - { tex: "k", meaning: "Den største verdien i Counting-Sort: inputen er heltall i $0 .. k$", section: "Rangering i lineær tid", term: "Counting-Sort", formula: counting-sort-kjoretid, note: "I Radix-Sort har hvert siffer $k + 1$ mulige verdier, $k = 9$ for desimale siffer." }
+  - { tex: "C[v]", meaning: "Antall elementer lik $v$, og etter den kumulative summen antall $\\le v$", section: "Rangering i lineær tid", term: "Counting-Sort", note: "Den sorterte outputen legges i $B$." }
+  - { tex: "d", meaning: "Antall siffer i Radix-Sort", section: "Rangering i lineær tid", term: "Radix-Sort", formula: radix-sort-kjoretid }
+  # ── Rotfaste trestrukturer ──
+  - { tex: "h", meaning: "Høyden til et tre, den største dybden", section: "Rotfaste trestrukturer", term: "Rotfast tre", formula: haug-hoyde, id: h, note: "Operasjonene i et binært søketre koster $O(h)$, og en haug har $h = \\lfloor \\lg n \\rfloor$. Ikke hashfunksjonen $h(k)$." }
+  - { tex: "x,\\ y,\\ z", meaning: "Noder i et binært søketre", section: "Rotfaste trestrukturer", term: "Binært søketre", note: "Tree-Insert setter inn $z$ og lar $y$ gå ett steg bak $x$, så $y$ blir forelderen." }
+  - { tex: "\\text{Left}(i)", meaning: "Venstre barn til node $i$ i en haug, $2i$", section: "Rotfaste trestrukturer", term: "Haug", formula: haug-indekser, id: haugindekser, note: "Rota er $A[1]$. Med indekser fra 0, som i Python, er rota $A[0]$ og venstre barn $2i + 1$." }
+  - { tex: "\\text{Right}(i)", meaning: "Høyre barn til node $i$ i en haug, $2i + 1$", section: "Rotfaste trestrukturer", formula: haug-indekser, note: "Med indekser fra 0 er høyre barn $2i + 2$." }
+  - { tex: "\\text{Parent}(i)", meaning: "Forelderen til node $i$ i en haug, $\\lfloor i/2 \\rfloor$", section: "Rotfaste trestrukturer", formula: haug-indekser, note: "Med indekser fra 0 er forelderen $\\lfloor (i - 1)/2 \\rfloor$. Haugegenskapen er $A[\\text{Parent}(i)] \\ge A[i]$." }
+  # ── Dynamisk programmering ──
+  - { tex: "u \\to v", meaning: "En kant i delinstansgrafen: svaret for $v$ bygger på svaret for $u$", section: "Dynamisk programmering", term: "Delinstansgraf", note: "Læreboka tegner kantene motsatt vei." }
+  - { tex: "p_i", meaning: "Prisen for en bit med lengde $i$", section: "Dynamisk programmering", formula: stavkapping-rekurrens, note: "$p_1, \\ldots, p_8 = 1, 5, 8, 9, 10, 17, 17, 20$ i eksemplene. I Python er <code>p[0]</code> en ubrukt plassholder." }
+  - { tex: "r_n", meaning: "Den største totalprisen for en stav med lengde $n$", section: "Dynamisk programmering", formula: stavkapping-rekurrens, id: rn, note: "Lagres i tabellen $r[0 .. n]$. Ikke segmentgrensen $r$ i $A[p .. r]$." }
+  - { tex: "s[j]", meaning: "Lengden på den første biten i en optimal kapping av lengde $j$", section: "Dynamisk programmering", note: "Kappingen leses av bakfra: skriv ut $s[n]$, trekk den fra $n$ og gjenta." }
+  - { tex: "X,\\ Y", meaning: "Sekvensene i LCS, $\\langle x_1, \\ldots, x_m \\rangle$ og $\\langle y_1, \\ldots, y_n \\rangle$", section: "Dynamisk programmering", term: "Lengste felles delsekvens", note: "Ikke problemene $X$ og $Y$ i en reduksjon." }
+  - { tex: "X_i,\\ Y_j", meaning: "Prefiksene $\\langle x_1, \\ldots, x_i \\rangle$ og $\\langle y_1, \\ldots, y_j \\rangle$, delinstansene i LCS", section: "Dynamisk programmering" }
+  - { tex: "c[i, j]", meaning: "Lengden av en LCS av $X_i$ og $Y_j$", section: "Dynamisk programmering", formula: lcs-rekurrens, id: cij, note: "Ikke konstanten $c$ i asymptotisk notasjon." }
+  - { tex: "b[i, j]", meaning: "Pilen som viser hvilken celle $c[i, j]$ fikk verdien fra", section: "Dynamisk programmering", note: "Print-LCS følger pilene bakfra fra $b[m, n]$." }
+  - { tex: "v_i,\\ w_i", meaning: "Verdien og vekten til gjenstand $i$", section: "Dynamisk programmering", term: "Det binære ryggsekkproblemet", formula: ryggsekk-rekurrens }
+  - { tex: "W", meaning: "Kapasiteten til ryggsekken", section: "Dynamisk programmering", formula: pseudopolynomisk, id: w, note: "$\\Theta(nW)$ er polynomisk i tallet $W$, men ikke i antall bits." }
+  - { tex: "K[i, j]", meaning: "Den største verdien med gjenstandene $1, \\ldots, i$ og kapasitet $j$", section: "Dynamisk programmering", formula: ryggsekk-rekurrens, id: kij, note: "Tabellen har $(n + 1)(W + 1)$ celler." }
+  - { tex: "m", meaning: "Antall bits i $W$, $\\lfloor \\lg W \\rfloor + 1$", section: "Dynamisk programmering", term: "Pseudopolynomisk kjøretid", formula: pseudopolynomisk, note: "$\\Theta(nW) = \\Theta(n 2^m)$, som er eksponentielt i $m$." }
 
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
