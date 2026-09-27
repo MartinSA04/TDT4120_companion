@@ -2,11 +2,486 @@
 order: 7
 num: "06"
 title: Dynamisk programmering
-summary: "Overlappende delinstanser løst i en rekkefølge som følger avhengighetene, med lagrede delløsninger. Modulen er under arbeid."
+summary: "Når delinstansene overlapper, lagrer dynamisk programmering hvert delsvar og løser hver delinstans én gang, med memoisering eller nedenfra og opp: stavkapping i Θ(n²), LCS i Θ(mn) og det binære ryggsekkproblemet i pseudopolynomisk Θ(nW)."
 importance: core
+tag: "Uke 39"
 part: "Del 3: Designmetoder"
+updated: 2026-09-27
 ---
 
-<Callout type="note" title="Under arbeid">
-Denne modulen er ikke skrevet ennå.
-</Callout>
+Splitt og hersk deler en instans i delinstanser uten noe felles og løser hver
+av dem én gang. I mange problemer trengs den samme delinstansen av flere større
+instanser, og en rekursiv prosedyre løser den på nytt hver gang. Dynamisk
+programmering bruker den samme dekomponeringen, men lagrer hvert delsvar første
+gang det regnes ut. Da koster algoritmen omtrent så mye som antall forskjellige
+delinstanser, ikke antall kall, og det kan være forskjellen på polynomisk og
+eksponentiell tid.
+
+<LearningGoals>
+- Forklar <Term name="Dynamisk programmering">dynamisk programmering</Term> som rekursiv dekomponering med lagrede delsvar.
+- Tegn <Term name="Delinstansgraf">delinstansgrafen</Term> for en dekomponering, og forklar hvorfor den må være asyklisk.
+- Forklar <Term name="Overlappende delinstanser">overlappende delinstanser</Term> og <Term name="Optimal delstruktur">optimal delstruktur</Term>, og vis at lengste enkle vei ikke har optimal delstruktur.
+- Løs et problem med <Term name="Memoisering">memoisering</Term> ovenfra og ned og med iterasjon nedenfra og opp, og finn kjøretiden fra delinstansgrafen.
+- Rekonstruer en optimal løsning fra lagrede valg.
+- Gjør rede for stavkapping med Cut-Rod, Memoized-Cut-Rod og Bottom-Up-Cut-Rod, og for <Term name="Lengste felles delsekvens">LCS</Term> med LCS-Length og Print-LCS.
+- Gjør rede for løsningen på <Term name="Det binære ryggsekkproblemet">det binære ryggsekkproblemet</Term>, og hvorfor kjøretiden $\Theta(nW)$ er <Term name="Pseudopolynomisk kjøretid">pseudopolynomisk</Term>.
+</LearningGoals>
+
+## Stavkapping
+
+En stav med lengde $n$ skal kappes i biter med heltallige lengder og selges.
+En bit med lengde $i$ gir prisen $p_i$, og målet er størst mulig totalpris
+$r_n$. Prisene i eksemplene er $p_1, \ldots, p_8 = 1, 5, 8, 9, 10, 17, 17, 20$.
+Staven kan kappes eller ikke i hvert av de $n - 1$ heltallige punktene, så det
+finnes $2^{n-1}$ kappinger. For $n = 4$ er to biter med lengde 2 best, til
+$5 + 5 = 10$ kr.
+
+Dekomponer ved å velge det første kuttet. Gir det en bit med lengde $i$, får vi
+$p_i$ for den, og resten er en stav med lengde $n - i$, en mindre instans av
+samme problem. Induksjonshypotesen er at resten kan kappes optimalt, så det
+beste vi får med første bit $i$, er $p_i + r_{n-i}$. En av de $n$ lengdene er
+den første biten i en optimal kapping, så vi prøver alle og tar den beste:
+
+$$
+r_0 = 0 \allowbreak\quad r_n = \max_{1 \le i \le n} (p_i + r_{n-i})
+$$
+
+Cut-Rod er denne rekurrensen skrevet som rekursiv prosedyre. Den er riktig,
+men treg. Kallet på lengde $n$ kaller seg selv på alle lengder fra $n - 1$ ned
+til 0, og hvert av dem gjør det samme. Antall kall $T(n)$, rota medregnet, er
+
+$$
+T(n) = 1 + \sum_{j=0}^{n-1} T(j) = 2^n
+$$
+
+Trekk $T(n - 1)$ fra $T(n)$: alle leddene unntatt $T(n - 1)$ selv faller bort,
+så $T(n) = 2T(n - 1)$, og med $T(0) = 1$ blir $T(n) = 2^n$. Cut-Rod gjør
+altså like mye arbeid som å prøve alle kappingene.
+
+## Overlappende delinstanser og memoisering
+
+Cut-Rod løser de samme delinstansene om og om igjen. Kallet på lengde 4 kaller
+lengde 2 direkte, og kallet på lengde 3 kaller lengde 2 én gang til. I hele
+kalltreet for $n = 4$ kalles lengde 1 fire ganger og lengde 0 åtte ganger. Det
+finnes bare $n + 1$ forskjellige delinstanser, lengdene 0 til $n$, men $2^n$
+kall.
+
+Delinstansene er <Term name="Overlappende delinstanser">overlappende</Term> når
+flere instanser bygger på den samme delinstansen, direkte eller indirekte.
+Skjer det på mange nivåer, blir den rekursive løsningen eksponentiell. I splitt
+og hersk skjer det ikke. Merge-Sort deler tabellen i to halvdeler uten felles
+elementer, og hver delinstans trengs av bare én større instans.
+
+<Term name="Delinstansgraf">Delinstansgrafen</Term> har én node per
+forskjellig delinstans, og en kant fra $u$ til $v$ når svaret for $v$ bygger på
+svaret for $u$. For stavkapping er nodene lengdene 0 til $n$, med en kant fra
+$j$ til $k$ for hver $j < k$. Læreboka tegner kantene motsatt vei, og det
+spiller ingen rolle så lenge det er klart hva som bygger på hva. Grafen må være
+asyklisk, og hver kjede av avhengigheter må ende i et grunntilfelle. Ellers
+bygger en instans til slutt på seg selv, og rekursjonen stopper aldri. Kalltreet
+har én node for hver sti fra instansen i grafen, så en delinstans som nås langs
+mange stier, står mange steder i treet.
+
+<Term name="Memoisering">Memoisering</Term> gir prosedyren hukommelse. Første
+gang den kalles med et argument, regner den ut svaret og lagrer det. Senere kall
+med samme argument slår opp svaret og returnerer med en gang. For stavkapping
+holder en tabell $r[0 .. n]$ der $-\infty$ betyr at delinstansen ikke er løst.
+Uten de tre linjene som leser og skriver $r$, er `aux` under nøyaktig Cut-Rod.
+I Python gjør dekoratøren `functools.cache` det samme for en hvilken som helst
+funksjon, med argumentene som nøkkel i en hashtabell.
+
+<CodeBlock
+  id="stavkapping-memo"
+  title="memoized_cut_rod.py"
+  lang="python"
+  code={`from math import inf
+
+def memoized_cut_rod(p, n):
+    r = [-inf] * (n + 1)
+    return aux(p, n, r)
+
+def aux(p, n, r):
+    if r[n] >= 0:
+        return r[n]
+    if n == 0:
+        q = 0
+    else:
+        q = -inf
+        for i in range(1, n + 1):
+            q = max(q, p[i] + aux(p, n - i, r))
+    r[n] = q
+    return q`}
+/>
+
+<Stepper
+  src="/steppers/stavkapping.js"
+  codeId="stavkapping-memo"
+  title="Memoized-Cut-Rod"
+  caption="Treet øverst er alle kallene Cut-Rod gjør uten memo. Den memoiserte versjonen går gjennom det i samme rekkefølge, men et kall på en lengde som allerede står i $r$, er et oppslag (oransje), og ingenting under det blir kalt. Raden nederst er $r$, og buene over den er kantene i delinstansgrafen. Grønt er løst og lagret. Endre $n$ for å se hvor mye av treet som faller bort."
+  height={380}
+/>
+
+Med memo beregnes hver lengde $k$ én gang, og den beregningen har $k$ runder i
+løkka. Til sammen er det $1 + 2 + \cdots + n = \Theta(n^2)$ kall utover det
+første, ett per kant i delinstansgrafen.
+
+## Nedenfra og opp
+
+Rekursjonen i den memoiserte versjonen sørger bare for at en delinstans er
+løst før noen bygger på den. Det kan vi like gjerne gjøre direkte, ved å løse
+delinstansene i en rekkefølge der hver av dem kommer etter alle den bygger på.
+En slik rekkefølge er en topologisk sortering av delinstansgrafen, og for
+stavkapping er det bare $0, 1, \ldots, n$. Denne formen kalles iterasjon
+nedenfra og opp, bottom-up, og memoisering kalles tilsvarende ovenfra og ned,
+top-down. Bottom-Up-Cut-Rod fyller $r$ fra venstre, og når den kommer til
+$r[j]$, er $r[0 .. j - 1]$ ferdige.
+
+Tabellen $r$ gir bare den beste prisen. For å finne kappingen lagrer vi også
+valget: $s[j]$ er lengden på den første biten i en optimal kapping av lengde
+$j$. Kappingen leses av bakfra. Skriv ut $s[n]$, trekk den fra $n$, og gjenta
+til $n = 0$. For $n = 7$ er $s[7] = 1$ og $s[6] = 6$, altså én bit med lengde 1
+og én med lengde 6, til $1 + 17 = 18$ kr.
+
+<CodeBlock
+  id="stavkapping-bottom-up"
+  title="bottom_up_cut_rod.py"
+  lang="python"
+  code={`from math import inf
+
+def bottom_up_cut_rod(p, n):
+    r = [0] * (n + 1)
+    s = [0] * (n + 1)
+    for j in range(1, n + 1):
+        q = -inf
+        for i in range(1, j + 1):
+            if p[i] + r[j - i] > q:
+                q = p[i] + r[j - i]
+                s[j] = i
+        r[j] = q
+    return r, s
+
+def print_cut_rod_solution(p, n):
+    r, s = bottom_up_cut_rod(p, n)
+    while n > 0:
+        print(s[n])
+        n = n - s[n]`}
+/>
+
+De to løkkene gir $\Theta(n^2)$, som den memoiserte versjonen. Bottom-up
+slipper kallene og er som regel raskere med en konstant faktor. Memoisering
+løser bare delinstansene som faktisk trengs, og det kan være færre enn alle.
+Generelt er kjøretiden summen av arbeidet med hver delinstans. Koster hver
+kant i delinstansgrafen konstant tid, er den lineær i antall noder og kanter.
+
+## Optimal delstruktur
+
+Dekomponeringen av stavkapping er et induksjonsbevis, og induksjonssteget
+holder fordi en optimal løsning består av optimale løsninger på delinstansene.
+Det kalles
+<Term name="Optimal delstruktur">optimal delstruktur</Term>. Beviset går som
+regel ved å bytte ut en del: var resten i en optimal kapping ikke kappet
+optimalt, kunne vi kappet resten bedre og fått en bedre kapping av hele staven.
+
+Korteste vei har optimal delstruktur. Går en korteste vei fra 1 til 4 innom 2,
+er delen fra 1 til 2 en korteste vei, ellers kunne den byttes ut med en kortere.
+Lengste enkle vei har det ikke. Ta en firkant med kantene 1–2, 2–4, 4–3 og 3–1.
+En lengste enkel vei fra 1 til 4 er 1, 2, 4. Men en lengste enkel vei fra 1 til
+2 er 1, 3, 4, 2, og fra 2 til 4 er den 2, 1, 3, 4. Satt sammen besøker de 1, 3
+og 4 to ganger. De to delene konkurrerer om de samme nodene, og en node den ene
+bruker, kan ikke den andre bruke. Ingen kjenner en effektiv algoritme for
+lengste enkle vei.
+
+Dynamisk programmering trenger begge egenskapene: optimal delstruktur for at
+dekomponeringen skal gi riktig svar, og overlappende delinstanser for at det
+skal lønne seg å lagre delsvarene. Læreboka gir en oppskrift i fire trinn.
+
+<Steps>
+<Step title="Struktur">
+Beskriv hvordan en optimal løsning er bygd opp, og hvilket valg som deler den
+i delinstanser som selv må løses optimalt.
+</Step>
+<Step title="Rekurrens">
+Definer verdien av en optimal løsning rekursivt, med grunntilfeller.
+</Step>
+<Step title="Verdi">
+Regn ut verdien, med memoisering eller nedenfra og opp.
+</Step>
+<Step title="Løsning">
+Lagre valgene underveis, og les løsningen av bakfra.
+</Step>
+</Steps>
+
+<Example label="Eksamensoppgave" title="Rettferdig fordeling av kontorer">
+<ExamRef id="2025-aug-kont" task="12" />
+
+Innen fagfeltet *rettferdig fordeling* (*fair allocation*) finnes det et
+bestemt problem, der man vil fordele nodene i en graf på et sett med
+mottakere, så rettferdig som mulig, slik at nodene hver mottaker får utgjør en
+*sammenhengende graf*. Det kan f.eks. være snakk om å fordele kontor på ulike
+grupper, der kantene i grafen angir hvilke kontor som er nabokontor, og hver
+gruppe vil ha et sett med kontor som ligger samlet.
+
+Du skal løse et spesialtilfelle av dette, der alle kontorene ligger på samme
+side i en korridor, så grafen utgjør en *sti*.
+
+For enkelhets skyld, antar vi at alle gruppene er enige om hvor fine kontorene
+er, så hvert kontor får en *verdi* i form av et positivt tall. Vi ønsker å
+finne en *maksimin*-fordeling, som er rettferdig i den forstand at den gruppen
+som får den laveste totalverdien likevel får en så høy totalverdi som mulig.
+
+Hvordan vil du løse dette problemet? Forklar.
+
+Merk at vi her kun ser på totalverdien hver gruppe får, og ikke har noe krav
+til antallet kontor. Vi kan f.eks. anta at verdien henger sammen med
+størrelsen, dvs. antall personer det er plass til, så færre og bedre kontor er
+like ønskelig som flere og dårligere.
+
+<Solution>
+Nummerer kontorene $1, \ldots, n$ langs korridoren, med verdier
+$a_1, \ldots, a_n$, og la $k$ være antall grupper. Hver gruppe får et
+sammenhengende stykke av stien, så en fordeling er $k - 1$ kutt, som i
+stavkapping.
+
+Velg det siste stykket: kontorene $i + 1, \ldots, j$ går til én gruppe, og de
+første $i$ fordeles på de andre $k - 1$ gruppene. Delinstansene trenger to
+parametre, antall grupper $g$ og antall kontorer $j$ fra starten av
+korridoren. La $M[g, j]$ være den beste laveste totalverdien, og
+$S_j = a_1 + \cdots + a_j$ prefikssummene, regnet ut på forhånd i lineær tid:
+
+$$
+M[1, j] = S_j \allowbreak\quad M[g, j] = \max_{g-1 \le i < j} \min(M[g-1, i],\, S_j - S_i)
+$$
+
+Optimal delstruktur holder. Gitt det siste stykket må de første $i$ kontorene
+fordeles maksimin, for en bedre fordeling av dem kan ikke gjøre minimum
+mindre. Fyll $M$ nedenfra og opp for $g = 1, \ldots, k$, eller memoiser
+rekursjonen. Det er $kn$ delinstanser med høyst $n$ valg hver, så kjøretiden er
+$O(kn^2)$. Lagre det beste $i$ for hver delinstans, så kan fordelingen leses av
+bakfra fra $M[k, n]$.
+
+<Answer>Som stavkapping: prøv alle størrelser på ett stykke, ta minimum av verdien til stykket og maksimin for resten med én gruppe mindre, og velg det beste. $O(kn^2)$ med memoisering eller nedenfra og opp.</Answer>
+</Solution>
+</Example>
+
+## Lengste felles delsekvens
+
+En delsekvens får du ved å stryke null eller flere elementer fra en sekvens og
+beholde rekkefølgen på resten. «baker» er en delsekvens av både «bakverk» og
+«basker», og ingen lengre felles delsekvens finnes. Problemet
+<Term name="Lengste felles delsekvens">LCS</Term> er å finne en lengste felles
+delsekvens av $X = \langle x_1, \ldots, x_m \rangle$ og
+$Y = \langle y_1, \ldots, y_n \rangle$. Det er grunnlaget for blant annet `diff`
+og for sammenligning av DNA-sekvenser. $X$ har $2^m$ delsekvenser, så å prøve
+alle er uaktuelt.
+
+Delinstansene er prefikser, $X_i = \langle x_1, \ldots, x_i \rangle$ og $Y_j$,
+og dekomponeringen ser på de siste elementene. Er $x_i = y_j$, kan det
+elementet alltid være sist i en LCS, og resten er en LCS av $X_{i-1}$ og
+$Y_{j-1}$. Er $x_i \ne y_j$, kan ikke begge være med som siste element, så vi
+dropper $x_i$ eller $y_j$, løser begge delinstansene og tar den beste. Med
+$c[i, j]$ som lengden av en LCS av $X_i$ og $Y_j$:
+
+$$
+c[i, j] = \begin{cases}
+0 & i = 0 \text{ eller } j = 0 \\
+c[i-1, j-1] + 1 & i, j > 0 \text{ og } x_i = y_j \\
+\max(c[i-1, j],\, c[i, j-1]) & i, j > 0 \text{ og } x_i \ne y_j
+\end{cases}
+$$
+
+Delinstansene overlapper, for både $c[i-1, j]$ og $c[i, j-1]$ bygger på
+$c[i-1, j-1]$. Delinstansgrafen er et rutenett med $(m+1)(n+1)$ noder, der
+hver celle bygger på cellen over, cellen til venstre og cellen diagonalt over
+til venstre. Rad for rad fra venstre er derfor en topologisk rekkefølge.
+LCS-Length fyller tabellen $c$ slik og lagrer valget i $b$ som en pil mot
+cellen svaret kom fra. Print-LCS følger pilene bakfra fra $b[m, n]$ og skriver
+ut $x_i$ for hver diagonal pil, etter det rekursive kallet, så bokstavene kommer
+i riktig rekkefølge. Strenger i Python starter på indeks 0, så $x_i$ er
+`X[i - 1]`.
+
+<CodeBlock
+  id="lcs"
+  title="lcs.py"
+  lang="python"
+  code={`def lcs_length(X, Y):
+    m, n = len(X), len(Y)
+    c = [[0] * (n + 1) for _ in range(m + 1)]
+    b = [[""] * (n + 1) for _ in range(m + 1)]
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if X[i - 1] == Y[j - 1]:
+                c[i][j] = c[i - 1][j - 1] + 1
+                b[i][j] = "↖"
+            elif c[i - 1][j] >= c[i][j - 1]:
+                c[i][j] = c[i - 1][j]
+                b[i][j] = "↑"
+            else:
+                c[i][j] = c[i][j - 1]
+                b[i][j] = "←"
+    return c, b
+
+def print_lcs(b, X, i, j):
+    if i == 0 or j == 0:
+        return
+    if b[i][j] == "↖":
+        print_lcs(b, X, i - 1, j - 1)
+        print(X[i - 1], end="")
+    elif b[i][j] == "↑":
+        print_lcs(b, X, i - 1, j)
+    else:
+        print_lcs(b, X, i, j - 1)`}
+/>
+
+<Stepper
+  src="/steppers/lcs.js"
+  codeId="lcs"
+  title="LCS-Length og Print-LCS"
+  caption="Tabellen $c$ med $X$ nedover og $Y$ bortover, og pilen fra $b$ i hjørnet av hver celle. Cellene den nye cellen leser, er oransje, og den den kopierer fra, er fylt. Etterpå følger Print-LCS pilene fra nederste høyre hjørne, og de diagonale cellene på veien, bokstavene i LCS-en, blir grønne. Stokk om for et nytt ordpar."
+  height={360}
+/>
+
+LCS-Length bruker konstant tid per celle, altså $\Theta(mn)$. Print-LCS tar
+høyst $m + n$ steg, for hvert kall minsker $i$ eller $j$ eller begge.
+
+<Example label="Eksamensoppgave" title="Rekurrensen for LCS">
+<ExamRef id="2025-des" task="5" />
+
+Dette er den rekursive formuleringen av lengden til den lengste felles
+delsekvensen (*longest common subsequence*, LCS) for prefiksene $X_i$ og $Y_j$
+av X og Y.
+
+$$
+c[i, j] = \begin{cases}
+0 & \text{if } i = 0 \text{ or } j = 0\,, \\
+\rule[-0.15em]{6.5em}{0.8em} & \text{if } i, j > 0 \text{ and } x_i = y_j\,, \\
+\max\{c[i, j-1], c[i-1, j]\} & \text{if } i, j > 0 \text{ and } x_i \neq y_j\,.
+\end{cases}
+$$
+
+Hva er det som mangler? Forklar kort.
+
+<Solution>
+Linjen gjelder tilfellet der de siste elementene i prefiksene er like. Da kan
+det elementet være sist i en LCS, og å ta det med gjør aldri svaret kortere.
+Resten er en LCS av prefiksene uten det siste elementet, altså $X_{i-1}$ og
+$Y_{j-1}$, og lengden øker med 1.
+
+<Answer>$c[i-1, j-1] + 1$</Answer>
+</Solution>
+</Example>
+
+## Det binære ryggsekkproblemet
+
+Du har $n$ gjenstander, der gjenstand $i$ har verdi $v_i$ og vekt $w_i$, og en
+ryggsekk med kapasitet $W$, alle positive heltall. Velg gjenstander med størst
+mulig totalverdi og totalvekt høyst $W$. Hver gjenstand er med eller ikke med,
+og det er derfor problemet kalles binært.
+
+Dekomponer på spørsmålet om gjenstand $n$ skal være med. Nei gir det samme
+problemet med gjenstandene $1, \ldots, n - 1$ og hele kapasiteten. Ja
+gir verdien $v_n$ pluss det beste med gjenstandene $1, \ldots, n - 1$ og
+kapasitet $W - w_n$, og er bare mulig hvis $w_n \le W$. Delinstansene trenger
+derfor to parametre: hvor mange gjenstander som er med i betraktningen, og hvor
+mye kapasitet som er igjen. Med $K[i, j]$ som den største verdien med
+gjenstandene $1, \ldots, i$ og kapasitet $j$:
+
+$$
+K[i, j] = \begin{cases}
+0 & i = 0 \\
+K[i-1, j] & w_i > j \\
+\max(K[i-1, j],\, K[i-1, j - w_i] + v_i) & w_i \le j
+\end{cases}
+$$
+
+Rad $i$ bygger bare på rad $i - 1$, så tabellen fylles rad for rad. Cellen som
+gir verdien med gjenstand $i$, ligger $w_i$ kolonner lenger til venstre, så
+kantene i delinstansgrafen avhenger av vektene. Valgene trenger ikke lagres for
+seg. Er $K[i, j] \ne K[i-1, j]$, var gjenstand $i$ med, og vi fortsetter fra
+$K[i-1, j - w_i]$, ellers fra $K[i-1, j]$. I Python har gjenstand $i$ vekt
+`w[i - 1]` og verdi `v[i - 1]`.
+
+<CodeBlock
+  id="ryggsekk"
+  title="ryggsekk.py"
+  lang="python"
+  code={`def knapsack(v, w, W):
+    n = len(v)
+    K = [[0] * (W + 1) for _ in range(n + 1)]
+    for i in range(1, n + 1):
+        for j in range(W + 1):
+            x = K[i - 1][j]
+            if j < w[i - 1]:
+                K[i][j] = x
+            else:
+                y = K[i - 1][j - w[i - 1]] + v[i - 1]
+                K[i][j] = max(x, y)
+    return K
+
+def chosen(K, w, W):
+    items, j = [], W
+    for i in range(len(K) - 1, 0, -1):
+        if K[i][j] != K[i - 1][j]:
+            items.append(i)
+            j = j - w[i - 1]
+    return items`}
+/>
+
+<Stepper
+  src="/steppers/ryggsekk.js"
+  codeId="ryggsekk"
+  title="Knapsack′"
+  caption="Tabellen $K$ med én rad per gjenstand og én kolonne per kapasitet, og vekt $w$ og verdi $v$ til høyre. Den nye cellen leser cellen rett over, uten gjenstanden, og cellen $w_i$ kolonner lenger til venstre, med gjenstanden. Begge er oransje, og den største er fylt. Etterpå leses valget av nedenfra, og gjenstandene som er med, blir grønne."
+  height={300}
+/>
+
+Tabellen har $(n + 1)(W + 1)$ celler med konstant arbeid per celle, så
+kjøretiden er $\Theta(nW)$. Det ser polynomisk ut, men er det ikke som funksjon
+av inputstørrelsen, som måles i bits. Tallet $W$ tar bare
+$m = \lfloor \lg W \rfloor + 1$ bits å skrive, så $W$ vokser eksponentielt med
+plassen det tar:
+
+$$
+\Theta(nW) = \Theta(n 2^m)
+$$
+
+En kjøretid som er polynomisk i et tall fra inputen, men ikke i antall bits,
+kalles <Term name="Pseudopolynomisk kjøretid">pseudopolynomisk</Term>. I
+RAM-modellen er heltallene om lag $c \lg n$ bits brede, så der er
+$W \le n^c$ og kjøretiden polynomisk. Med vilkårlig store heltall er
+ryggsekkproblemet NP-hardt, og ingen kjenner en algoritme som er polynomisk i
+antall bits.
+
+<Example label="Eksamensoppgave" title="Er ryggsekkløsningen polynomisk?">
+<ExamRef id="2024-aug-kont" task="9" />
+
+Løsningen på det binære ryggsekkproblemet (0-1 knapsack) har kjøretid
+$\Theta(nW)$, der $n$ er antall gjenstander og $W$ er kapasiteten til
+ryggsekken. Er dette en polynomisk algoritme? Forklar kort.
+
+<Solution>
+Polynomisk betyr polynomisk i inputstørrelsen, antall bits. $W$ tar
+$m = \Theta(\lg W)$ bits, og med $m$ bits kan $W$ være nesten $2^m$. Da er
+$\Theta(nW) = \Theta(n 2^m)$, som er eksponentielt i $m$. Kjøretiden er
+pseudopolynomisk.
+
+<Answer>Nei. $W$ vokser eksponentielt med antall bits som trengs for å skrive det.</Answer>
+</Solution>
+</Example>
+
+## Sjekk deg selv
+
+<Quiz
+  question="Du kaller Cut-Rod på en stav med lengde 5, uten memo. Hvor mange av kallene har lengde 1?"
+  options={["1", "4", "8", "16"]}
+  answer={2}
+  explanation="Hvert kall på en lengde større enn $k$ kaller lengde $k$ én gang. La $c_k$ være antall kall på lengde $k$. Da er $c_5 = 1$ og $c_k = c_{k+1} + \cdots + c_5$, så $c_4 = 1$, $c_3 = 2$, $c_2 = 4$ og $c_1 = 8$. Med memoisering beregnes lengde 1 én gang."
+/>
+
+<KeyTakeaways>
+- Dynamisk programmering er rekursiv dekomponering der hvert delsvar lagres og slås opp. Det gir riktig svar når problemet har optimal delstruktur, og lønner seg når delinstansene overlapper.
+- Delinstansgrafen har én node per delinstans og en kant fra $u$ til $v$ når $v$ bygger på $u$. Den må være asyklisk. Kalltreet har én node per sti, grafen én per delinstans, og kjøretiden er som regel lineær i antall noder og kanter.
+- Memoisering beholder rekursjonen og lagrer svaret første gang. Nedenfra og opp løser delinstansene i topologisk rekkefølge. Begge gir $\Theta(n^2)$ for stavkapping, mot $2^n$ kall for Cut-Rod. Lagre valget ved siden av verdien, og les løsningen av bakfra.
+- Lengste enkle vei har ikke optimal delstruktur: to lengste delveier kan bruke de samme nodene.
+- LCS: $c[i, j]$ bygger på cellen diagonalt over når $x_i = y_j$, ellers på den største av cellen over og cellen til venstre. $\Theta(mn)$.
+- Ryggsekk: $K[i, j]$ er det beste av å droppe gjenstand $i$ og å ta den med og miste $w_i$ i kapasitet. $\Theta(nW)$ er pseudopolynomisk, for $W$ er eksponentiell i antall bits.
+</KeyTakeaways>

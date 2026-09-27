@@ -161,6 +161,37 @@ formulas:
       id: heapsort-kjoretid,
     }
 
+  - {
+      tex: "r_0 = 0 \\allowbreak\\quad r_n = \\max_{1 \\le i \\le n} (p_i + r_{n-i})",
+      label: "Stavkapping: prøv alle lengder $i$ på den første biten, og kapp resten optimalt. Med memoisering eller nedenfra og opp er det $\\Theta(n^2)$.",
+      section: "Dynamisk programmering",
+      id: stavkapping-rekurrens,
+    }
+  - {
+      tex: "T(n) = 1 + \\sum_{j=0}^{n-1} T(j) = 2^n",
+      label: "Antall kall Cut-Rod gjør uten lagring, rota medregnet. Trekk $T(n-1)$ fra $T(n)$: da er $T(n) = 2T(n-1)$, og $T(0) = 1$.",
+      section: "Dynamisk programmering",
+      id: cut-rod-kall,
+    }
+  - {
+      tex: "c[i, j] = \\begin{cases} 0 & i = 0 \\text{ eller } j = 0 \\\\ c[i-1, j-1] + 1 & i, j > 0 \\text{ og } x_i = y_j \\\\ \\max(c[i-1, j],\\, c[i, j-1]) & i, j > 0 \\text{ og } x_i \\ne y_j \\end{cases}",
+      label: "Lengden av en LCS av prefiksene $X_i$ og $Y_j$. Tabellen fylles rad for rad i $\\Theta(mn)$.",
+      section: "Dynamisk programmering",
+      id: lcs-rekurrens,
+    }
+  - {
+      tex: "K[i, j] = \\begin{cases} 0 & i = 0 \\\\ K[i-1, j] & w_i > j \\\\ \\max(K[i-1, j],\\, K[i-1, j - w_i] + v_i) & w_i \\le j \\end{cases}",
+      label: "Det binære ryggsekkproblemet med gjenstandene $1, \\ldots, i$ og kapasitet $j$. Tabellen har $(n+1)(W+1)$ celler, så kjøretiden er $\\Theta(nW)$.",
+      section: "Dynamisk programmering",
+      id: ryggsekk-rekurrens,
+    }
+  - {
+      tex: "\\Theta(nW) = \\Theta(n 2^m) \\allowbreak\\quad m = \\lfloor \\lg W \\rfloor + 1",
+      label: "Kjøretiden for ryggsekkproblemet uttrykt ved antall bits $m$ i $W$. Den er polynomisk i tallet $W$, men eksponentiell i inputstørrelsen, altså pseudopolynomisk.",
+      section: "Dynamisk programmering",
+      id: pseudopolynomisk,
+    }
+
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
 glossary:
@@ -426,6 +457,47 @@ glossary:
       term: "Heapsort",
       definition: "Sortering ved utvelgelse med en maks-haug: bygg haugen av hele $A$, og bytt så $n - 1$ ganger rota med det siste elementet i haugen, minsk haugen og reparer rota med Max-Heapify. Sorterer på plass, $\\Theta(n \\lg n)$ i verste tilfelle og $\\Theta(n)$ i beste, når alle elementene er like.",
       section: "Rotfaste trestrukturer",
+    }
+
+  - {
+      term: "Dynamisk programmering",
+      definition: "Designmetode: rekursiv dekomponering der hvert delsvar lagres første gang det regnes ut og slås opp senere. Gir riktig svar når problemet har optimal delstruktur, og lønner seg når delinstansene overlapper. Løses med memoisering ovenfra og ned, eller iterativt nedenfra og opp i topologisk rekkefølge i delinstansgrafen.",
+      section: "Dynamisk programmering",
+    }
+  - {
+      term: "Delinstansgraf",
+      definition: "Én node per forskjellig delinstans, og en kant fra $u$ til $v$ når svaret for $v$ bygger på svaret for $u$. Må være asyklisk, og hver kjede av avhengigheter må ende i et grunntilfelle. Kalltreet til en rekursiv løsning har én node per sti i grafen. Kjøretiden til dynamisk programmering er som regel lineær i antall noder og kanter.",
+      section: "Dynamisk programmering",
+    }
+  - {
+      term: "Overlappende delinstanser",
+      definition: "Flere instanser bygger på den samme delinstansen, direkte eller indirekte. Skjer det på mange nivåer, blir en rekursiv løsning uten lagring eksponentiell. I splitt og hersk overlapper delinstansene ikke, så der gir lagring ingenting.",
+      section: "Dynamisk programmering",
+    }
+  - {
+      term: "Optimal delstruktur",
+      definition: "En optimal løsning består av optimale løsninger på delinstansene. Vises som regel ved å bytte ut en del: var den ikke optimal, kunne den byttes ut og gi en bedre løsning. Korteste vei har egenskapen. Lengste enkle vei har den ikke, for to lengste delveier kan bruke de samme nodene.",
+      section: "Dynamisk programmering",
+    }
+  - {
+      term: "Memoisering",
+      definition: "Rekursjon med hukommelse: første kall med et argument regner ut svaret og lagrer det, og senere kall med samme argument slår det opp. Løsningen ovenfra og ned (top-down) i dynamisk programmering. Løser bare delinstansene som faktisk trengs.",
+      section: "Dynamisk programmering",
+    }
+  - {
+      term: "Lengste felles delsekvens",
+      definition: "Forkortet LCS. En lengste sekvens som er en delsekvens av både $X$ og $Y$, der en delsekvens er det som står igjen når null eller flere elementer strykes. LCS-Length fyller $c[i, j]$ for prefiksene $X_i$ og $Y_j$ rad for rad og lagrer en pil i $b$, og Print-LCS følger pilene bakfra. $\\Theta(mn)$.",
+      section: "Dynamisk programmering",
+    }
+  - {
+      term: "Det binære ryggsekkproblemet",
+      definition: "Gjenstander med verdi $v_i$ og vekt $w_i$, og en kapasitet $W$: velg gjenstander med størst mulig totalverdi og totalvekt høyst $W$, der hver gjenstand er med eller ikke med. $K[i, j]$ er det beste med gjenstandene $1, \\ldots, i$ og kapasitet $j$, og er den største av verdien uten gjenstand $i$ og verdien med den. $\\Theta(nW)$, som er pseudopolynomisk.",
+      section: "Dynamisk programmering",
+    }
+  - {
+      term: "Pseudopolynomisk kjøretid",
+      definition: "Polynomisk som funksjon av et tall fra inputen, men ikke av inputstørrelsen i bits. Ryggsekkløsningen bruker $\\Theta(nW)$, men $W$ tar bare $m = \\lfloor \\lg W \\rfloor + 1$ bits, så kjøretiden er $\\Theta(n 2^m)$.",
+      section: "Dynamisk programmering",
     }
 
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──
