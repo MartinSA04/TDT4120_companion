@@ -98,7 +98,7 @@ formulas:
       id: quicksort-verste,
     }
   - {
-      tex: "T(n) = aT(n/b) + f(n) \\implies T(n) = \\begin{cases} \\Theta(n^{\\log_b a}) & f(n) = O(n^{\\log_b a - \\epsilon}) \\\\ \\Theta(n^{\\log_b a} \\lg^{k+1} n) & f(n) = \\Theta(n^{\\log_b a} \\lg^{k} n) \\\\ \\Theta(f(n)) & f(n) = \\Omega(n^{\\log_b a + \\epsilon}) \\end{cases}",
+      tex: "T(n) = aT(n/b) + f(n) \\implies T(n) = \\begin{cases} \\Theta(n^{\\log_b a}) & f(n) = O(n^{\\log_b a - \\epsilon}) \\\\ \\Theta(n^{\\log_b a} \\lg^{k+1} n) & f(n) = \\Theta(n^{\\log_b a} \\lg^{k} n),\\ k \\ge 0 \\\\ \\Theta(f(n)) & f(n) = \\Omega(n^{\\log_b a + \\epsilon}) \\end{cases}",
       label: "Masterteoremet. Sammenlign $f(n)$ med vannskillefunksjonen $n^{\\log_b a}$; avstanden må være en faktor $n^\\epsilon$ i tilfelle 1 og 3, og tilfelle 3 krever i tillegg $a f(n/b) \\le c f(n)$ for en $c < 1$.",
       section: "Splitt og hersk",
       id: masterteoremet,
@@ -328,7 +328,7 @@ glossary:
     }
   - {
       term: "Masterteoremet",
-      definition: "Løser $T(n) = aT(n/b) + f(n)$ ved å sammenligne den drivende funksjonen $f(n)$ med vannskillefunksjonen $n^{\\log_b a}$. Er $f$ polynomisk mindre, dominerer løvnodene: $\\Theta(n^{\\log_b a})$. Er $f = \\Theta(n^{\\log_b a} \\lg^k n)$, koster alle nivåene like mye: $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$. Er $f$ polynomisk større og regulær, dominerer rota: $\\Theta(f(n))$.",
+      definition: "Løser $T(n) = aT(n/b) + f(n)$ ved å sammenligne den drivende funksjonen $f(n)$ med vannskillefunksjonen $n^{\\log_b a}$. Er $f$ polynomisk mindre, dominerer løvnodene: $\\Theta(n^{\\log_b a})$. Er $f = \\Theta(n^{\\log_b a} \\lg^k n)$ for en konstant $k \\ge 0$, koster alle nivåene like mye: $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$. Er $f$ polynomisk større og regulær, dominerer rota: $\\Theta(f(n))$.",
       section: "Splitt og hersk",
     }
   - {

@@ -124,7 +124,7 @@ cards:
     back: "Gjennomsnittstilfelle: snitt over instanser, med en sannsynlighetsfordeling over input. Amortisert: snitt over operasjonene i én følge, i verste fall. Forventet: snitt over algoritmens egne tilfeldige valg, for én fast instans."
     section: "Splitt og hersk"
   - front: "Masterteoremets tre tilfeller for $T(n) = aT(n/b) + f(n)$?"
-    back: "Sammenlign $f(n)$ med $n^{\\log_b a}$. Polynomisk mindre: $\\Theta(n^{\\log_b a})$, løvnodene dominerer. Lik opp til $\\lg^k n$: $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$, alle nivåene like. Polynomisk større og regulær: $\\Theta(f(n))$, rota dominerer."
+    back: "Sammenlign $f(n)$ med $n^{\\log_b a}$. Polynomisk mindre: $\\Theta(n^{\\log_b a})$, løvnodene dominerer. Lik opp til $\\lg^k n$ for en konstant $k \\ge 0$: $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$, alle nivåene like. Polynomisk større og regulær: $\\Theta(f(n))$, rota dominerer."
     section: "Splitt og hersk"
   - front: "Løs $T(n) = 2T(n/2) + n \\lg n$."
     back: "$n^{\\log_2 2} = n$, og $f(n) = n \\lg n$ ligger en logaritmisk faktor over. Det er ikke polynomisk, så tilfelle 2 med $k = 1$: $\\Theta(n \\lg^2 n)$."
