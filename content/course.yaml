@@ -193,6 +193,19 @@ formulas:
       id: pseudopolynomisk,
     }
 
+  - {
+      tex: "B(T) = \\sum_{c \\in C} c.\\mathit{freq} \\cdot d_T(c)",
+      label: "Kostnaden til kodetreet $T$: antall bits i den kodede teksten. Dybden $d_T(c)$ er lengden av kodeordet til $c$. For et huffmantre er det også summen av frekvensene i de indre nodene.",
+      section: "Grådighet",
+      id: huffman-kostnad,
+    }
+  - {
+      tex: "B(T) = B(T') \\allowbreak + x.\\mathit{freq} + y.\\mathit{freq}",
+      label: "Optimal delstruktur for Huffman: $T'$ har det nye tegnet $z$ i stedet for $x$ og $y$. Får $z$ barna $x$ og $y$, blir kodeordene deres én bit lengre.",
+      section: "Grådighet",
+      id: huffman-delstruktur,
+    }
+
 # ── Symbols → Symboler page ──────────────────────────────────────────────────
 # Bokstavene modulene bruker, gruppert som modulene. En bokstav med flere
 # betydninger får én rad per betydning, med en advarsel i `note`. Algoritmer har
@@ -261,6 +274,15 @@ symbols:
   - { tex: "W", meaning: "Kapasiteten til ryggsekken", section: "Dynamisk programmering", formula: pseudopolynomisk, id: w, note: "$\\Theta(nW)$ er polynomisk i tallet $W$, men ikke i antall bits." }
   - { tex: "K[i, j]", meaning: "Den største verdien med gjenstandene $1, \\ldots, i$ og kapasitet $j$", section: "Dynamisk programmering", formula: ryggsekk-rekurrens, id: kij, note: "Tabellen har $(n + 1)(W + 1)$ celler." }
   - { tex: "m", meaning: "Antall bits i $W$, $\\lfloor \\lg W \\rfloor + 1$", section: "Dynamisk programmering", term: "Pseudopolynomisk kjøretid", formula: pseudopolynomisk, note: "$\\Theta(nW) = \\Theta(n 2^m)$, som er eksponentielt i $m$." }
+  # ── Grådighet ──
+  - { tex: "v_i / w_i", meaning: "Kiloprisen til gjenstand $i$, verdi per vektenhet", section: "Grådighet", term: "Det kontinuerlige ryggsekkproblemet", note: "Den grådige algoritmen fyller sekken etter synkende kilopris." }
+  - { tex: "[s_i, f_i)", meaning: "Aktivitet $a_i$: starttiden $s_i$ og sluttiden $f_i$, et halvåpent intervall", section: "Grådighet", term: "Aktivitetsutvalg", id: aktivitet, note: "Aktivitetene er sortert etter $f_i$. Den tenkte $a_0$ har $f_0 = 0$. Ikke funksjonen $f(n)$." }
+  - { tex: "k", meaning: "Indeksen til den sist valgte aktiviteten", section: "Grådighet", term: "Aktivitetsutvalg", note: "En ny aktivitet $a_m$ tas med når $s_m \\ge f_k$." }
+  - { tex: "C", meaning: "Alfabetet: tegnene som skal kodes", section: "Grådighet", term: "Huffman-kode", note: "Ikke tellertabellen $C$ i Counting-Sort." }
+  - { tex: "c.\\mathit{freq}", meaning: "Frekvensen til tegnet $c$: hvor mange ganger det står i teksten", section: "Grådighet", formula: huffman-kostnad, note: "En indre node i et huffmantre har summen av frekvensene under seg." }
+  - { tex: "d_T(c)", meaning: "Dybden til løvnoden for $c$ i kodetreet $T$, som er lengden av kodeordet", section: "Grådighet", formula: huffman-kostnad }
+  - { tex: "B(T)", meaning: "Kostnaden til kodetreet $T$: antall bits i den kodede teksten", section: "Grådighet", formula: huffman-kostnad }
+  - { tex: "x,\\ y,\\ z", meaning: "I Huffman: de to trærne med lavest frekvens, og den nye noden som blir forelderen deres", section: "Grådighet", term: "Huffman-kode", formula: huffman-delstruktur, note: "$z$ får frekvensen $x.\\mathit{freq} + y.\\mathit{freq}$. Ikke nodene i et binært søketre." }
 
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
@@ -570,6 +592,42 @@ glossary:
       section: "Dynamisk programmering",
     }
 
+  - {
+      term: "Grådighet",
+      definition: "Designmetode: gjør det valget som ser best ut her og nå, løs den ene delinstansen som er igjen, og sett valget og delløsningen sammen. Valget tas før noen delinstans er løst. Algoritmen er riktig når problemet har grådighetsegenskapen og optimal delstruktur.",
+      section: "Grådighet",
+    }
+  - {
+      term: "Grådighetsegenskapen",
+      definition: "Det finnes en optimal løsning som tar det første grådige valget. Egenskapen sier bare at det første valget er trygt. At alle de grådige valgene er trygge, følger først sammen med optimal delstruktur, ved induksjon.",
+      section: "Grådighet",
+    }
+  - {
+      term: "Utvekslingsargument",
+      definition: "Bevis for grådighetsegenskapen: ta en vilkårlig optimal løsning, bytt ut ett av valgene med det grådige, og vis at løsningen fortsatt er lovlig og ikke blir dårligere. Da finnes en optimal løsning med det grådige valget.",
+      section: "Grådighet",
+    }
+  - {
+      term: "Det kontinuerlige ryggsekkproblemet",
+      definition: "Som det binære ryggsekkproblemet, men vi kan ta med en andel mellom 0 og 1 av hver gjenstand og får samme andel av verdien. Løses grådig: fyll sekken etter synkende kilopris $v_i / w_i$, så bare den siste gjenstanden blir delt. $O(n \\lg n)$ med sorteringen.",
+      section: "Grådighet",
+    }
+  - {
+      term: "Aktivitetsutvalg",
+      definition: "Velg flest mulig aktiviteter $[s_i, f_i)$ der ingen to overlapper. Det grådige valget er aktiviteten som slutter først, og delinstansen som er igjen, er aktivitetene som starter etter at den slutter. Greedy-Activity-Selector bruker $\\Theta(n)$ når aktivitetene er sortert etter sluttid.",
+      section: "Grådighet",
+    }
+  - {
+      term: "Prefiksfri kode",
+      definition: "Binær kode der ingen kodeord er et prefiks av et annet, så en kodet tekst kan dekodes ett kodeord om gangen fra starten. Tegnes som et kodetre med tegnene i løvnodene: kodeordet er stien fra rota, med 0 for venstre og 1 for høyre barn, og lengden er dybden.",
+      section: "Grådighet",
+    }
+  - {
+      term: "Huffman-kode",
+      definition: "En optimal prefiksfri kode, laget av Huffmans algoritme. Hvert tegn starter som et tre i en min-prioritetskø på frekvens, og $n - 1$ ganger slås de to trærne med lavest frekvens sammen under en ny node med summen av frekvensene. $O(n \\lg n)$ med en binær haug.",
+      section: "Grådighet",
+    }
+
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──
 # A curated newest-first selection. Dates are the verified exam days, read off
 # page 1 of each oppgavesett ("Eksamen, <dato>") — not guessed.
@@ -622,6 +680,20 @@ exams:
       date: 2022-12-19,
       url: "https://algdat.idi.ntnu.no/arkiv/2022.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2022.des.tdt4120.losn.no.pdf",
+    }
+  - {
+      label: "Kontinuasjonseksamen, august 2019",
+      id: "2019-aug-kont",
+      date: 2019-08-07,
+      url: "https://algdat.idi.ntnu.no/arkiv/2019.aug.tdt4120.oppg.no.pdf",
+      solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2019.aug.tdt4120.losn.no.pdf",
+    }
+  - {
+      label: "Kontinuasjonseksamen, august 2018",
+      id: "2018-aug-kont",
+      date: 2018-08-15,
+      url: "https://algdat.idi.ntnu.no/arkiv/2018.aug.tdt4120.oppg.no.pdf",
+      solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2018.aug.tdt4120.losn.no.pdf",
     }
 
 # Full, browsable archive (back to 2003) — rendered as the final list row.
