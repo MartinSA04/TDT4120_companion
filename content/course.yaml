@@ -206,6 +206,37 @@ formulas:
       id: huffman-delstruktur,
     }
 
+  - {
+      tex: "\\sum_{u \\in V} |G.\\mathit{Adj}[u]| = |E|",
+      label: "Nabolistene i en rettet graf: kanten $(u, v)$ står bare i lista til $u$. I en urettet graf står den i begge listene, og summen er $2|E|$. Nabolistene tar $\\Theta(V + E)$ plass, og en nabomatrise tar $\\Theta(V^2)$.",
+      section: "Traversering av grafer",
+      id: nabolister-lengde,
+    }
+  - {
+      tex: "\\Theta(V) + \\sum_{u \\in V} \\Theta(1 + |G.\\mathit{Adj}[u]|) \\allowbreak = \\Theta(V + E)",
+      label: "DFS: initialiseringen, og ett kall til DFS-Visit per node, som går gjennom nabolista én gang. BFS bruker $O(V + E)$ med samme argument. Topological-Sort og Strongly-Connected-Components bruker også $\\Theta(V + E)$.",
+      section: "Traversering av grafer",
+      id: dfs-kjoretid,
+    }
+  - {
+      tex: "u.d < v.d < v.f < u.f",
+      label: "Parentesteoremet: $v$ er en ekte etterkommer av $u$ i dybde-først-skogen hvis og bare hvis intervallet til $v$ ligger inni intervallet til $u$. Ellers er intervallene disjunkte, eller $u$ er en etterkommer av $v$.",
+      section: "Traversering av grafer",
+      id: parentes,
+    }
+  - {
+      tex: "(u, v) \\in E \\;\\Rightarrow\\; v.f < u.f",
+      label: "I en DAG går hver kant fra en node med høyere sluttid til en med lavere. Derfor gir synkende sluttid en topologisk sortering.",
+      section: "Traversering av grafer",
+      id: topologisk-sluttid,
+    }
+  - {
+      tex: "v.d = \\delta(s, v)",
+      label: "Etter BFS fra $s$ er $v.d$ det minste antallet kanter på en sti fra $s$ til $v$, og $\\infty$ hvis $v$ ikke kan nås. Stien i bredde-først-treet fra $s$ til $v$ er en korteste vei.",
+      section: "Traversering av grafer",
+      id: bfs-avstand,
+    }
+
 # ── Symbols → Symboler page ──────────────────────────────────────────────────
 # Bokstavene modulene bruker, gruppert som modulene. En bokstav med flere
 # betydninger får én rad per betydning, med en advarsel i `note`. Algoritmer har
@@ -283,6 +314,18 @@ symbols:
   - { tex: "d_T(c)", meaning: "Dybden til løvnoden for $c$ i kodetreet $T$, som er lengden av kodeordet", section: "Grådighet", formula: huffman-kostnad }
   - { tex: "B(T)", meaning: "Kostnaden til kodetreet $T$: antall bits i den kodede teksten", section: "Grådighet", formula: huffman-kostnad }
   - { tex: "x,\\ y,\\ z", meaning: "I Huffman: de to trærne med lavest frekvens, og den nye noden som blir forelderen deres", section: "Grådighet", term: "Huffman-kode", formula: huffman-delstruktur, note: "$z$ får frekvensen $x.\\mathit{freq} + y.\\mathit{freq}$. Ikke nodene i et binært søketre." }
+
+  # ── Traversering av grafer ──
+  - { tex: "G = (V, E)", meaning: "En graf med nodene $V$ og kantene $E$", section: "Traversering av grafer", id: graf, note: "Inne i asymptotisk notasjon står $V$ og $E$ for antall noder og kanter, som i $O(V + E)$." }
+  - { tex: "G.\\mathit{Adj}[u]", meaning: "Nabolista til $u$: ut-naboene", section: "Traversering av grafer", term: "Nabolister", formula: nabolister-lengde, id: adj }
+  - { tex: "a_{uv}", meaning: "Elementet i rad $u$, kolonne $v$ i nabomatrisen: 1 når $(u, v)$ er en kant, ellers 0", section: "Traversering av grafer", term: "Nabomatrise" }
+  - { tex: "s", meaning: "Startnoden i en traversering", section: "Traversering av grafer", note: "Ikke starttiden $s_i$ til en aktivitet." }
+  - { tex: "u.d", meaning: "I DFS: starttiden, da $u$ ble oppdaget og grå", section: "Traversering av grafer", term: "Dybde-først-søk", formula: parentes, id: starttid, note: "I BFS er $u.d$ avstanden fra startnoden." }
+  - { tex: "u.f", meaning: "I DFS: sluttiden, da $u$ ble ferdig og svart", section: "Traversering av grafer", term: "Dybde-først-søk", formula: topologisk-sluttid, id: sluttid, note: "Ikke sluttiden $f_i$ til en aktivitet eller funksjonen $f(n)$." }
+  - { tex: "u.d", meaning: "I BFS: avstanden fra startnoden $s$ til $u$", section: "Traversering av grafer", term: "Bredde-først-søk", formula: bfs-avstand, id: avstand, note: "$\\infty$ til $u$ er oppdaget." }
+  - { tex: "u.\\pi", meaning: "Forgjengeren til $u$: noden $u$ ble oppdaget fra", section: "Traversering av grafer", term: "Traverseringstre", id: forgjenger, note: "nil for startnoden og for røttene i en dybde-først-skog." }
+  - { tex: "\\delta(s, v)", meaning: "Avstanden fra $s$ til $v$: det minste antallet kanter på en sti", section: "Traversering av grafer", formula: bfs-avstand, id: delta, note: "$\\infty$ når $v$ ikke kan nås fra $s$." }
+  - { tex: "G^{\\mathrm T}", meaning: "Den transponerte grafen: $G$ med alle kantene snudd", section: "Traversering av grafer", term: "Sterke komponenter", id: transponert }
 
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
@@ -628,6 +671,62 @@ glossary:
       section: "Grådighet",
     }
 
+  - {
+      term: "Nabolister",
+      definition: "Grafrepresentasjon med én liste per node: $G.\\mathit{Adj}[u]$ inneholder ut-naboene til $u$. Tar $\\Theta(V + E)$ plass. Å gå gjennom naboene til $u$ tar tid proporsjonal med antallet, men å sjekke om $(u, v)$ er en kant krever et søk i lista. Standardvalget for traversering.",
+      section: "Traversering av grafer",
+    }
+  - {
+      term: "Nabomatrise",
+      definition: "Grafrepresentasjon som en $|V| \\times |V|$-tabell der $a_{uv} = 1$ når $(u, v)$ er en kant. Tar $\\Theta(V^2)$ plass uansett antall kanter, og svarer på om $(u, v)$ er en kant i konstant tid. Symmetrisk for en urettet graf.",
+      section: "Traversering av grafer",
+    }
+  - {
+      term: "Traverseringstre",
+      definition: "Treet som forgjengerkantene $(v.\\pi, v)$ danner etter en traversering, med startnoden som rot. BFS gir et bredde-først-tre der stien fra rota er en korteste vei. DFS gir en dybde-først-skog med ett tre per kall fra hovedløkka.",
+      section: "Traversering av grafer",
+    }
+  - {
+      term: "Dybde-først-søk",
+      definition: "Forkortet DFS. Traversering som går videre fra den nyeste noden den har oppdaget: DFS-Visit kaller seg selv på hver hvite nabo med en gang. DFS starter fra hver hvite node etter tur og gir hver node en starttid $u.d$ og en sluttid $u.f$. $\\Theta(V + E)$.",
+      section: "Traversering av grafer",
+    }
+  - {
+      term: "Parentesteoremet",
+      definition: "I en dybde-først-skog er intervallene $[u.d, u.f]$ og $[v.d, v.f]$ enten disjunkte, eller så ligger det ene inni det andre, og da er den indre noden en etterkommer av den ytre. Skrives «(u» ved $u.d$ og «u)» ved $u.f$, blir parentesene riktig nøstet.",
+      section: "Traversering av grafer",
+    }
+  - {
+      term: "Hvit-sti-teoremet",
+      definition: "$v$ er en etterkommer av $u$ i en dybde-først-skog hvis og bare hvis det, da $u$ ble oppdaget, fantes en sti fra $u$ til $v$ med bare hvite noder.",
+      section: "Traversering av grafer",
+    }
+  - {
+      term: "Kantklassifisering",
+      definition: "DFS deler kantene i tre-kanter (i dybde-først-skogen), bakoverkanter (til en forfader), foroverkanter (til en etterkommer, utenfor treet) og krysskanter (alle andre). Kanten $(u, v)$ er en tre-kant hvis $v$ er hvit når den undersøkes, en bakoverkant hvis $v$ er grå, og en forover- eller krysskant hvis $v$ er svart. En rettet graf har en sykel hvis og bare hvis DFS finner en bakoverkant.",
+      section: "Traversering av grafer",
+    }
+  - {
+      term: "DAG",
+      definition: "Rettet asyklisk graf: en rettet graf uten sykler. Har en topologisk sortering, og DFS finner ingen bakoverkanter i den.",
+      section: "Traversering av grafer",
+    }
+  - {
+      term: "Topologisk sortering",
+      definition: "En rekkefølge av nodene i en DAG der $u$ kommer før $v$ for hver kant $(u, v)$. Topological-Sort kjører DFS og setter hver node først i en lenket liste når den blir ferdig, så lista blir sortert etter synkende sluttid. $\\Theta(V + E)$.",
+      section: "Traversering av grafer",
+    }
+  - {
+      term: "Sterke komponenter",
+      definition: "De største mengdene av noder i en rettet graf der hver node kan nå hver annen langs rettede stier. Kollapses hver komponent til én node, blir grafen en DAG. Strongly-Connected-Components kjører DFS på $G$, og så DFS på $G^{\\mathrm T}$ med startnodene etter synkende sluttid: hvert tre er én komponent. $\\Theta(V + E)$.",
+      section: "Traversering av grafer",
+    }
+  - {
+      term: "Bredde-først-søk",
+      definition: "Forkortet BFS. Traversering med en FIFO-kø fra en startnode $s$: nodene besøkes lag for lag, i stigende avstand. Gir $v.d = \\delta(s, v)$, korteste vei målt i antall kanter, og et bredde-først-tre av forgjengerkanter. $O(V + E)$.",
+      section: "Traversering av grafer",
+    }
+
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──
 # A curated newest-first selection. Dates are the verified exam days, read off
 # page 1 of each oppgavesett ("Eksamen, <dato>") — not guessed.
@@ -680,6 +779,13 @@ exams:
       date: 2022-12-19,
       url: "https://algdat.idi.ntnu.no/arkiv/2022.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2022.des.tdt4120.losn.no.pdf",
+    }
+  - {
+      label: "Ordinær eksamen, november 2019",
+      id: "2019-nov",
+      date: 2019-11-28,
+      url: "https://algdat.idi.ntnu.no/arkiv/2019.nov.tdt4120.oppg.no.pdf",
+      solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2019.nov.tdt4120.losn.no.pdf",
     }
   - {
       label: "Kontinuasjonseksamen, august 2019",
