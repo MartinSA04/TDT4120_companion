@@ -35,9 +35,9 @@ sett helt lokalt, som å ta med mest mulig av den dyreste gjenstanden eller å
 velge den aktiviteten som slutter først. Valget tas før delinstansen er løst, så
 algoritmen kan ikke se om det lønner seg.
 
-Dekomponeringen er den samme som i dynamisk programmering, og dynamisk
-programmering gir fortsatt riktig svar på et problem som kan løses grådig, bare
-langsommere. For at den grådige algoritmen skal være riktig, må to ting vises.
+Dynamisk programmering som prøver alle valgene, gir også riktig svar på et
+problem som kan løses grådig, bare langsommere. For at den grådige algoritmen
+skal være riktig, må du vise grådighetsegenskapen og optimal delstruktur.
 
 <Statement kind="definition" name="Grådighetsegenskapen">
 Det finnes en optimal løsning som tar det første grådige valget.
@@ -52,7 +52,8 @@ løsning. Da er delinstansen et problem av samme form som skal løses optimalt, 
 grådighetsegenskapen gjelder der også. Med induksjon over størrelsen på
 instansen er alle de grådige valgene trygge. Mangler grådighetsegenskapen, kan
 det første valget gjøre en optimal løsning umulig. Mangler optimal delstruktur,
-kan resten etter valget måtte løses på en helt annen måte.
+er det ikke sikkert at en optimal løsning på delinstansen gir en optimal løsning
+sammen med valget.
 
 Læreboka gir en oppskrift i tre trinn.
 
@@ -72,8 +73,8 @@ Grådighetsegenskapen vises som regel med et
 <Term name="Utvekslingsargument">utvekslingsargument</Term>. Start med en
 vilkårlig optimal løsning. Bytt ut ett av valgene i den med det grådige valget,
 og vis at løsningen fortsatt er lovlig og ikke blir dårligere. Da finnes en
-optimal løsning med det grådige valget. Et annet argument, forsprang (greedy
-stays ahead), bygger en grådig og en vilkårlig løsning ett valg om gangen og
+optimal løsning med det grådige valget. Et annet argument heter forsprang (greedy
+stays ahead): du bygger en grådig og en vilkårlig løsning ett valg om gangen og
 viser at den grådige aldri ligger bak. Optimal delstruktur vises som i dynamisk
 programmering: var resten ikke løst optimalt, kunne den byttes ut med noe bedre,
 og hele løsningen ble bedre. Å vise at et grådig valg ikke er trygt, er lettere.
@@ -112,11 +113,11 @@ likevel ikke vist at grådighet er korrekt. Forklar.
 <Solution>
 Grådighetsegenskapen sier bare at det første grådige valget er trygt: det finnes
 en optimal løsning som tar det. Den sier ingenting om valgene etter det. For å
-vise at alle valgene er trygge, bruker vi induksjon, og da må delinstansen som
+vise at alle valgene er trygge, bruker du induksjon, og da må delinstansen som
 er igjen etter et grådig valg, være et problem av samme form, der en optimal
 løsning sammen med valget gir en optimal løsning. Det er optimal delstruktur.
 
-<Answer>Vi må også vise optimal delstruktur. Først da gir induksjon at alle de grådige valgene er trygge, og ikke bare det første.</Answer>
+<Answer>Du må også vise optimal delstruktur. Først da gir induksjon at alle de grådige valgene er trygge, og ikke bare det første.</Answer>
 </Solution>
 </Example>
 
@@ -125,7 +126,7 @@ løsning sammen med valget gir en optimal løsning. Det er optimal delstruktur.
 I <Term name="Det binære ryggsekkproblemet">det binære ryggsekkproblemet</Term>
 er hver gjenstand med eller ikke med. I
 <Term name="Det kontinuerlige ryggsekkproblemet">det kontinuerlige ryggsekkproblemet</Term>
-kan vi ta med en andel mellom 0 og 1 av hver gjenstand, og får samme andel av
+kan du ta med en andel mellom 0 og 1 av hver gjenstand, og får samme andel av
 verdien. Gjenstand $i$ har verdi $v_i$ og vekt $w_i$, og sekken har kapasitet
 $W$.
 
@@ -151,11 +152,11 @@ gjenstandene under har gjenstand 1 høyest kilopris.
   ]}
 />
 
-Velger vi etter kilopris, tar vi 1 og 2, til 160, og da får ikke 3 plass. Det beste er
+Velger du etter kilopris, tar du 1 og 2, til 160, og da får ikke 3 plass. Det beste er
 2 og 3, til 220. I det kontinuerlige problemet tar den grådige algoritmen 1, 2 og
 to tredjedeler av 3, til $60 + 100 + 80 = 240$, og det er optimalt. I det binære
 problemet kan det bli tom plass i sekken, og den senker verdien per kilo for
-hele lasten. For å avgjøre om en gjenstand skal være med, må vi sammenligne den
+hele lasten. For å avgjøre om en gjenstand skal være med, må du sammenligne den
 beste løsningen med gjenstanden og den beste uten, og det er dynamisk
 programmering.
 
@@ -168,17 +169,19 @@ starter. <Term name="Aktivitetsutvalg">Aktivitetsutvalg</Term> (activity
 selection) er å velge flest mulig aktiviteter der ingen to overlapper.
 Aktivitetene er sortert etter sluttid, $f_1 \le f_2 \le \cdots \le f_n$.
 
-Velger vi en aktivitet $a_k$, deler den resten i to delinstanser: aktivitetene
+Velger du en aktivitet $a_k$, deler den resten i to delinstanser: aktivitetene
 som slutter før $a_k$ starter, og de som starter etter at $a_k$ slutter. Det gir
-en løsning med dynamisk programmering som prøver hver $a_k$. Vi trenger bare ett
-valg, aktiviteten som slutter først. Den lar rommet være ledig for flest mulig
-av de andre, og siden ingen aktivitet slutter før $a_1$ starter, er bare én
-delinstans igjen, aktivitetene som starter etter at $a_1$ slutter.
+en løsning med dynamisk programmering som prøver hver $a_k$. Det grådige valget
+er $a_1$, aktiviteten som slutter først, og er det trygt, trenger du ikke prøve
+de andre. Aktiviteten $a_1$ lar rommet være ledig for flest mulig av de andre,
+og siden ingen aktivitet slutter før $a_1$ starter, er bare én delinstans igjen,
+aktivitetene som starter etter at $a_1$ slutter.
 
 Grådighetsegenskapen vises med et utvekslingsargument. La $A$ være en optimal
 løsning, og la $a_j$ være aktiviteten i $A$ som slutter først. Bytt ut $a_j$ med
-$a_1$. Siden $f_1 \le f_j$, slutter $a_1$ før eller idet de andre aktivitetene i
-$A$ starter, så ingen av dem overlapper. Løsningen er like stor og inneholder
+$a_1$. De andre aktivitetene i $A$ overlapper ikke $a_j$, og siden $a_j$ slutter
+først, starter de ved $f_j$ eller senere. Siden $f_1 \le f_j$, slutter $a_1$
+før eller idet de starter, så ingen av dem overlapper $a_1$. Løsningen er like stor og inneholder
 $a_1$. Optimal delstruktur: aktivitetene som starter etter $f_1$, er en instans
 av samme problem og må velges optimalt.
 
@@ -342,11 +345,13 @@ gjør tre køoperasjoner på $O(\lg n)$. Til sammen er det $O(n \lg n)$.
 Grådighetsegenskapen: la $x$ og $y$ være de to tegnene med lavest frekvens. Da
 finnes et optimalt kodetre der $x$ og $y$ er søsken på største dybde. Ta et
 optimalt tre $T$, og la $a$ og $b$ være søsken på største dybde. Bytt plass på
-$x$ og $a$. Bare leddene for $x$ og $a$ i $B(T)$ endrer seg, og kostnaden synker
-med
+$x$ og $a$, og kall det nye treet $T_1$. I $B(T)$ står
+$x.\mathit{freq}\, d_T(x) + a.\mathit{freq}\, d_T(a)$, og i $B(T_1)$ står
+$x.\mathit{freq}\, d_T(a) + a.\mathit{freq}\, d_T(x)$. Alle andre ledd er like,
+så kostnaden synker med
 
 $$
-(a.\mathit{freq} - x.\mathit{freq}) \allowbreak\cdot (d_T(a) - d_T(x)) \ge 0
+B(T) - B(T_1) = (a.\mathit{freq} - x.\mathit{freq}) \allowbreak\cdot (d_T(a) - d_T(x)) \ge 0
 $$
 
 fordi $x$ har lavest frekvens og $a$ står dypest. Byttet gjør ikke treet dyrere,
@@ -362,8 +367,9 @@ $$
 B(T) = B(T') + x.\mathit{freq} + y.\mathit{freq}
 $$
 
-Tillegget avhenger ikke av $T'$, så et optimalt $T'$ gir et optimalt $T$. Etter
-å ha slått sammen $x$ og $y$ løser Huffman nettopp det mindre problemet der $z$
+Tillegget avhenger ikke av $T'$, så blant trærne der $x$ og $y$ er søsken, er
+$T$ optimalt når $T'$ er det. Grådighetsegenskapen sier at et av disse trærne er
+optimalt blant alle, så $T$ er optimalt. Etter å ha slått sammen $x$ og $y$ løser Huffman nettopp det mindre problemet der $z$
 er ett tegn.
 
 <Example label="Eksamensoppgave" title="Hvilke trær er huffmantrær">

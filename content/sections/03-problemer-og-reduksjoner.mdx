@@ -13,9 +13,9 @@ updated: 2026-09-27
 av de andre.» Det var en eksamensoppgave i august 2010. En oppgave fra august
 2011 byttet ut ett ord: velg ut *færrest* mulig. Den første har en enkel,
 effektiv løsning. Den andre er, så vidt noen vet, ikke mulig å løse effektivt i
-det hele tatt. Ordlyden røper ikke forskjellen. Denne modulen gir begrepene som
-gjør den synlig: hva et problem er, hvilke typer problemer vi møter, og hvordan
-reduksjoner sammenligner vanskegrad ved å oversette ett problem til et annet.
+det hele tatt. Ordlyden røper ikke forskjellen. Den blir synlig når du vet hva
+et problem er, hvilke typer problemer som finnes og hvordan du sammenligner
+vanskegrad med en reduksjon, som oversetter ett problem til et annet.
 
 <LearningGoals>
 - Skill mellom spesifikke og generelle problemer, og se et problem som en relasjon mellom input og output.
@@ -29,14 +29,14 @@ reduksjoner sammenligner vanskegrad ved å oversette ett problem til et annet.
 
 Et spesifikt problem er en beskrivelse av akseptable løsninger for én bestemt
 input, som å sortere $\langle 5, 2, 4, 6, 1, 3 \rangle$. Et generelt problem er
-en familie av spesifikke problemer, og det er det vi vanligvis mener med ordet
-problem. Hvert medlem av familien er en <Term name="Problem og instans">instans</Term>.
+en familie av spesifikke problemer, og det er et slikt problem ordet vanligvis
+betyr. Hvert medlem av familien er en <Term name="Problem og instans">instans</Term>.
 
 Formelt er et problem en binær relasjon $R \subseteq I \times O$ mellom en
 mengde inputs $I$ og en mengde outputs $O$: $R$ angir hvilke outputs som er
 riktige svar på hvilke inputs. Én instans kan ha mange riktige svar, og noen
-instanser har ingen; dem kan vi se på som ugyldige. Vil vi være helt konkrete,
-koder vi input og output som bitstrenger, altså
+instanser har ingen, og de kan regnes som ugyldige. Skal input og output være
+helt konkrete, kodes de som bitstrenger, altså
 $R \subseteq \{0,1\}^* \times \{0,1\}^*$.
 
 <Figure
@@ -49,7 +49,7 @@ $R \subseteq \{0,1\}^* \times \{0,1\}^*$.
 />
 
 <Statement kind="definition" name="Problemtyper">
-Gitt en relasjon $R$ og en instans $x$ kan vi <b>søke</b>: finn en $y$ slik at
+Gitt en relasjon $R$ og en instans $x$ kan du <b>søke</b>: finn en $y$ slik at
 $(x, y) \in R$; <b>beslutte</b>: avgjør om en slik $y$ finnes; eller
 <b>optimere</b>: finn en akseptabel $y$ som er best mulig etter et gitt mål. Å
 <b>verifisere</b> er å sjekke, gitt både $x$ og $y$, om $(x, y) \in R$.
@@ -81,15 +81,15 @@ $k$.
 
 Verifiseringen er enkel i søke- og beslutningsvarianten: gitt et sertifikat
 $H$, sjekk at $H$ består av $k$ noder fra $G$ og at alle par er naboer. Å finne
-en klikk virker derimot svært vanskelig, og det er faktisk et åpent spørsmål om
-det egentlig *er* vanskeligere enn å verifisere en. I optimeringsvarianten
+en klikk virker derimot svært vanskelig, og det er et åpent spørsmål om å finne
+en klikk egentlig *er* vanskeligere enn å verifisere en. I optimeringsvarianten
 sjekkes det på samme måte at $H$ er en klikk, men ikke at ingen større klikk
 finnes.
 
 ## Reduksjoner
 
-Vi vil avgjøre om alle elementene i en tabell er forskjellige. I stedet for å
-angripe det direkte kan vi omforme problemet:
+Oppgaven er å avgjøre om alle elementene i en tabell er forskjellige. I stedet
+for å løse den direkte kan du omforme problemet:
 
 ```python
 def unique(A, n):
@@ -102,8 +102,8 @@ def unique(A, n):
 
 Etter sorteringen står like verdier ved siden av hverandre, så det holder å
 sjekke naboene. Sorteringen har redusert unikhetsproblemet til noe enklere.
-Slik kan vi tenke helt generelt: gjør noe arbeid som omformer instansen, og
-overlat resten til en subrutine vi later som vi har. En slik hypotetisk
+Slik kan du tenke helt generelt: gjør noe arbeid som omformer instansen, og
+overlat resten til en subrutine du later som du har. En slik hypotetisk
 subrutine kalles et <Term name="Orakel">orakel</Term>, og konstruksjonen er en
 <Term name="Reduksjon">reduksjon</Term> fra det ene problemet til det andre.
 Reduksjonene deles inn etter hvor mye de får lov til å gjøre:
@@ -156,13 +156,18 @@ Flest mulig: stryk en person som kjenner færre enn $k$ av de gjenværende, og
 gjenta til ingen flere kan strykes. Ingen gyldig gruppe mister noe medlem på
 veien: så lenge hele gruppa står, kjenner hvert medlem minst $k$ innenfor
 gruppa, og dermed minst $k$ blant de gjenværende, så ingen av dem strykes
-først. De som står igjen, er derfor den største gyldige gruppa, og hele
-prosessen er polynomisk.
+først. Når ingen flere kan strykes, kjenner alle som står igjen minst $k$ av de
+gjenværende, så de gjenværende er selv en gyldig gruppe. De er altså en gyldig
+gruppe som inneholder alle andre gyldige grupper, og dermed den største. Det
+strykes høyst $n$ personer, og hver stryking finnes ved å telle bekjentskaper
+blant de gjenværende, så hele prosessen er polynomisk.
 
 Færrest mulig: alle i gruppa skal kjenne minst $k$ andre i gruppa, så gruppa må
-ha minst $k + 1$ personer. En gruppe med nøyaktig $k + 1$ personer er gyldig
-bare når alle kjenner alle, altså når bekjentskapsgrafen har en klikk med
-$k + 1$ noder. Å avgjøre om svaret er $k + 1$, er dermed å avgjøre CLIQUE.
+ha minst $k + 1$ personer. En gruppe på $k + 1$ personer er gyldig nøyaktig
+når alle kjenner alle, ettersom hver av dem må kjenne de $k$ andre og
+gruppa ikke har flere. Svaret er altså $k + 1$ hvis og bare hvis
+bekjentskapsgrafen har en klikk med $k + 1$ noder, så en algoritme for
+færrest-varianten avgjør CLIQUE.
 Klikkproblemet er redusert til færrest-varianten, så den er minst like
 vanskelig.
 
@@ -197,17 +202,17 @@ algoritme for $P$ som går veien om $Q$, så $P$ er også lett.
 ## Dekomponering
 
 Reduksjonene over oversetter mellom forskjellige problemer. Like ofte reduserer
-vi et problem til mindre instanser av seg selv: vi dekomponerer. En rekursiv
-prosedyre er nettopp dette, en prosedyre som bruker seg selv som orakel på
-mindre delinstanser.
+du et problem til mindre instanser av seg selv: du dekomponerer. En rekursiv
+prosedyre dekomponerer, for den bruker seg selv som orakel på mindre
+delinstanser.
 
-At dette gir riktige svar, er matematisk induksjon, og oppskriften har tre
-deler. Grunntilfellet er instansene som løses direkte, uten dekomponering, og
+Beviset for at en rekursiv prosedyre gir riktige svar, er et induksjonsbevis
+over delinstansene. Grunntilfellet er instansene som løses direkte, uten dekomponering, og
 det er ofte trivielt: ett element, én node, en tom mengde.
 Induksjonshypotesen er antagelsen om at delinstansene kan løses, det induktive
-premisset for trinnet vårt. Induksjonssteget viser at dekomponeringen og
-kombinasjonen av delsvar gir et riktig svar for hele instansen. I tillegg må
-dekomponeringen krympe instansen, slik at rekursjonen terminerer i
+premisset for induksjonssteget. Induksjonssteget viser at dekomponeringen og
+kombinasjonen av delsvar gir et riktig svar for hele instansen. Og
+dekomponeringen må krympe instansen, slik at rekursjonen ender i
 grunntilfellet.
 
 <Figure

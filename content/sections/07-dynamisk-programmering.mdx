@@ -12,8 +12,8 @@ updated: 2026-09-27
 Splitt og hersk deler en instans i delinstanser uten noe felles og løser hver
 av dem én gang. I mange problemer trengs den samme delinstansen av flere større
 instanser, og en rekursiv prosedyre løser den på nytt hver gang. Dynamisk
-programmering bruker den samme dekomponeringen, men lagrer hvert delsvar første
-gang det regnes ut. Da er kjøretiden som regel lineær i antall forskjellige
+programmering dekomponerer på samme måte som den rekursive prosedyren, men
+lagrer hvert delsvar første gang det regnes ut. Da er kjøretiden som regel lineær i antall forskjellige
 delinstanser og avhengighetene mellom dem, ikke i antall kall, og det kan være
 forskjellen på polynomisk og eksponentiell tid.
 
@@ -36,11 +36,13 @@ Staven kan kappes eller ikke i hvert av de $n - 1$ heltallige punktene, så det
 finnes $2^{n-1}$ kappinger. For $n = 4$ er to biter med lengde 2 best, til
 $5 + 5 = 10$ kr.
 
-Dekomponer ved å velge det første kuttet. Gir det en bit med lengde $i$, får vi
+Dekomponer ved å velge det første kuttet. Gir det en bit med lengde $i$, får du
 $p_i$ for den, og resten er en stav med lengde $n - i$, en mindre instans av
-samme problem. Induksjonshypotesen er at resten kan kappes optimalt, så det
-beste vi får med første bit $i$, er $p_i + r_{n-i}$. En av de $n$ lengdene er
-den første biten i en optimal kapping, så vi prøver alle og tar den beste:
+samme problem. Totalprisen er $p_i$ pluss prisen for resten, så den blir størst
+når resten kappes optimalt: var resten kappet dårligere, kunne du byttet ut den
+kappingen og fått en bedre kapping av hele staven. Det beste med første bit $i$
+er altså $p_i + r_{n-i}$. En av de $n$ lengdene er den første biten i en optimal
+kapping, så du prøver alle og tar den beste:
 
 $$
 r_0 = 0 \allowbreak\quad r_n = \max_{1 \le i \le n} (p_i + r_{n-i})
@@ -48,15 +50,22 @@ $$
 
 Cut-Rod er denne rekurrensen skrevet som rekursiv prosedyre. Den er riktig,
 men treg. Kallet på lengde $n$ kaller seg selv på alle lengder fra $n - 1$ ned
-til 0, og hvert av dem gjør det samme. Antall kall $T(n)$, rota medregnet, er
+til 0, og hvert av dem gjør det samme. Antall kall $T(n)$ er ett for rota pluss
+alle kallene under de $n$ barna:
 
 $$
-T(n) = 1 + \sum_{j=0}^{n-1} T(j) = 2^n
+T(n) = 1 + \sum_{j=0}^{n-1} T(j)
 $$
 
-Trekk $T(n - 1)$ fra $T(n)$: alle leddene unntatt $T(n - 1)$ selv faller bort,
-så $T(n) = 2T(n - 1)$, og med $T(0) = 1$ blir $T(n) = 2^n$. Cut-Rod gjør
-altså like mye arbeid som å prøve alle kappingene.
+Trekk fra den samme ligningen for $n - 1$. Da faller 1 og leddene
+$T(0), \ldots, T(n-2)$ bort, og bare $T(n-1)$ står igjen:
+
+$$
+T(n) - T(n-1) = T(n-1) \;\Rightarrow\; T(n) = 2T(n-1) \;\Rightarrow\; T(n) = 2^n
+$$
+
+Det siste steget bruker $T(0) = 1$, for kallet på lengde 0 kaller ingenting.
+Cut-Rod gjør altså like mye arbeid som å prøve alle kappingene.
 
 ## Overlappende delinstanser og memoisering
 
@@ -87,9 +96,10 @@ gang den kalles med et argument, regner den ut svaret og lagrer det. Senere kall
 med samme argument slår opp svaret og returnerer med en gang. For stavkapping
 holder en tabell $r[0 .. n]$ der $-\infty$ betyr at delinstansen ikke er løst.
 Uten de tre linjene som leser og skriver $r$, er `aux` under nøyaktig Cut-Rod.
-I Python gjør dekoratøren `functools.cache` det samme for en hvilken som helst
-funksjon, med argumentene som nøkkel i en hashtabell. Prislista `p` har en
-ubrukt plassholder i `p[0]`, så `p[i]` er prisen for lengde $i$.
+I Python gjør dekoratøren `functools.cache` det samme for en funksjon der alle
+argumentene er hashbare, med argumentene som nøkkel i en hashtabell. Prislista
+`p` er ikke hashbar, så den må være en tuppel eller ligge utenfor funksjonen.
+Den har en ubrukt plassholder i `p[0]`, så `p[i]` er prisen for lengde $i$.
 
 <CodeBlock
   id="stavkapping-memo"
@@ -129,7 +139,7 @@ første, ett per kant i delinstansgrafen.
 ## Nedenfra og opp
 
 Rekursjonen i den memoiserte versjonen sørger bare for at en delinstans er
-løst før noen bygger på den. Det kan vi like gjerne gjøre direkte, ved å løse
+løst før noen bygger på den. Du kan like gjerne sørge for det direkte, ved å løse
 delinstansene i en rekkefølge der hver av dem kommer etter alle den bygger på.
 En slik rekkefølge er en topologisk sortering av delinstansgrafen, og for
 stavkapping er det bare $0, 1, \ldots, n$. Denne formen kalles iterasjon
@@ -137,7 +147,7 @@ nedenfra og opp, bottom-up, og memoisering kalles tilsvarende ovenfra og ned,
 top-down. Bottom-Up-Cut-Rod fyller $r$ fra venstre, og når den kommer til
 $r[j]$, er $r[0 .. j - 1]$ ferdige.
 
-Tabellen $r$ gir bare den beste prisen. For å finne kappingen lagrer vi også
+Tabellen $r$ gir bare den beste prisen. For å finne kappingen lagrer du også
 valget: $s[j]$ er lengden på den første biten i en optimal kapping av lengde
 $j$. Kappingen leses av bakfra. Skriv ut $s[n]$, trekk den fra $n$, og gjenta
 til $n = 0$. For $n = 7$ er $s[7] = 1$ og $s[6] = 6$, altså én bit med lengde 1
@@ -176,12 +186,12 @@ kant i delinstansgrafen konstant tid, er den lineær i antall noder og kanter.
 
 ## Optimal delstruktur
 
-Dekomponeringen av stavkapping er et induksjonsbevis, og induksjonssteget
-holder fordi en optimal løsning består av optimale løsninger på delinstansene.
-Det kalles
-<Term name="Optimal delstruktur">optimal delstruktur</Term>. Beviset går som
-regel ved å bytte ut en del: var resten i en optimal kapping ikke kappet
-optimalt, kunne vi kappet resten bedre og fått en bedre kapping av hele staven.
+Utbyttingen som ga $p_i + r_{n-i}$ viser at en optimal løsning består av
+optimale løsninger på delinstansene. Den egenskapen kalles
+<Term name="Optimal delstruktur">optimal delstruktur</Term>, og den gjør
+dekomponeringen av stavkapping til et riktig induksjonsbevis. Beviset går som
+regel slik: bytt ut en del av løsningen med en bedre løsning på delinstansen,
+og hele løsningen blir bedre.
 
 Korteste vei har optimal delstruktur. Går en korteste vei fra 1 til 4 innom 2,
 er delen fra 1 til 2 en korteste vei, ellers kunne den byttes ut med en kortere.
@@ -243,19 +253,25 @@ $a_1, \ldots, a_n$, og la $k$ være antall grupper. Hver gruppe får et
 sammenhengende stykke av stien, så en fordeling er $k - 1$ kutt, som i
 stavkapping.
 
+Delinstansene trenger to parametre, antall grupper $g$ og antall kontorer $j$
+fra starten av korridoren. La $M[g, j]$ være den beste laveste totalverdien, og
+$S_j = a_1 + \cdots + a_j$ prefikssummene, regnet ut på forhånd i lineær tid.
+
 Velg det siste stykket: kontorene $i + 1, \ldots, j$ går til én gruppe, og de
-første $i$ fordeles på de andre $k - 1$ gruppene. Delinstansene trenger to
-parametre, antall grupper $g$ og antall kontorer $j$ fra starten av
-korridoren. La $M[g, j]$ være den beste laveste totalverdien, og
-$S_j = a_1 + \cdots + a_j$ prefikssummene, regnet ut på forhånd i lineær tid:
+første $i$ fordeles på de andre $g - 1$ gruppene. Den laveste totalverdien er da
+den minste av $S_j - S_i$, verdien til det siste stykket, og den laveste blant
+de $g - 1$ andre gruppene. Det siste stykket ligger fast, så minimum blir størst
+når den laveste blant de andre er størst, altså når de første $i$ kontorene
+fordeles maksimin. Den laveste totalverdien er altså
+$\min(M[g-1, i],\, S_j - S_i)$. Hver av de $g - 1$
+andre gruppene trenger minst ett kontor, og det siste stykket også, så $i$ går
+fra $g - 1$ til $j - 1$, og du tar den beste:
 
 $$
 M[1, j] = S_j \allowbreak\quad M[g, j] = \max_{g-1 \le i < j} \min(M[g-1, i],\, S_j - S_i)
 $$
 
-Optimal delstruktur holder. Gitt det siste stykket må de første $i$ kontorene
-fordeles maksimin, for en bedre fordeling av dem kan ikke gjøre minimum
-mindre. Fyll $M$ nedenfra og opp for $g = 1, \ldots, k$, eller memoiser
+Fyll $M$ nedenfra og opp for $g = 1, \ldots, k$, eller memoiser
 rekursjonen. Det er $kn$ delinstanser med høyst $n$ valg hver, så kjøretiden er
 $O(kn^2)$. Lagre det beste $i$ for hver delinstans, så kan fordelingen leses av
 bakfra fra $M[k, n]$.
@@ -276,10 +292,14 @@ og for sammenligning av DNA-sekvenser. $X$ har $2^m$ delsekvenser, så å prøve
 alle er uaktuelt.
 
 Delinstansene er prefikser, $X_i = \langle x_1, \ldots, x_i \rangle$ og $Y_j$,
-og dekomponeringen ser på de siste elementene. Er $x_i = y_j$, kan det
-elementet alltid være sist i en LCS, og resten er en LCS av $X_{i-1}$ og
-$Y_{j-1}$. Er $x_i \ne y_j$, kan ikke begge være med som siste element, så vi
-dropper $x_i$ eller $y_j$, løser begge delinstansene og tar den beste. Med
+og du dekomponerer ved å se på de siste elementene. La $Z$ være en LCS av $X_i$
+og $Y_j$. Er $x_i = y_j$, må $Z$ slutte på dette elementet, for ellers kunne du
+lagt det til bakerst og fått en lengre felles delsekvens. Resten av $Z$ er da en
+felles delsekvens av $X_{i-1}$ og $Y_{j-1}$, og den er en lengste, for ellers
+kunne du byttet den ut og fått en lengre $Z$. Er $x_i \ne y_j$, kan ikke det
+siste elementet i $Z$ være lik begge, så $Z$ er en felles delsekvens av
+$X_{i-1}$ og $Y_j$ eller av $X_i$ og $Y_{j-1}$. Du løser begge delinstansene og
+tar den beste. Med
 $c[i, j]$ som lengden av en LCS av $X_i$ og $Y_j$:
 
 $$
@@ -362,10 +382,10 @@ $$
 Hva er det som mangler? Forklar kort.
 
 <Solution>
-Linjen gjelder tilfellet der de siste elementene i prefiksene er like. Da kan
-det elementet være sist i en LCS, og å ta det med gjør aldri svaret kortere.
-Resten er en LCS av prefiksene uten det siste elementet, altså $X_{i-1}$ og
-$Y_{j-1}$, og lengden øker med 1.
+Linjen gjelder tilfellet der de siste elementene i prefiksene er like. Da må en
+LCS slutte på det elementet, for ellers kunne det legges til bakerst. Resten er
+en LCS av $X_{i-1}$ og $Y_{j-1}$, for en lengre kunne byttet den ut, og lengden
+øker med 1.
 
 <Answer>$c[i-1, j-1] + 1$</Answer>
 </Solution>
@@ -397,7 +417,7 @@ $$
 Rad $i$ bygger bare på rad $i - 1$, så tabellen fylles rad for rad. Cellen som
 gir verdien med gjenstand $i$, ligger $w_i$ kolonner lenger til venstre, så
 kantene i delinstansgrafen avhenger av vektene. Valgene trenger ikke lagres for
-seg. Er $K[i, j] \ne K[i-1, j]$, var gjenstand $i$ med, og vi fortsetter fra
+seg. Er $K[i, j] \ne K[i-1, j]$, var gjenstand $i$ med, og du fortsetter fra
 $K[i-1, j - w_i]$, ellers fra $K[i-1, j]$. I Python har gjenstand $i$ vekt
 `w[i - 1]` og verdi `v[i - 1]`.
 
@@ -446,10 +466,8 @@ $$
 $$
 
 En kjøretid som er polynomisk i et tall fra inputen, men ikke i antall bits,
-kalles <Term name="Pseudopolynomisk kjøretid">pseudopolynomisk</Term>. I
-RAM-modellen er heltallene om lag $c \lg n$ bits brede, så der er
-$W \le n^c$ og kjøretiden polynomisk. Med vilkårlig store heltall er
-ryggsekkproblemet NP-hardt, og ingen kjenner en algoritme som er polynomisk i
+kalles <Term name="Pseudopolynomisk kjøretid">pseudopolynomisk</Term>. Er $W$ begrenset av et polynom i $n$, er kjøretiden polynomisk. Med vilkårlig
+store heltall er ryggsekkproblemet NP-hardt, og ingen kjenner en algoritme som er polynomisk i
 antall bits.
 
 <Example label="Eksamensoppgave" title="Er ryggsekkløsningen polynomisk?">

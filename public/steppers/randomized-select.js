@@ -124,7 +124,7 @@ export default {
       const k = q - p + 1;
       snap(
         12,
-        `k = q - p + 1 = ${k}: pivoten er det ${k}-ende minste i segmentet, og vi leter etter det ${i}-ende.`,
+        `k = q - p + 1 = ${k}: pivoten er det ${k}-ende minste i segmentet, og du leter etter det ${i}-ende.`,
         { p, r, i, q, k },
         { seg: [p, r], x, pivot: q, split: true },
       );
@@ -134,7 +134,7 @@ export default {
       } else if (i < k) {
         snap(
           [15, 16],
-          `i < k: svaret er blant de ${k - 1} små. De store forkastes, og vi søker etter rang ${i} i ${seg(p, q - 1)}.`,
+          `i < k: svaret er blant de ${k - 1} små. De store forkastes, og du søker etter rang ${i} i ${seg(p, q - 1)}.`,
           { i, k, p, q },
           { seg: [p, q - 1], x, pivot: q, split: true, keep: [p, q - 1] },
         );
@@ -142,7 +142,7 @@ export default {
       } else {
         snap(
           [17, 18],
-          `i > k: ${k} elementer er mindre enn eller lik pivoten, så svaret har rang ${i - k} blant de store. Vi søker i ${seg(q + 1, r)}.`,
+          `i > k: ${k} elementer er mindre enn eller lik pivoten, så svaret har rang ${i - k} blant de store. Søk videre i ${seg(q + 1, r)}.`,
           { i, k, q, r },
           { seg: [q + 1, r], x, pivot: q, split: true, keep: [q + 1, r] },
         );

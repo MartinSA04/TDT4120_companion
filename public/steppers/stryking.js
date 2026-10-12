@@ -38,7 +38,7 @@ export default {
         removed: [],
         desc:
           "Åtte personer, og kravet er k = 2: alle i gruppa skal kjenne minst " +
-          "to andre i gruppa. Vi stryker alle som kjenner færre enn to av de gjenværende.",
+          "to andre i gruppa. Alle som kjenner færre enn to av de gjenværende, strykes.",
       },
       {
         removed: [],

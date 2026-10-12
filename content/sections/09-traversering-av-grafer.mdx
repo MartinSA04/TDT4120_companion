@@ -9,10 +9,10 @@ part: "Del 4: Grafer og flyt"
 updated: 2026-10-10
 ---
 
-Å traversere en graf er å besøke nodene vi vet om. I starten vet vi bare om
-startnoden, men hver gang vi besøker en node, oppdager vi naboene dens. Slik når
-vi alle nodene som kan nås fra startnoden. Traversering er nyttig i seg selv, og
-den er grunnlaget for mange av de andre grafalgoritmene. Læreboka kaller det søk
+Å traversere en graf er å besøke nodene du har oppdaget. I starten har du bare
+oppdaget startnoden, men hver gang du besøker en node, oppdager du naboene dens.
+Slik når du alle nodene som kan nås fra startnoden. Traversering er nyttig i seg
+selv, og mange grafalgoritmer bygger på den. Læreboka kaller det søk
 (search), og derfor heter de to algoritmene bredde-først-søk og dybde-først-søk.
 
 <LearningGoals>
@@ -87,7 +87,8 @@ føre opp naboene den har. Når lista er tom, er alle nodene som kan nås fra
 startnoden, besøkt. Hvilken node som tas av lista først, bestemmer hvilken
 traversering det blir.
 
-Algoritmene i læreboka holder styr på dette med farger. En node er hvit før den
+Algoritmene i læreboka holder styr på hvilke noder som er oppdaget og besøkt,
+med farger. En node er hvit før den
 er oppdaget, grå når den er oppdaget, men ikke ferdig, og svart når den er
 ferdig. Uten fargene ville en sykel sendt traverseringen rundt og rundt. Med dem
 behandles hver node én gang, på samme måte som memoisering løser hver delinstans
@@ -199,9 +200,16 @@ kanten $(u, v)$ undersøkes, avgjør typen.
 />
 
 En grå node ligger på kallstakken, så den er en forfader til $u$, og kanten
-lukker en sykel. En rettet graf har derfor en sykel hvis og bare hvis DFS finner
-en bakoverkant. I en urettet graf er hver kant en tre-kant eller en bakoverkant.
-Er $u.d < v.d$, blir $v$ ferdig mens $u$ er grå. Undersøkes kanten første gang
+lukker en sykel. Omvendt, har grafen en sykel, la $v$ være den første noden i
+sykelen som DFS oppdager, og $u$ noden foran $v$ i sykelen. Ved $v.d$ er resten
+av sykelen en hvit sti fra $v$ til $u$, så $u$ blir en etterkommer av $v$ etter
+hvit-sti-teoremet, og kanten $(u, v)$ blir en bakoverkant. En rettet graf har
+altså en sykel hvis og bare hvis DFS finner en bakoverkant.
+
+I en urettet graf er hver kant en tre-kant eller en bakoverkant. Er
+$u.d < v.d$, er $v$ hvit ved $u.d$, og kanten er en hvit sti fra $u$ til $v$.
+Etter hvit-sti-teoremet blir $v$ da en etterkommer av $u$ og ferdig mens $u$ er
+grå. Undersøkes kanten første gang
 fra $u$, er $v$ hvit, og kanten blir en tre-kant. Undersøkes den første gang fra
 $v$, er $u$ fortsatt grå, og kanten blir en bakoverkant.
 
@@ -322,12 +330,14 @@ for starter DFS i 3, får 3 den laveste starttiden.
 </Solution>
 </Example>
 
-Memoisering i dynamisk programmering er DFS på delinstansgrafen. Et kall blir
-ferdig først når alle delinstansene det bygger på, er løst, og en delinstans som
-alt er løst, er svart og slås bare opp. Rekkefølgen kallene blir ferdige i, er
-derfor en topologisk sortering av delinstansgrafen, med grunntilfellene først.
-Det er den samme rekkefølgen en løsning nedenfra og opp går gjennom
-delinstansene i.
+<Derivation title="Memoisering er DFS">
+Memoisering i dynamisk programmering er DFS i delinstansgrafen, men mot kantene:
+et kall går fra en instans til delinstansene den bygger på. Et kall blir ferdig
+først når alle disse er løst, og en delinstans som alt er løst, er svart og slås
+bare opp. Rekkefølgen kallene blir ferdige i, er derfor en topologisk sortering
+av delinstansgrafen, med grunntilfellene først. En løsning nedenfra og opp går
+gjennom delinstansene i den samme rekkefølgen.
+</Derivation>
 
 ## Sterke komponenter
 
@@ -339,14 +349,28 @@ en node stopper når det ikke er flere kanter å følge.
 En rettet graf er sterkt sammenhengende når det for hvert par $u$ og $v$ finnes
 en sti fra $u$ til $v$ og en sti fra $v$ til $u$. De
 <Term name="Sterke komponenter">sterke komponentene</Term> er de største
-mengdene av noder der alle kan nå alle. Kollapser vi hver komponent til én node,
-får vi komponentgrafen. Den er en DAG, for en sykel mellom to komponenter ville
+mengdene av noder der alle kan nå alle. Kollapser du hver komponent til én node,
+får du komponentgrafen. Den er en DAG, for en sykel mellom to komponenter ville
 gjort dem til én.
 
-Kjører vi DFS rett på $G$, kan et tre gå fra én komponent og inn i en annen.
-Strongly-Connected-Components bruker den transponerte grafen $G^{\mathrm T}$, som
-er $G$ med alle kantene snudd. $G$ og $G^{\mathrm T}$ har de samme sterke
+Kjører du DFS rett på $G$, kan et tre gå fra én komponent og inn i en annen.
+Starter DFS i en komponent der alle nodene er hvite og alle kantene ut av
+komponenten går til svarte noder, blir treet nøyaktig den komponenten. Du trenger derfor startnoder i en rekkefølge der hver komponent
+bare har kanter ut til komponenter som alt er besøkt. Sluttidene gir den
+rekkefølgen.
+
+La sluttiden til en komponent være den høyeste sluttiden i den. Går en kant i $G$
+fra komponent $C$ til en annen komponent $C'$, har $C$ høyere sluttid enn $C'$.
+Oppdager DFS en node i $C$ først, når den hele $C'$ langs hvite stier før den
+noden blir ferdig. Oppdager den en node i $C'$ først, kan den ikke nå $C$
+derfra, for da ville $C$ og $C'$ vært én komponent. Da er hele $C'$ ferdig før
+$C$ blir oppdaget.
+
+Komponenten med høyest sluttid har derfor ingen kanter inn fra andre komponenter
+i $G$. Snur du alle kantene, får du den transponerte grafen $G^{\mathrm T}$, og
+der har komponenten ingen kanter ut. $G$ og $G^{\mathrm T}$ har de samme sterke
 komponentene, for hver sti i den ene er en sti baklengs i den andre.
+Strongly-Connected-Components kjører derfor en runde til, på $G^{\mathrm T}$.
 
 <Steps>
 <Step title="DFS på $G$">
@@ -363,22 +387,14 @@ Hvert dybde-først-tre fra andre runde er én sterk komponent.
 </Step>
 </Steps>
 
-La sluttiden til en komponent være den høyeste sluttiden i den. Går en kant i $G$
-fra komponent $C$ til en annen komponent $C'$, har $C$ høyere sluttid enn $C'$.
-Oppdager DFS en node i $C$ først, når den hele $C'$ langs hvite stier før den
-noden blir ferdig. Oppdager den en node i $C'$ først, kan den ikke nå $C$
-derfra, for da ville $C$ og $C'$ vært én komponent. Da er hele $C'$ ferdig før
-$C$ blir oppdaget.
-
-Andre runde starter i noden med høyest sluttid. Komponenten dens har ingen kanter
-inn fra andre komponenter i $G$, så i $G^{\mathrm T}$ har den ingen kanter ut, og
-DFS besøker nøyaktig den komponenten. Hver ny startnode har høyest sluttid av
-nodene som er igjen, og i $G^{\mathrm T}$ fører kantene ut av komponenten dens
-bare til komponenter som alt er svarte. Hvert tre blir dermed én komponent, og
-hele algoritmen tar $\Theta(V + E)$.
+Andre runde starter i noden med høyest sluttid, og DFS besøker nøyaktig
+komponenten dens. Hver ny startnode har høyest sluttid av nodene som er igjen, og
+i $G^{\mathrm T}$ fører kantene ut av komponenten dens bare til komponenter som
+alt er svarte. Hvert tre blir dermed én komponent, og hele algoritmen tar
+$\Theta(V + E)$.
 
 I Python lager `transpose` grafen $G^{\mathrm T}$, og første runde er
-`topological_sort` fra over. Grafen kan ha sykler, så lista er ikke en
+`topological_sort` ovenfor. Grafen kan ha sykler, så lista er ikke en
 topologisk sortering, men den er fortsatt nodene etter synkende sluttid.
 
 <CodeBlock
@@ -449,11 +465,24 @@ $s.d = 0$ og legger den i køen. Så lenge køen ikke er tom, tas den første no
 $u$ ut. Hver hvite nabo $v$ blir grå med $v.d = u.d + 1$ og $v.\pi = u$ og settes
 bakerst i køen. Når alle naboene er sett, blir $u$ svart.
 
-Traverseringen går ut fra $s$ lag for lag. Alle nodene med avstand $k$ fra $s$
-oppdages før noen med avstand $k + 1$, så køen har aldri mer enn to verdier av
-$d$, i stigende rekkefølge. Når BFS er ferdig, er $v.d = \delta(s, v)$
-(<FormulaRef id="bfs-avstand" />): det minste antallet kanter på en sti fra $s$
-til $v$, og $\infty$ hvis $v$ ikke kan nås. Forgjengerkantene utgjør et
+Traverseringen går ut fra $s$ lag for lag. Hver kant $(u, v)$ som gjør $v$ grå,
+gir $v.d = u.d + 1$, så $v.d$ er lengden av stien fra $s$ til $v$ i
+bredde-først-treet. Ingen sti er kortere enn $\delta(s, v)$, så
+$v.d \ge \delta(s, v)$.
+
+Køen er FIFO, og en node som settes inn, får $d$ én høyere enn noden som ble
+tatt ut. Nodene tas derfor ut i stigende $d$, og køen har aldri mer enn to
+verdier av $d$.
+
+Resten er induksjon på avstanden $k$. Har alle nodene med avstand $k$ fått
+$d = k$, har en node $v$ med $\delta(s, v) = k + 1$ en kant inn fra en node $u$
+med avstand $k$. Når $u$ tas ut, er $v$ hvit og får $v.d = k + 1$, eller den er
+alt oppdaget av en node som ble tatt ut før $u$, og da er
+$v.d \le u.d + 1 = k + 1$.
+
+Når BFS er ferdig, er altså $v.d = \delta(s, v)$ (<FormulaRef id="bfs-avstand" />):
+det minste antallet kanter på en sti fra $s$ til $v$, og $\infty$ hvis $v$ ikke
+kan nås. Forgjengerkantene utgjør et
 bredde-først-tre, og stien i treet fra $s$ til $v$ er en korteste vei.
 Print-Path skriver den ut ved å følge forgjengerne bakover fra $v$ og skrive ut
 nodene på vei ut av rekursjonen.
@@ -500,8 +529,8 @@ def print_path(pi, s, v):
   height={310}
 />
 
-Sammenlign med dybde-først-treet for den samme grafen. DFS når node 4 via 3, 7
-og 8, fem kanter fra 1, mens BFS når den med to. DFS finner altså ikke korteste
+Sammenlign med dybde-først-treet for den samme grafen. DFS når node 4 via 2, 3,
+7 og 8, fem kanter fra 1, mens BFS når den med to. DFS finner altså ikke korteste
 vei.
 
 Hver node settes i køen høyst én gang, for den blir grå idet den settes inn, og
@@ -526,13 +555,16 @@ igjen, og den tar $\Theta(V)$.
 Huskelista i BFS er køen $Q$. Nodene er hvite før de settes inn, grå mens de står
 i køen og svarte etterpå. FIFO-køen gjør at BFS finner korteste veier, men
 traverseringen besøker alle nodene som kan nås fra $s$ uansett hvilken node som
-tas ut i hver runde. Bytter vi køen med en stakk, oppfører traverseringen seg som
-DFS-Visit. Rekursjonen i DFS-Visit bruker en kallstakk, og en stakk i koden gjør
-det samme.
+tas ut i hver runde. Bytter du bare køen med en stakk, blir det ikke DFS-Visit.
+En node blir grå idet den legges på stakken, så forgjengeren blir den første
+noden som oppdaget den. Med kantene $(s, a)$, $(s, b)$, $(a, b)$ og $(b, a)$ får
+både $a$ og $b$ forgjengeren $s$, mens DFS-Visit lar den ene få den andre som
+forgjenger. DFS-Visit gjør en node grå først når kallet på den starter, og
+versjonen under gjør en node grå først når den kommer øverst i stakken.
 
-I versjonen under ser løkka på noden øverst i stakken. Er den hvit, blir den grå,
-og alle de hvite naboene legges på stakken. Er den ikke hvit, er alt over den i
-stakken ferdig, så den blir svart og tas av. En node kan ligge i stakken flere
+Løkka ser på noden øverst i stakken. Er den hvit, blir den grå, og alle de hvite
+naboene legges på stakken. Er den ikke hvit, er alt som ble lagt over den, tatt
+av igjen, så den blir svart og tas av. En node kan ligge i stakken flere
 ganger, og da besøkes den fra den øverste. Naboene besøkes i motsatt rekkefølge
 av DFS-Visit, og stakken kan bli $O(E)$ lang.
 
@@ -559,7 +591,7 @@ av DFS-Visit, og stakken kan bli $O(E)$ lang.
 />
 
 BFS prioriterer de eldste nodene i huskelista, og DFS de nyeste. Med en
-prioritetskø kan vi prioritere etter noe annet, og da får vi andre algoritmer.
+prioritetskø kan du prioritere etter noe annet, og da får du andre algoritmer.
 Prims algoritme for minimale spenntrær og Dijkstras algoritme for korteste vei er
 traverseringer av dette slaget, der nøklene i køen oppdateres underveis. Med en
 binær haug koster hver køoperasjon $O(\lg V)$, og traverseringen tar
@@ -579,7 +611,7 @@ $s$, aldri blir besøkt, og se på en sti fra $s$ til $v$. Den første noden på
 stien som ikke blir besøkt, har en nabo foran seg på stien som blir besøkt. Da
 ble den oppdaget og lagt i køen, og det er en motsigelse. Rekkefølgen avgjør bare
 når hver node besøkes. Det som går tapt, er korteste vei: $v.d$ er ikke lenger
-avstanden fra $s$.
+nødvendigvis avstanden fra $s$.
 
 <Answer>Ja, hvis grafen er sammenhengende. Da besøkes de samme nodene som med BFS, men $v.d$ er ikke nødvendigvis den korteste avstanden.</Answer>
 </Solution>

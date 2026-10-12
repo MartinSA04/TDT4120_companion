@@ -11,11 +11,10 @@ updated: 2026-09-27
 
 Merge-Sort bruker $\Theta(n \lg n)$ tid, og ingen algoritme som bare
 sammenligner elementer parvis, kan gjøre det bedre i verste tilfelle. Grensen
-gjelder så lenge forutsetningene gjelder. Ber vi om mindre enn en sortert
-tabell, for eksempel bare det $i$-ende minste elementet, eller antar vi mer om
-inputen, for eksempel at verdiene er små heltall, går det i lineær tid. Denne
-modulen viser først hvor grensen kommer fra, og deretter fem algoritmer som
-går under den.
+gjelder så lenge algoritmen bare sammenligner, og svaret skal være hele den
+sorterte tabellen. Ber du om mindre enn en sortert tabell, for eksempel bare
+det $i$-ende minste elementet, eller antar du mer om inputen, for eksempel at
+verdiene er små heltall, går det i lineær tid.
 
 <LearningGoals>
 - Forklar med et <Term name="Beslutningstre">beslutningstre</Term> hvorfor <Term name="Sammenligningsbasert sortering">sammenligningsbasert sortering</Term> bruker $\Omega(n \lg n)$ sammenligninger i verste tilfelle.
@@ -61,7 +60,8 @@ derfor asymptotisk optimal blant dem.
 </Statement>
 
 Grensen er en nedre grense for verste tilfelle. Den sier at den dyreste
-instansen koster minst $n \lg n$. Mer sier den ikke. En algoritme kan gjerne
+instansen krever minst $\lg n!$ sammenligninger, og $\lg n! = \Omega(n \lg n)$.
+Mer sier den ikke. En algoritme kan gjerne
 være verre, og i beste tilfelle kan den være bedre: Insertion-Sort bruker
 $\Theta(n)$ på sortert input. Beste tilfelle er $\Omega(n)$ uansett, for hvert
 element må leses. Gjennomsnittet er $\Omega(n \lg n)$ som det verste, for en
@@ -69,9 +69,9 @@ tilfeldig permutasjon krever i snitt $\lg n!$ ja/nei-svar å skille fra de
 andre.
 
 <Callout type="warning" title="Snubletråd">
-Grensen gjelder sortering. Skal den smitte over på et annet problem, må vi
+Grensen gjelder sortering. Skal den smitte over på et annet problem, må du
 redusere fra sortering til det problemet, med en reduksjon som koster
-$o(n \lg n)$. Kunne problemet da løses raskere enn $n \lg n$, kunne vi sortert
+$o(n \lg n)$. Kunne problemet da løses raskere enn $n \lg n$, kunne du sortert
 raskere. En reduksjon den andre veien, fra problemet til sortering, sier
 ingenting om hvor vanskelig problemet er.
 </Callout>
@@ -109,16 +109,16 @@ med $O(n)$, som er mindre enn det. Resten må Init stå for.
 Det $i$-ende minste elementet i en tabell har <Term name="Rang">rang</Term>
 $i$. Rang 1 er minimum, rang $n$ maksimum, og medianen har rang
 $\lfloor (n+1)/2 \rfloor$, den nederste av de to midterste når $n$ er partall.
-Sortering og oppslag finner elementet i $\Theta(n \lg n)$, men vi ber om mindre
-enn en sortert tabell, så grensen gjelder ikke. Vi antar at verdiene er
+Sortering og oppslag finner elementet i $\Theta(n \lg n)$, men du ber om mindre
+enn en sortert tabell, så grensen gjelder ikke. Verdiene antas å være
 forskjellige.
 
 Randomized-Select er Quicksort med ett rekursivt kall. Randomized-Partition
 velger en tilfeldig pivot og setter den på plass $q$, og da er pivoten det
 $k = q - p + 1$-ende minste i segmentet. Er $i = k$, er pivoten svaret. Er
-$i < k$, ligger svaret blant de små, og vi søker etter rang $i$ der. Ellers
+$i < k$, ligger svaret blant de små, og du søker etter rang $i$ der. Ellers
 ligger det blant de store, og der har det rang $i - k$, for $k$ elementer er
-allerede mindre. Som i binærsøk stopper vi straks vi treffer, og søker bare
+allerede mindre. Som i binærsøk stopper du straks du treffer, og søker bare
 videre i én av delene.
 
 <CodeBlock
@@ -176,10 +176,20 @@ $T(n) = 2(n/2) - 1 + n = 2n - 1$, og $T(1) = 2 - 1 = 1$ stemmer.
 </Solution>
 </Example>
 
-Pivoten deler ikke på midten hver gang, men i forventning deler den godt nok.
-Læreboka regner ut forventningen og verifiserer med substitusjon, og svaret er
-det samme: <Term name="Forventet kjøretid">forventet</Term> $\Theta(n)$ for
-enhver input. Verste tilfelle er som for Quicksort. Havner pivoten ytterst
+Pivoten deler ikke på midten hver gang. Kall en pivot god når den har rang
+mellom $n/4$ og $3n/4$ i segmentet på $n$ elementer. Halvparten av elementene
+er gode pivoter, så en tilfeldig pivot er god med sannsynlighet minst $1/2$, og
+i forventning trengs høyst to delinger før segmentet har krympet til høyst
+$3/4$ av størrelsen. Hver deling koster høyst lineær tid i segmentet, så
+forventet arbeid er høyst
+
+$$
+2\left(n + \tfrac34 n + \left(\tfrac34\right)^2 n + \cdots\right) = 8n
+$$
+
+Dette betyr at <Term name="Forventet kjøretid">forventet</Term> kjøretid er
+$\Theta(n)$ for enhver input, ettersom regningen bare bruker de tilfeldige
+valgene og ikke rekkefølgen i inputen. Verste tilfelle er som for Quicksort. Havner pivoten ytterst
 hver gang, er $T(n) = T(n-1) + n = \Theta(n^2)$, men det krever uflaks med de
 tilfeldige valgene, og ingen input er mer utsatt enn andre.
 
@@ -247,10 +257,11 @@ som i Randomized-Select: svar, eller ett rekursivt kall på riktig side.
 </Step>
 </Steps>
 
-Garantien ligger i steg 2. Halvparten av gruppemedianene er større enn eller
-lik $x$, og hver av dem har to elementer over seg i sin gruppe, så minst
-$3 \cdot n/10$ elementer er større enn eller lik $x$. Det samme gjelder på den
-andre siden. Det rekursive kallet i steg 3 får derfor høyst $7n/10$ elementer.
+Garantien ligger i steg 2. Halvparten av gruppemedianene, $n/10$ av
+dem, er større enn eller lik $x$. Hver av dem og de to elementene over den i
+gruppen er større enn eller lik $x$, så minst $3 \cdot n/10$ elementer er
+større enn eller lik $x$. På samme måte er minst $3n/10$ elementer mindre enn
+eller lik $x$. Det rekursive kallet i steg 3 får derfor høyst $7n/10$ elementer.
 
 <Figure
   src="/figures/median-av-medianer.svg"
@@ -260,6 +271,9 @@ andre siden. Det rekursive kallet i steg 3 får derfor høyst $7n/10$ elementer.
   height={260}
   caption="Gruppene som kolonner, hver sortert med størst øverst, og ordnet etter median. Medianen av medianene $x$ har minst tre elementer over seg i hver av de høyre kolonnene og tre under seg i hver av de venstre."
 />
+
+Steg 2 er et rekursivt kall på $n/5$ elementer, steg 3 et kall på høyst
+$7n/10$, og gruppesorteringen og Partition koster $\Theta(n)$:
 
 $$
 T(n) \le T(n/5) + T(7n/10) + \Theta(n)
@@ -281,29 +295,30 @@ små verdiene av $n$.
 </Derivation>
 
 Select gir også de $k$ minste elementene i lineær tid: finn elementet med rang
-$k$, del rundt det, og de $k$ minste står til venstre for det. Konstanten i
+$k$ og del rundt det. Da står elementet på plass $k$ med de $k - 1$ mindre til
+venstre for seg, og de $k$ første plassene holder de $k$ minste. Konstanten i
 Select er stor, så i praksis brukes Randomized-Select. Select viser likevel at
 rangering kan gjøres i lineær tid også i verste tilfelle.
 
 ## Stabilitet og Counting-Sort
 
 Den andre veien under grensen er å anta mer om inputen: verdiene er heltall i
-et lite område $0 .. k$. Da trenger vi ikke sammenligne dem. Vi kan bruke dem
+et lite område $0 .. k$. Da trenger du ikke sammenligne dem. Du kan bruke dem
 som indekser.
 
 En sorteringsalgoritme er stabil når like nøkler står i samme
-innbyrdes rekkefølge i output som i input. Det spiller ingen rolle når nøkkelen
-er hele elementet, men elementer bærer ofte mer enn nøkkelen. Sorterer vi
-studenter på karakter, avgjør stabiliteten om de med samme karakter fortsatt
-står alfabetisk. Insertion-Sort og Merge-Sort er stabile slik vi skrev dem: et
-element flyttes bare forbi strengt større, og flettingen tar fra venstre ved
+innbyrdes rekkefølge i output som i input. Stabiliteten spiller ingen rolle når
+nøkkelen er hele elementet, men elementer bærer ofte mer enn nøkkelen. Sorterer
+du studenter på karakter, avgjør stabiliteten om de med samme karakter fortsatt
+står alfabetisk. Insertion-Sort og Merge-Sort er stabile når de skrives slik at
+et element flyttes bare forbi strengt større, og flettingen tar fra venstre ved
 likhet. Quicksort er det ikke, for Partition bytter elementer forbi hverandre.
 
 Counting-Sort teller først hvor mange ganger hver verdi forekommer, $C[v]$. Så
 gjøres tellingen kumulativ, slik at $C[v]$ er antall elementer som er mindre
 enn eller lik $v$. I den sorterte tabellen $B$ fyller $v$-ene plassene fra
 $C[v-1]$ til og med $C[v] - 1$, så den siste $v$-en hører hjemme på plass
-$C[v] - 1$. Til slutt går vi baklengs gjennom $A$: trekk én fra $C[A[j]]$, og
+$C[v] - 1$. Til slutt går du baklengs gjennom $A$: trekk én fra $C[A[j]]$, og
 legg $A[j]$ der. Neste like verdi havner ett hakk til venstre.
 
 <CodeBlock
@@ -384,14 +399,16 @@ Etter pass $i$ er tallene sortert på de $i$ siste sifrene. Det er en invariant,
 og induksjonssteget er stabiliteten: passet ordner tallene etter siffer $i$, og
 to tall med samme siffer beholder rekkefølgen fra før, som var sortert på de
 $i - 1$ lavere sifrene. Det er nøyaktig rekkefølgen de $i$ siste sifrene gir.
-Begge forutsetningene trengs. Starter vi med det mest signifikante sifferet,
+Radix-Sort trenger begge deler: det minst signifikante sifferet først og en
+stabil subrutine. Starter du med det mest signifikante sifferet,
 ødelegger neste pass ordningen fra det forrige, for det sorterer på et mindre
 viktig siffer uten å ta hensyn til det viktigere. Og er subrutinen ustabil,
 mister to tall med likt siffer ordningen fra de lavere sifrene.
 
 Kjøretiden er $d$ pass med $\Theta(n + k)$ hver, altså $\Theta(d(n + k))$. Et
-siffer trenger ikke være et desimalsiffer. Datoer sorteres på dag, så måned,
-så år, med samme argument.
+siffer trenger ikke være et desimalsiffer. Datoer sorteres stabilt på dag, så
+måned, så år. Etter hvert pass er datoene sortert på feltene som er behandlet,
+med samme induksjonssteg som for sifrene.
 
 ## Bucket-Sort
 
@@ -414,9 +431,25 @@ hver bøtte med Insertion-Sort, og sett bøttene etter hverandre.
     return [x for bucket in B for x in bucket]`}
 />
 
-Med uniform fordeling får hver bøtte i forventning ett element, og forventet
-arbeid i Insertion-Sort per bøtte er konstant, så hele sorteringen tar
-forventet $\Theta(n)$. Havner alt i én bøtte, er det Insertion-Sort på hele
+Insertion-Sort på en bøtte med $n_i$ elementer koster $O(n_i^2)$, så det er
+forventningen av $n_i^2$ som avgjør, ikke at bøtta i snitt får ett element. Med
+uniform fordeling havner hvert element i bøtte $i$ med sannsynlighet $1/n$,
+uavhengig av de andre, og da er $E[n_i^2] = 2 - 1/n$. Summert over de $n$
+bøttene er forventet arbeid i Insertion-Sort $O(n)$, så hele sorteringen tar
+forventet $\Theta(n)$.
+
+<Derivation title="Forventningen til $n_i^2$">
+Skriv $n_i = \sum_j X_j$, der $X_j = 1$ når element $j$ havner i bøtte $i$, og
+ellers $0$. Da er $X_j^2 = X_j$, og $X_j$ og $X_k$ er uavhengige for $j \ne k$,
+så
+
+$$
+E[n_i^2] = \sum_j E[X_j^2] + \sum_{j \ne k} E[X_j X_k]
+= n \cdot \tfrac1n + n(n-1) \cdot \tfrac1{n^2} = 2 - \tfrac1n
+$$
+</Derivation>
+
+Havner alt i én bøtte, er det Insertion-Sort på hele
 inputen, $\Theta(n^2)$. Forventningen her er et snitt over tilfeldige inputer,
 altså gjennomsnittstilfellet. Randomized-Select og Randomized-Quicksort har
 forventet kjøretid over sine egne tilfeldige valg, for enhver input, og det er

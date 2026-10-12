@@ -57,7 +57,7 @@ exam:
 formulas:
   - {
       tex: "O(n^a) + \\Omega(n^b) + \\Theta(n^c) = \\Omega(n^b + n^c)",
-      label: "Summer øvre og nedre grenser hver for seg. Står vi igjen med bare en nedre grense, skrives den med $\\Omega$.",
+      label: "Summer øvre og nedre grenser hver for seg. Står bare en nedre grense igjen, skrives den med $\\Omega$.",
       section: "Asymptotisk notasjon",
       id: sum-grenser,
     }
@@ -272,8 +272,8 @@ symbols:
   - { tex: "a", meaning: "Antall rekursive kall i $T(n) = aT(n/b) + f(n)$", section: "Splitt og hersk", formula: masterteoremet, note: "Nivå $i$ i rekursjonstreet har $a^i$ noder av størrelse $n/b^i$." }
   - { tex: "b", meaning: "Faktoren instansen krymper med: hvert kall får $n/b$", section: "Splitt og hersk", formula: masterteoremet, note: "Masterteoremet krever konstanter $a \\ge 1$ og $b > 1$, så $T(n - 1)$ er ikke på formen." }
   - { tex: "f(n)", meaning: "Den drivende funksjonen, arbeidet med å dele og kombinere", section: "Splitt og hersk", formula: masterteoremet }
-  - { tex: "n^{\\log_b a}", meaning: "Vannskillefunksjonen, antall løvnoder i rekursjonstreet", section: "Splitt og hersk", term: "Masterteoremet", formula: log-bytte, id: vannskille, note: "Kjøretiden avgjøres av om $f(n)$ vokser raskere enn den, like raskt eller saktere." }
-  - { tex: "k", meaning: "Eksponenten til $\\lg n$ i tilfelle 2 av masterteoremet, en konstant $k \\ge 0$", section: "Splitt og hersk", formula: masterteoremet, note: "Gir $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$. I simuleringen av rekursjonstreet er $k$ i stedet eksponenten i $f(n) = n^k$." }
+  - { tex: "n^{\\log_b a}", meaning: "Vannskillefunksjonen, antall løvnoder i rekursjonstreet", section: "Splitt og hersk", term: "Masterteoremet", formula: log-bytte, id: vannskille, note: "Kjøretiden avgjøres av om $f(n)$ er polynomisk større, lik opp til en faktor $\\lg^k n$ med $k \\ge 0$ eller polynomisk mindre. Andre $f(n)$ dekkes ikke av masterteoremet." }
+  - { tex: "k", meaning: "Eksponenten til $\\lg n$ i tilfelle 2 av masterteoremet, en konstant $k \\ge 0$", section: "Splitt og hersk", formula: masterteoremet, note: "Gir $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$. I simuleringen av rekursjonstreet er eksponenten i $f(n) = n^d$ en annen størrelse, $d$." }
   - { tex: "\\epsilon", meaning: "Avstanden i tilfelle 1 og 3: $f(n)$ skiller seg fra $n^{\\log_b a}$ med en faktor $n^\\epsilon$", section: "Splitt og hersk", formula: masterteoremet, id: epsilon, note: "En konstant $\\epsilon > 0$. Tilfelle 3 krever i tillegg $a f(n/b) \\le c f(n)$ for en konstant $c < 1$." }
   - { tex: "x", meaning: "Pivoten, splittelementet", section: "Splitt og hersk", term: "Quicksort", note: "Partition bruker det siste elementet, $x = A[r]$. I Select er $x$ medianen av gruppemedianene." }
   - { tex: "q", meaning: "Plassen segmentet deles ved: midten, eller pivotens endelige plass etter Partition", section: "Splitt og hersk" }
@@ -347,7 +347,7 @@ glossary:
     }
   - {
       term: "Beste, verste og gjennomsnittlige tilfelle",
-      definition: "Tre funksjoner av $n$: kjøretiden for den billigste instansen av størrelse $n$, for den dyreste, og middelet over alle. Hvilket tilfelle det gjelder er uavhengig av hvilken asymptotisk operator som brukes på det.",
+      definition: "Tre funksjoner av $n$: kjøretiden for den billigste instansen av størrelse $n$, for den dyreste og middelet over alle. Hvilket tilfelle det gjelder er uavhengig av hvilken asymptotisk operator som brukes på det.",
       section: "Grunnlag",
     }
   - {
@@ -463,7 +463,7 @@ glossary:
     }
   - {
       term: "Masterteoremet",
-      definition: "Løser $T(n) = aT(n/b) + f(n)$ ved å sammenligne den drivende funksjonen $f(n)$ med vannskillefunksjonen $n^{\\log_b a}$. Er $f$ polynomisk mindre, dominerer løvnodene: $\\Theta(n^{\\log_b a})$. Er $f = \\Theta(n^{\\log_b a} \\lg^k n)$ for en konstant $k \\ge 0$, koster alle nivåene like mye: $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$. Er $f$ polynomisk større og regulær, dominerer rota: $\\Theta(f(n))$.",
+      definition: "Løser $T(n) = aT(n/b) + f(n)$ ved å sammenligne den drivende funksjonen $f(n)$ med vannskillefunksjonen $n^{\\log_b a}$. Er $f$ polynomisk mindre, dominerer løvnodene: $\\Theta(n^{\\log_b a})$. Er $f = \\Theta(n^{\\log_b a} \\lg^k n)$ for en konstant $k \\ge 0$, er løsningen $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$. En logaritmisk faktor under vannskillefunksjonen, som $n/\\lg n$, dekkes ikke. Er $f$ polynomisk større og regulær, dominerer rota: $\\Theta(f(n))$.",
       section: "Splitt og hersk",
     }
   - {
@@ -545,7 +545,7 @@ glossary:
     }
   - {
       term: "Komplett binærtre",
-      definition: "Et binærtre der alle indre noder har to barn og alle løvnodene har samme dybde. Med $n$ løvnoder har det $n - 1$ indre noder, og med $n$ noder i alt er høyden $\\lfloor \\lg n \\rfloor$.",
+      definition: "Et binærtre der alle indre noder har to barn og alle løvnodene har samme dybde. Med høyde $h$ har det $2^h$ løvnoder og $2^h - 1$ indre noder, så $n = 2^{h+1} - 1$ noder i alt og $h = \\lfloor \\lg n \\rfloor$.",
       section: "Rotfaste trestrukturer",
     }
   - {
@@ -652,7 +652,7 @@ glossary:
     }
   - {
       term: "Det kontinuerlige ryggsekkproblemet",
-      definition: "Som det binære ryggsekkproblemet, men vi kan ta med en andel mellom 0 og 1 av hver gjenstand og får samme andel av verdien. Løses grådig: fyll sekken etter synkende kilopris $v_i / w_i$, så bare den siste gjenstanden blir delt. $O(n \\lg n)$ med sorteringen.",
+      definition: "Som det binære ryggsekkproblemet, men du kan ta med en andel mellom 0 og 1 av hver gjenstand og får samme andel av verdien. Løses grådig: fyll sekken etter synkende kilopris $v_i / w_i$, så bare den siste gjenstanden blir delt. $O(n \\lg n)$ med sorteringen.",
       section: "Grådighet",
     }
   - {

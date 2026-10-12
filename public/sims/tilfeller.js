@@ -216,8 +216,7 @@ export default function init({ stage, controls, getSize, onResize, signal }) {
     readout.innerHTML =
       `<b>${CASES[caseKey].label.toLowerCase()} tilfelle = ${b.label}(${orderTex})</b>: ` +
       `${caseKey === "best" ? "den billigste instansen" : caseKey === "worst" ? "den dyreste instansen" : "snittet over instansene"} ` +
-      `av størrelse n koster ${b.word} ${orderTex}, opp til en konstant. ` +
-      `Alle ni kombinasjonene er lovlige utsagn.`;
+      `av størrelse n koster ${b.word} ${orderTex}, opp til en konstant.`;
   }
 
   onResize(render);

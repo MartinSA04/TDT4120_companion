@@ -83,7 +83,7 @@ export default {
       let j = i - 1;
       frames.push({
         line: 5,
-        desc: `j = ${j}. Vi går bakover gjennom den sorterte delen.`,
+        desc: `j = ${j}. j går bakover gjennom den sorterte delen.`,
         data: [...a],
         vars: { i, key, j },
         sorted: slice(i),
@@ -123,8 +123,8 @@ export default {
           line: 8,
           desc:
             j >= 0
-              ? `j = ${j}. Vi ser på neste element til venstre.`
-              : `j = -1. Vi er forbi starten av tabellen.`,
+              ? `j = ${j}. j peker på neste element til venstre.`
+              : `j = -1: forbi starten av tabellen.`,
           data: [...a],
           vars: { i, key, j },
           sorted: slice(i),
@@ -138,7 +138,7 @@ export default {
         line: 6,
         desc:
           (j < 0
-            ? `j = -1, så vi er forbi starten av tabellen.`
+            ? `j = -1: forbi starten av tabellen.`
             : `A[${j}] = ${a[j]} er ikke større enn key = ${key}.`) + ` Løkka stopper.`,
         data: [...a],
         vars: { i, key, j },

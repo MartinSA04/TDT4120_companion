@@ -70,7 +70,7 @@ export default {
     });
     snap(linked, {
       line: 7,
-      desc: "delete(x) tar noden ut igjen. Vi står allerede ved x, så ingenting må søkes opp.",
+      desc: "delete(x) tar noden ut igjen. Du står allerede ved x, så ingenting må søkes opp.",
     });
     snap({ ...linked, aNext: "b" }, {
       line: 8,

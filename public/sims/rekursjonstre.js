@@ -1,9 +1,9 @@
 /**
  * Rekursjonstreet nivå for nivå — the picture behind the master theorem
- * (læringsmål C6). For T(n) = aT(n/b) + n^k the tree has a^i nodes of size
- * n/b^i on level i, so the level costs n^k · (a/b^k)^i: a geometric series
+ * (læringsmål C6). For T(n) = aT(n/b) + n^d the tree has a^i nodes of size
+ * n/b^i on level i, so the level costs n^d · (a/b^d)^i: a geometric series
  * that grows, stays flat or shrinks with the depth. Which of the three happens
- * is exactly the case of the theorem, and the reader picks a, b and k and
+ * is exactly the case of the theorem, and the reader picks a, b and d and
  * watches the bars change shape.
  *
  * n is fixed at b^5 so every level is exact (no rounding) and the tree always
@@ -37,7 +37,7 @@ function fmtExp(a, b) {
 export default function init({ stage, controls, getSize, onResize, signal }) {
   let a = 2;
   let b = 2;
-  let k = 1;
+  let d = 1;
 
   const slider = (text, min, max, value, aria, onInput, show) => {
     const label = document.createElement("label");
@@ -71,7 +71,7 @@ export default function init({ stage, controls, getSize, onResize, signal }) {
   controls.append(
     slider("Kall a", 1, 8, a, "Antall rekursive kall a", (v) => (a = v), (v) => String(v)),
     slider("Deling b", 2, 4, b, "Instansen deles på b", (v) => (b = v), (v) => String(v)),
-    slider("Arbeid f(n)", 0, 3, k, "Arbeid per kall, n opphøyd i k", (v) => (k = v), (v) => POW[v]),
+    slider("Arbeid f(n)", 0, 3, d, "Arbeid per kall, n opphøyd i d", (v) => (d = v), (v) => POW[v]),
     readout,
   );
 
@@ -79,7 +79,7 @@ export default function init({ stage, controls, getSize, onResize, signal }) {
     const { w, h } = getSize();
     const n = b ** (LEVELS - 1);
     const costs = [];
-    for (let i = 0; i < LEVELS; i++) costs.push(a ** i * (n / b ** i) ** k);
+    for (let i = 0; i < LEVELS; i++) costs.push(a ** i * (n / b ** i) ** d);
     const maxC = Math.max(...costs);
 
     const padL = 8;
@@ -93,7 +93,7 @@ export default function init({ stage, controls, getSize, onResize, signal }) {
     const rowH = (h - padT - padB) / LEVELS;
     const barH = Math.max(8, Math.min(22, rowH * 0.55));
 
-    const ratio = a / b ** k;
+    const ratio = a / b ** d;
     const caseNo = Math.abs(ratio - 1) < 1e-9 ? 2 : ratio > 1 ? 1 : 3;
     const colour = caseNo === 2 ? "var(--accent)" : caseNo === 1 ? "var(--green)" : "var(--orange)";
 
@@ -128,20 +128,20 @@ export default function init({ stage, controls, getSize, onResize, signal }) {
       `<svg width="100%" height="100%" viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" ` +
       `preserveAspectRatio="none" role="img" aria-hidden="true" style="display:block">${svg}</svg>`;
 
-    const eq = `T(n) = ${a === 1 ? "" : a}T(n/${b}) + ${POW[k]}`;
+    const eq = `T(n) = ${a === 1 ? "" : a}T(n/${b}) + ${POW[d]}`;
     const water = `n<sup>log<sub>${b}</sub> ${a}</sup>`;
     let tail;
     if (caseNo === 1) {
       tail =
-        `er tilfelle 1: nivåkostnaden vokser med faktoren ${a}/${b ** k} nedover, ` +
+        `er tilfelle 1: nivåkostnaden vokser med faktoren ${a}/${b ** d} nedover, ` +
         `så løvnodene dominerer og T(n) = Θ(${water}) = Θ(n${sup(fmtExp(a, b))}).`;
     } else if (caseNo === 2) {
-      const ans = k === 0 ? "lg n" : `${POW[k]} lg n`;
+      const ans = d === 0 ? "lg n" : `${POW[d]} lg n`;
       tail = `er tilfelle 2: alle nivåene koster like mye, og det er log<sub>${b}</sub> n + 1 av dem, så T(n) = Θ(${ans}).`;
     } else {
       tail =
-        `er tilfelle 3: nivåkostnaden krymper med faktoren ${a}/${b ** k} nedover, ` +
-        `så rota dominerer og T(n) = Θ(${POW[k]}).`;
+        `er tilfelle 3: nivåkostnaden krymper med faktoren ${a}/${b ** d} nedover, ` +
+        `så rota dominerer og T(n) = Θ(${POW[d]}).`;
     }
     readout.innerHTML = `<b>${eq}</b> ${tail}`;
   }
