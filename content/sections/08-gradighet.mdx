@@ -28,32 +28,51 @@ det.
 
 ## Grådige valg
 
-En grådig algoritme for et optimeringsproblem gjør et valg $c$, krymper
-instansen til det som er igjen etter valget, løser den delinstansen og setter
-$c$ og delløsningen sammen. Valget er grådig når det er det beste lovlige valget
-sett helt lokalt, som å ta med mest mulig av den dyreste gjenstanden eller å
-velge den aktiviteten som slutter først. Valget tas før delinstansen er løst, så
-algoritmen kan ikke se om det lønner seg.
+Du får punktene $x_1 \le x_2 \le \cdots \le x_n$ på tallinja, og skal dekke dem
+med færrest mulig lukkede intervaller med lengde 1. Et intervall må dekke $x_1$,
+og det er ingen punkter til venstre for $x_1$. Legg derfor intervallet
+$[x_1, x_1 + 1]$, som dekker $x_1$ og går lengst til høyre. Fjern punktene det
+dekker, og gjenta med resten. Punktene er sortert, så algoritmen tar
+$\Theta(n)$ tid.
 
+En algoritme som velger slik, er grådig. Den gjør et valg $c$, her intervallet
+$[x_1, x_1 + 1]$, og krymper instansen til det som er igjen etter valget, her
+punktene til høyre for $x_1 + 1$. Så løser den delinstansen og setter $c$ og
+delløsningen sammen. Valget er det beste lovlige valget sett helt lokalt, og det
+tas før delinstansen er løst, så algoritmen kan ikke se om det lønner seg.
 Dynamisk programmering som prøver alle valgene, gir også riktig svar på et
-problem som kan løses grådig, bare langsommere. For at den grådige algoritmen
-skal være riktig, må du vise grådighetsegenskapen og optimal delstruktur.
+problem som kan løses grådig, bare langsommere.
+
+For at den grådige algoritmen skal være riktig, må det første valget være trygt.
 
 <Statement kind="definition" name="Grådighetsegenskapen">
 Det finnes en optimal løsning som tar det første grådige valget.
 </Statement>
 
-Grådighetsegenskapen sier at det første valget er trygt. Det ødelegger ikke
-muligheten for en optimal løsning, så lenge resten løses riktig. Den sier ingenting
-om valgene etter det første. Til det trengs
+Intervallproblemet har grådighetsegenskapen. La $I$ være intervallet som dekker
+$x_1$ i en optimal løsning. $I$ starter i $x_1$ eller til venstre for det, så
+det slutter i $x_1 + 1$ eller tidligere. Flytt $I$ til $[x_1, x_1 + 1]$. Det
+flyttede intervallet dekker fortsatt $x_1$ og alle punktene $I$ dekket til høyre
+for $x_1$. Løsningen har like mange intervaller og tar det grådige valget.
+
+Grådighetsegenskapen sier ingenting om valgene etter det første. Til det trengs
 <Term name="Optimal delstruktur">optimal delstruktur</Term>: det grådige valget
 satt sammen med en optimal løsning på delinstansen som er igjen, gir en optimal
-løsning. Da er delinstansen et problem av samme form som skal løses optimalt, og
-grådighetsegenskapen gjelder der også. Med induksjon over størrelsen på
-instansen er alle de grådige valgene trygge. Mangler grådighetsegenskapen, kan
-det første valget gjøre en optimal løsning umulig. Mangler optimal delstruktur,
-er det ikke sikkert at en optimal løsning på delinstansen gir en optimal løsning
-sammen med valget.
+løsning. I intervallproblemet tar du den optimale løsningen som har
+$[x_1, x_1 + 1]$. De andre intervallene i den dekker punktene til høyre for
+$x_1 + 1$, så de er minst like mange som i en optimal løsning på delinstansen.
+Bytt dem ut med en optimal løsning på delinstansen. Antallet intervaller øker
+ikke, så løsningen er fortsatt optimal.
+
+Delinstansen er et problem av samme form, så grådighetsegenskapen gjelder der
+også, og optimal delstruktur sier at det holder å løse den optimalt. Med
+induksjon over størrelsen på instansen er alle de grådige valgene trygge.
+
+<Callout title="Når grådighet er riktig">
+En grådig algoritme er riktig når problemet har grådighetsegenskapen og optimal
+delstruktur. Grådighetsegenskapen gjør det første valget trygt, og optimal
+delstruktur gir med induksjon at alle valgene er trygge.
+</Callout>
 
 Læreboka gir en oppskrift i tre trinn.
 
@@ -69,40 +88,24 @@ Vis at det grådige valget sammen med en optimal løsning på delinstansen gir e
 </Step>
 </Steps>
 
-Grådighetsegenskapen vises som regel med et
-<Term name="Utvekslingsargument">utvekslingsargument</Term>. Start med en
-vilkårlig optimal løsning. Bytt ut ett av valgene i den med det grådige valget,
-og vis at løsningen fortsatt er lovlig og ikke blir dårligere. Da finnes en
-optimal løsning med det grådige valget. Et annet argument heter forsprang (greedy
-stays ahead): du bygger en grådig og en vilkårlig løsning ett valg om gangen og
-viser at den grådige aldri ligger bak. Optimal delstruktur vises som i dynamisk
-programmering: var resten ikke løst optimalt, kunne den byttes ut med noe bedre,
-og hele løsningen ble bedre. Å vise at et grådig valg ikke er trygt, er lettere.
-Ett moteksempel holder.
+Intervallproblemet følger oppskriften. Valget etterlater bare punktene til høyre
+for $x_1 + 1$, flyttingen av $I$ til $[x_1, x_1 + 1]$ viser
+grådighetsegenskapen, og byttet av de andre intervallene mot en optimal løsning
+på delinstansen viser optimal delstruktur.
 
-<Example title="Punkter dekket av intervaller">
-Du får punktene $x_1 \le x_2 \le \cdots \le x_n$ på tallinja, og skal dekke dem
-med færrest mulig lukkede intervaller med lengde 1. Finn en grådig algoritme, og
-vis at den gir en optimal løsning.
+Flyttingen av $I$ er et
+<Term name="Utvekslingsargument">utvekslingsargument</Term>, den vanlige måten å
+vise grådighetsegenskapen på. Start med en vilkårlig optimal løsning. Bytt ut
+ett av valgene i den med det grådige valget, og vis at løsningen fortsatt er
+lovlig og ikke blir dårligere. Da finnes en optimal løsning med det grådige
+valget. Å vise at et grådig valg ikke er trygt, er lettere. Ett moteksempel
+holder.
 
-<Solution>
-Et intervall må dekke $x_1$, og det er ingen punkter til venstre for $x_1$. Det
-grådige valget er $[x_1, x_1 + 1]$, intervallet som dekker $x_1$ og går lengst
-til høyre. Fjern punktene det dekker, og gjenta med resten.
-
-Grådighetsegenskapen: la $I$ være intervallet som dekker $x_1$ i en optimal
-løsning. $I$ starter i $x_1$ eller til venstre for det, så det slutter i
-$x_1 + 1$ eller tidligere. Flytt $I$ til $[x_1, x_1 + 1]$. Det dekker fortsatt
-$x_1$ og alle punktene $I$ dekket til høyre for $x_1$. Løsningen har like mange
-intervaller og tar det grådige valget.
-
-Optimal delstruktur: punktene til høyre for $x_1 + 1$ er en instans av samme
-problem. Var de dekket med flere intervaller enn nødvendig, kunne de dekkes
-bedre, og hele løsningen ble bedre.
-
-<Answer>Legg et intervall fra det første punktet som ikke er dekket, fjern punktene det dekker, og gjenta. Punktene er sortert, så det tar $\Theta(n)$.</Answer>
-</Solution>
-</Example>
+<Callout title="Utvekslingsargument">
+Grådighetsegenskapen vises ved å bytte ut et valg i en optimal løsning med det
+grådige valget uten å gjøre løsningen dårligere. At et valg ikke er trygt, viser
+du med ett moteksempel.
+</Callout>
 
 <Example label="Eksamensoppgave" title="Grådighetsegenskapen er ikke nok">
 <ExamRef id="2018-aug-kont" task="4" />
@@ -133,12 +136,13 @@ $W$.
 Det grådige valget er gjenstanden med høyest kilopris $v_i / w_i$. Ta med mest
 mulig av den, så mest mulig av den med nest høyest kilopris, og fortsett til
 sekken er full. Bare den siste gjenstanden blir delt. Grådighetsegenskapen vises
-med et utvekslingsargument. Tar en løsning med mindre enn mulig av gjenstanden
-med høyest kilopris, ligger det noe med lavere kilopris i sekken. Bytt ut like
-mange kilo av det med den beste gjenstanden, og totalverdien øker eller står
-stille. Optimal delstruktur: kapasiteten som er igjen, må fylles optimalt med
-det som er igjen av gjenstandene. Sorteringen etter kilopris tar
-$O(n \lg n)$, og resten er én gjennomgang.
+med et utvekslingsargument. Tar en løsning mindre enn mulig av gjenstanden med
+høyest kilopris, har sekken tom plass eller noe med samme eller lavere kilopris.
+Fyll den tomme plassen, eller bytt ut like mange kilo av det andre, med den
+beste gjenstanden, og totalverdien øker eller står stille. Optimal delstruktur:
+kapasiteten som er igjen, må fylles optimalt med det som er igjen av
+gjenstandene. Sorteringen etter kilopris tar $O(n \lg n)$, og resten er én
+gjennomgang.
 
 For det binære problemet er det samme valget ikke trygt. Med $W = 50$ og
 gjenstandene under har gjenstand 1 høyest kilopris.
@@ -154,11 +158,18 @@ gjenstandene under har gjenstand 1 høyest kilopris.
 
 Velger du etter kilopris, tar du 1 og 2, til 160, og da får ikke 3 plass. Det beste er
 2 og 3, til 220. I det kontinuerlige problemet tar den grådige algoritmen 1, 2 og
-to tredjedeler av 3, til $60 + 100 + 80 = 240$, og det er optimalt. I det binære
-problemet kan det bli tom plass i sekken, og den senker verdien per kilo for
-hele lasten. For å avgjøre om en gjenstand skal være med, må du sammenligne den
-beste løsningen med gjenstanden og den beste uten, og det er dynamisk
-programmering.
+to tredjedeler av 3, til $60 + 100 + 80 = 240$, og det er optimalt.
+Utvekslingsargumentet virker ikke i det binære problemet, fordi en gjenstand bare
+kan byttes ut hel. Bytter du ut 3 med 1 i den beste løsningen, står 20 kilo tomt,
+og verdien synker fra 220 til 160. For å avgjøre om en gjenstand skal være med,
+må du sammenligne den beste løsningen med gjenstanden og den beste uten, og
+den sammenligningen er dynamisk programmering.
+
+<Callout title="Grådig etter kilopris">
+Det kontinuerlige ryggsekkproblemet løses grådig ved å fylle sekken etter
+synkende kilopris. I det binære er valget ikke trygt, fordi gjenstandene ikke kan
+deles og sekken kan få tom plass.
+</Callout>
 
 ## Aktivitetsutvalg
 
@@ -170,33 +181,34 @@ selection) er å velge flest mulig aktiviteter der ingen to overlapper.
 Aktivitetene er sortert etter sluttid, $f_1 \le f_2 \le \cdots \le f_n$.
 
 Velger du en aktivitet $a_k$, deler den resten i to delinstanser: aktivitetene
-som slutter før $a_k$ starter, og de som starter etter at $a_k$ slutter. Det gir
-en løsning med dynamisk programmering som prøver hver $a_k$. Det grådige valget
-er $a_1$, aktiviteten som slutter først, og er det trygt, trenger du ikke prøve
-de andre. Aktiviteten $a_1$ lar rommet være ledig for flest mulig av de andre,
-og siden ingen aktivitet slutter før $a_1$ starter, er bare én delinstans igjen,
-aktivitetene som starter etter at $a_1$ slutter.
+som slutter ved $s_k$ eller før, og de som starter ved $f_k$ eller senere. Den
+delingen gir en løsning med dynamisk programmering som prøver hver $a_k$. Det
+grådige valget er $a_1$, aktiviteten som slutter først, og er det valget trygt,
+trenger du ikke prøve de andre. Aktiviteten $a_1$ lar rommet være ledig for
+flest mulig av de andre, og siden ingen aktivitet slutter før $a_1$ starter, er
+bare én delinstans igjen, aktivitetene som starter ved $f_1$ eller senere.
 
 Grådighetsegenskapen vises med et utvekslingsargument. La $A$ være en optimal
 løsning, og la $a_j$ være aktiviteten i $A$ som slutter først. Bytt ut $a_j$ med
 $a_1$. De andre aktivitetene i $A$ overlapper ikke $a_j$, og siden $a_j$ slutter
 først, starter de ved $f_j$ eller senere. Siden $f_1 \le f_j$, slutter $a_1$
 før eller idet de starter, så ingen av dem overlapper $a_1$. Løsningen er like stor og inneholder
-$a_1$. Optimal delstruktur: aktivitetene som starter etter $f_1$, er en instans
-av samme problem og må velges optimalt.
+$a_1$. Optimal delstruktur: aktivitetene som starter ved $f_1$ eller senere, er
+en instans av samme problem og må velges optimalt.
 
 Recursive-Activity-Selector får indeksen $k$ til den sist valgte aktiviteten, og
-leter fra $k + 1$ etter den første som ikke overlapper $a_k$. Den tas
-med, og resten løses rekursivt fra den. Det første kallet har $k = 0$, med en
-tenkt aktivitet $a_0$ der $f_0 = 0$. Greedy-Activity-Selector gjør det samme med
-en løkke. I Python står $a_0$ på plass 0 i listene `s` og `f`, så aktivitet $i$
-har indeks `i`, og `s[0]` brukes ikke.
+leter fra $k + 1$ etter den første aktiviteten $a_m$ som ikke overlapper $a_k$.
+Aktivitetene er sortert, så $f_m \ge f_k$, og da overlapper $a_m$ ikke $a_k$
+nøyaktig når $s_m \ge f_k$.
+Aktiviteten $a_m$ tas med, og resten løses rekursivt fra den. Det første kallet
+har $k = 0$, med en tenkt aktivitet $a_0$ der $f_0 = 0$. Greedy-Activity-Selector
+gjør det samme med en løkke.
 
 <CodeBlock
   id="aktivitetsutvalg"
   title="aktivitetsutvalg.py"
   lang="python"
-  code={`def recursive_activity_selector(s, f, k, n):
+  code={`def recursive_activity_selector(s, f, k, n):  # plass 0 er a0, med f[0] = 0
     m = k + 1
     while m <= n and s[m] < f[k]:
         m = m + 1
@@ -218,12 +230,18 @@ def greedy_activity_selector(s, f, n):
   src="/steppers/aktivitetsutvalg.js"
   codeId="aktivitetsutvalg"
   title="Greedy-Activity-Selector"
-  caption="Én rad per aktivitet, sortert etter sluttid, med aktiviteten tegnet fra $s_i$ til $f_i$. Den stiplede linjen er $f[k]$, sluttiden til den sist valgte. En aktivitet som starter ved eller etter linjen, tas med og blir grønn. Stokk om for nye aktiviteter."
+  caption="Én rad per aktivitet, sortert etter sluttid, med aktiviteten tegnet fra $s_i$ til $f_i$. Den stiplede linjen er $f[k]$, sluttiden til den sist valgte aktiviteten. Grønne aktiviteter er valgt, og grå er hoppet over."
   height={320}
 />
 
 Hver aktivitet sjekkes én gang, så begge versjonene tar $\Theta(n)$ tid når
 aktivitetene er sortert, og $O(n \lg n)$ med sorteringen.
+
+<Callout title="Aktivitetsutvalg">
+Velg aktiviteten som slutter først, og gjenta med aktivitetene som starter ved
+sluttiden dens eller senere. Greedy-Activity-Selector tar $\Theta(n)$ tid når
+aktivitetene er sortert etter sluttid.
+</Callout>
 
 <Example label="Eksamensoppgave" title="Videokanaler med målgrupper">
 <ExamRef id="2019-aug-kont" task="9" />
@@ -241,8 +259,8 @@ første, og gå gjennom resten i rekkefølge. Ta med en kanal når den ikke over
 den sist valgte, og hopp over den ellers. Regnes begge endene av et
 aldersintervall med, overlapper en kanal for 25 til 40 år med en for 10 til 25
 år, så testen er at den nedre grensen er større enn den øvre grensen til den
-sist valgte. Utvekslingsargumentet over viser at kanalen med lavest øvre grense
-alltid kan være med.
+sist valgte. Utvekslingsargumentet for aktivitetsutvalg viser at kanalen med
+lavest øvre grense alltid kan være med.
 
 <Answer>Som Greedy-Activity-Selector: sorter etter øvre aldersgrense, og velg hver kanal som ikke overlapper den sist valgte. $O(n \lg n)$ med sorteringen.</Answer>
 </Solution>
@@ -288,13 +306,8 @@ $n - 1$ runder er ett tre igjen, og det er kodetreet.
 Valget er grådig. Å slå sammen to trær legger én bit til kodeordet for hvert
 tegn i dem, så sammenslåingen øker $B(T)$ med summen av frekvensene deres, og
 Huffman velger den billigste. Derfor er $B(T)$ også summen av frekvensene i alle
-de indre nodene.
-
-I Python er et tre et tegn eller et par `(venstre, høyre)`, og `C` er en
-ordbok fra tegn til frekvens. Køen holder tupler `(frekvens, nummer, tre)`, og
-`heapq` sammenligner tupler element for element. Nummeret fra `tie` avgjør når
-frekvensene er like, så to trær blir aldri sammenlignet. `decode` er dekodingen
-over.
+de indre nodene. Med to tegn er det én indre node, begge kodeordene har én bit,
+og $B(T)$ er summen av de to frekvensene.
 
 <CodeBlock
   id="huffman"
@@ -303,14 +316,14 @@ over.
   code={`import heapq
 from itertools import count
 
-def huffman(C):
-    tie = count()
+def huffman(C):  # C er en ordbok fra tegn til frekvens
+    tie = count()  # løpenummer for like frekvenser, så trær sammenlignes aldri
     Q = [(freq, next(tie), c) for c, freq in C.items()]
     heapq.heapify(Q)
     for i in range(1, len(C)):
         fx, _, x = heapq.heappop(Q)
         fy, _, y = heapq.heappop(Q)
-        z = (x, y)
+        z = (x, y)  # et tre er et tegn eller et par (venstre, høyre)
         heapq.heappush(Q, (fx + fy, next(tie), z))
     return Q[0][2]
 
@@ -333,19 +346,28 @@ def decode(T, bits):
   src="/steppers/huffman.js"
   codeId="huffman"
   title="Huffman"
-  caption="Køen $Q$ tegnet som en skog, sortert etter frekvens med den laveste til venstre. Løvnodene er tegn med frekvens, og de indre nodene har summen av frekvensene under seg. De to trærne Extract-Min gir, er oransje, og den nye noden $z$ er fylt. Til slutt får kantene 0 og 1, og kodeordene står under løvnodene. Stokk om for nye frekvenser."
+  caption="Køen $Q$ tegnet som en skog, sortert etter frekvens med den laveste til venstre. Løvnodene er tegn med frekvens, og en indre node har summen av frekvensene under seg. De to trærne Extract-Min gir, er oransje, den nye noden $z$ er fylt, og i det ferdige treet står kodeordene under løvnodene."
   height={300}
 />
 
 Med en binær min-haug bygges køen i $O(n)$ tid, og hver av de $n - 1$ rundene
 gjør tre køoperasjoner på $O(\lg n)$. Til sammen er det $O(n \lg n)$.
 
+<Callout title="Huffmans algoritme">
+Huffman slår sammen de to trærne med lavest frekvens $n - 1$ ganger, på
+$O(n \lg n)$ tid med en binær min-haug. Kostnaden $B(T)$ er summen av
+frekvensene i de indre nodene.
+</Callout>
+
 ### Hvorfor koden er optimal
 
-Grådighetsegenskapen: la $x$ og $y$ være de to tegnene med lavest frekvens. Da
-finnes et optimalt kodetre der $x$ og $y$ er søsken på største dybde. Ta et
-optimalt tre $T$, og la $a$ og $b$ være søsken på største dybde. Bytt plass på
-$x$ og $a$, og kall det nye treet $T_1$. I $B(T)$ står
+Står et tegn ett nivå dypere, blir kodeordet én bit lengre, og den kodede
+teksten blir like mange bits lengre som tegnet har frekvens. De sjeldneste
+tegnene hører derfor hjemme nederst. Grådighetsegenskapen: la $x$ og $y$ være
+de to tegnene med lavest frekvens. Da finnes et optimalt kodetre der $x$ og $y$
+er søsken på største dybde. Ta et optimalt tre $T$, og la $a$ og $b$ være
+søsken på største dybde. Bytt plass på $x$ og $a$, og kall det nye treet $T_1$.
+I $B(T)$ står
 $x.\mathit{freq}\, d_T(x) + a.\mathit{freq}\, d_T(a)$, og i $B(T_1)$ står
 $x.\mathit{freq}\, d_T(a) + a.\mathit{freq}\, d_T(x)$. Alle andre ledd er like,
 så kostnaden synker med
@@ -369,8 +391,14 @@ $$
 
 Tillegget avhenger ikke av $T'$, så blant trærne der $x$ og $y$ er søsken, er
 $T$ optimalt når $T'$ er det. Grådighetsegenskapen sier at et av disse trærne er
-optimalt blant alle, så $T$ er optimalt. Etter å ha slått sammen $x$ og $y$ løser Huffman nettopp det mindre problemet der $z$
-er ett tegn.
+optimalt blant alle, så $T$ er optimalt. Etter å ha slått sammen $x$ og $y$
+løser Huffman nettopp det mindre problemet der $z$ er ett tegn.
+
+<Callout title="Optimal kode">
+Det finnes et optimalt kodetre der de to sjeldneste tegnene er søsken nederst,
+og etter sammenslåingen løser Huffman et mindre problem av samme form. Derfor
+er treet Huffman bygger, optimalt.
+</Callout>
 
 <Example label="Eksamensoppgave" title="Hvilke trær er huffmantrær">
 <ExamRef id="2024-des" task="8" />
@@ -416,6 +444,6 @@ korrekt huffmantre i figur 1, men det kan være flere.
 - Grådighetsegenskapen sier at det finnes en optimal løsning som tar det første grådige valget. Sammen med optimal delstruktur gir induksjon at alle de grådige valgene er trygge.
 - Grådighetsegenskapen vises med et utvekslingsargument: bytt ut et valg i en optimal løsning med det grådige uten å gjøre løsningen dårligere. Ett moteksempel viser at et valg ikke er trygt.
 - Det kontinuerlige ryggsekkproblemet løses ved å fylle sekken etter synkende kilopris, $O(n \lg n)$. Det binære løses ikke slik, for gjenstanden med høyest kilopris kan etterlate tom plass i sekken.
-- Aktivitetsutvalg: velg aktiviteten som slutter først, og gjenta med dem som starter etter at den slutter. $\Theta(n)$ når aktivitetene er sortert etter sluttid.
+- Aktivitetsutvalg: velg aktiviteten som slutter først, og gjenta med dem som starter ved sluttiden dens eller senere. $\Theta(n)$ når aktivitetene er sortert etter sluttid.
 - Huffman slår sammen de to trærne med lavest frekvens $n - 1$ ganger, $O(n \lg n)$ med en binær min-haug. Kostnaden $B(T)$ er summen av frekvensene i de indre nodene.
 </KeyTakeaways>

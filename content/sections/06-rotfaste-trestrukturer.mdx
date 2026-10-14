@@ -34,9 +34,12 @@ Et fritt tre er en sammenhengende graf uten sykler. Det har nøyaktig én sti
 mellom hvert par av noder, og $|E| = |V| - 1$. Velger du ut én node som rot,
 får du et rotfast tre, og da har kantene retning: rota har ingen forelder,
 hver annen node har nøyaktig én, og nodene rett under en node er barna dens.
-En node uten barn er en løvnode, og de andre er indre noder. Dybden til en
-node er antall kanter opp til rota, og høyden $h$ til treet er den største
-dybden. Deltreet med rot $x$ er $x$ og alt under den.
+
+Treet i figur 1 har rota 7. Barna til 7 er 5 og 6, og barna til 5 er 1, 2, 3
+og 4. En node uten barn er en løvnode, som 1 og 6, og de andre er indre
+noder, her 5 og 7. Dybden til en node er antall kanter opp til rota, så 1 har
+dybde 2. Høyden $h$ til treet er den største dybden, her 2. Deltreet med rot
+$x$ er $x$ og alt under den, så deltreet med rot 5 har fem noder.
 
 Et binærtre har to barneposisjoner per node, venstre og høyre, og en av dem
 kan stå tom. Du vet altså hvilket barn som mangler. Et <Term name="Komplett binærtre">komplett binærtre</Term>
@@ -82,6 +85,11 @@ er større. Hver node besøkes én gang, så det tar $\Theta(n)$. Preorder og
 postorder skriver ut noden før eller etter de to rekursive kallene i stedet
 for mellom dem.
 
+<Callout title="Inorder-Tree-Walk">
+Inorder-Tree-Walk skriver ut nøklene i et binært søketre i sortert
+rekkefølge, på $\Theta(n)$.
+</Callout>
+
 Tree-Search sammenligner nøkkelen $k$ med nøkkelen i $x$. Er de like, er $x$
 svaret. Er $k$ mindre, kan den bare ligge i venstre deltre, så du søker videre
 der, ellers i høyre. Treffer du nil, finnes ikke $k$. Ingenting skjer etter det
@@ -125,7 +133,7 @@ def inorder_tree_walk(x):
   src="/steppers/binaert-soketre.js"
   codeId="binaert-soketre"
   title="Tree-Insert og Inorder-Tree-Walk"
-  caption="Nøklene settes inn i den rekkefølgen de står i raden under. Hver node tegnes med nøkkelens plass i sortert rekkefølge som vannrett posisjon, så venstre deltre ligger til venstre for noden. Etter innsettingene skriver Inorder-Tree-Walk ut nøklene, og grønt er skrevet ut. Stokk om for å se hvordan rekkefølgen bestemmer høyden."
+  caption="Et binært søketre bygd med Tree-Insert av nøklene i raden under, i den rekkefølgen de står. Vannrett posisjon er nøkkelens plass i sortert rekkefølge. Rødt er $x$ eller den nye noden, oransje er $y$, og grønt er skrevet ut av Inorder-Tree-Walk."
   height={320}
 />
 
@@ -177,10 +185,11 @@ kan kobles ut på samme måte og settes inn der $z$ sto. Tree-Delete følger ogs
   ]}
   align={["left", "left"]}
   rowHeader={false}
-  caption="Alt unntatt traverseringen følger én sti i treet, og koster derfor høyden."
+  caption="Alt unntatt traverseringen følger én sti i treet, og koster derfor $O(h)$."
 />
 
-Alt avhenger av høyden, og høyden avhenger av innsettingsrekkefølgen. Settes
+Alle operasjonene unntatt traverseringen koster altså $O(h)$, og høyden
+avhenger av innsettingsrekkefølgen. Settes
 $1, 2, \ldots, 7$ inn i stigende rekkefølge, blir hver ny nøkkel høyre barn
 av den forrige, og treet er en kjede med høyde $n - 1$. Da koster søk
 $\Theta(n)$, som i en lenket liste. Settes de samme nøklene inn i rekkefølgen
@@ -195,11 +204,26 @@ $4, 2, 6, 1, 3, 5, 7$, er treet komplett med høyde $\lfloor \lg n \rfloor$.
   caption="De samme sju nøklene i to innsettingsrekkefølger. Sortert input gir høyde $n - 1$, og søk koster $\Theta(n)$. Rekkefølgen til høyre fyller treet nivå for nivå og gir høyde $\lfloor \lg n \rfloor$."
 />
 
-Er innsettingsrekkefølgen en tilfeldig permutasjon, er forventet høyde
-$\Theta(\lg n)$, og alle operasjonene er forventet $O(\lg n)$. Verste tilfelle
-er fortsatt lineært. Det finnes søketrær som balanserer seg selv etter hver
-innsetting og sletting i logaritmisk tid, for eksempel rød-svarte trær, og de
-garanterer $h = \Theta(\lg n)$.
+Med en tilfeldig innsettingsrekkefølge finner du den forventede dybden ved å
+telle sammenligninger. Når $z$ settes inn, sammenlignes den med hver node på stien fra rota ned til
+forelderen, og den stien har like mange noder som dybden $z$ får. Summen av
+dybdene er altså antall sammenligninger i hele byggingen. Rota deler de senere
+nøklene i mindre og større, og hvert deltre deler sine videre på samme måte.
+Det er de samme sammenligningene som Quicksort gjør når pivoten i hvert segment
+er den nøkkelen som ble satt inn først. I en tilfeldig permutasjon er den
+pivoten tilfeldig, og da gjør Quicksort forventet $\Theta(n \lg n)$
+sammenligninger. Snittet av dybdene er derfor forventet $\Theta(\lg n)$, og
+det er kostnaden til et søk etter en tilfeldig nøkkel. Høyden er den største
+dybden, og en finere regning viser at også forventet høyde er
+$\Theta(\lg n)$. Verste tilfelle er fortsatt lineært. Det finnes søketrær som balanserer seg selv etter hver innsetting og
+sletting i logaritmisk tid, for eksempel rød-svarte trær, og de garanterer
+$h = \Theta(\lg n)$.
+
+<Callout title="Høyden til et søketre">
+Søk, innsetting, etterfølger og sletting koster $O(h)$. Sortert
+innsettingsrekkefølge gir $h = n - 1$, en tilfeldig rekkefølge gir forventet
+$h = \Theta(\lg n)$, og balanserte søketrær garanterer $h = \Theta(\lg n)$.
+</Callout>
 
 <Example label="Eksamensoppgave" title="Tree-Insert og Inorder-Tree-Walk">
 <ExamRef id="2022-des" task="8" />
@@ -279,9 +303,6 @@ $$
 \end{aligned}
 $$
 
-Med indekser fra 0, som i Python, blir barna $2i + 1$ og $2i + 2$ og
-forelderen $\lfloor (i - 1)/2 \rfloor$. Koden under bruker det.
-
 <Statement kind="definition" name="Haugegenskapen">
 I en maks-haug er $A[\text{Parent}(i)] \ge A[i]$ for hver node $i$ unntatt
 rota. Det største elementet står i rota, og hvert deltre er selv en maks-haug.
@@ -309,15 +330,17 @@ Node $i$ har et venstre barn bare når $2i \le n$, så nodene fra
 $\lfloor n/2 \rfloor + 1$ til $n$ har ingen barn. De er løvnoder og dermed
 maks-hauger alene. <Term name="Build-Max-Heap" /> kaller Max-Heapify på de indre nodene
 fra $\lfloor n/2 \rfloor$ og ned til 1, nedenfra og opp i treet. Når turen
-kommer til $i$, er deltrærne under $i$ allerede reparert, så forutsetningen
-for Max-Heapify holder. Det er induksjon på størrelsen til deltreet.
+kommer til $i$, er barna $2i$ og $2i + 1$ løvnoder eller allerede behandlet,
+for de har høyere numre. Begge deltrærne under $i$ er da maks-hauger, så forutsetningen
+for Max-Heapify holder, og etter kallet er også deltreet med rot $i$ en
+maks-haug.
 
 <CodeBlock
   id="build-max-heap"
   title="build_max_heap.py"
   lang="python"
   code={`def max_heapify(A, i, size):
-    l, r = 2 * i + 1, 2 * i + 2
+    l, r = 2 * i + 1, 2 * i + 2  # indekser fra 0: rota er A[0]
     m = i
     if l < size and A[l] > A[m]:
         m = l
@@ -336,11 +359,11 @@ def build_max_heap(A, n):
   src="/steppers/build-max-heap.js"
   codeId="build-max-heap"
   title="Build-Max-Heap"
-  caption="Tabellen $A$ tegnet som tre og som celler. Stiplede noder har Build-Max-Heap ikke nådd ennå. Hvert kall til Max-Heapify lar $A[i]$ synke: sammenlign med barna, bytt med det største, og fortsett der det mindre elementet havnet."
+  caption="Tabellen $A$ tegnet som tre og som celler, med indekser fra 0 som i koden. Stiplede noder har Build-Max-Heap ikke nådd ennå. Rødt er noden Max-Heapify står på eller de to som bytter. Barna den sammenlignes med er oransje, og det største av dem er fylt."
   height={300}
 />
 
-$\lfloor n/2 \rfloor$ kall som hvert koster $O(\lg n)$, gir $O(n \lg n)$. Det
+$\lfloor n/2 \rfloor$ kall til Max-Heapify som hvert koster $O(\lg n)$, gir $O(n \lg n)$. Det
 er riktig, men ikke stramt, for nesten alle kallene er langt nede i treet, der
 det er lite å synke. Høyden til en node er høyden til deltreet med noden som
 rot, og en node med høyde $k$ synker høyst $k$ steg. Følger du venstre barn $k$
@@ -365,7 +388,7 @@ For $|x| < 1$ er $\sum_{k \ge 0} k x^k = x/(1 - x)^2$. Med $x = 1/2$ er summen
 $(1/2)/(1/4) = 2$, så $T(n) = O(2n) = O(n)$.
 </Derivation>
 
-<Callout type="warning" title="Snubletråd">
+<Callout type="warning" title="Bygging mot innsetting">
 Build-Max-Heap er ikke det samme som $n$ kall til Max-Heap-Insert, og det
 koster ikke det samme. Innsetting lar det nye elementet stige fra bunnen, og
 settes elementene inn i stigende rekkefølge, stiger hvert av dem helt til
@@ -418,6 +441,7 @@ def max_heap_increase_key(A, i, key):
     if key < A[i]:
         raise ValueError("new key is smaller")
     A[i] = key
+    # indekser fra 0: forelderen til i er (i - 1) // 2
     while i > 0 and A[(i - 1) // 2] < A[i]:
         A[i], A[(i - 1) // 2] = A[(i - 1) // 2], A[i]
         i = (i - 1) // 2
@@ -449,7 +473,9 @@ legger det bakerst, $n$ ganger, og bruker $\Theta(n)$ per plukk.
 <Term name="Heapsort" /> gjør det samme med en maks-haug som usortert del, så
 hvert plukk er en Extract-Max. Bygg haugen av hele $A$. Så, for $i$ fra $n$
 ned til 2: bytt rota $A[1]$ med $A[i]$, minsk haugstørrelsen med én og kall
-Max-Heapify på rota. Invarianten er at $A[i+1 .. n]$ er de $n - i$ største
+Max-Heapify på rota.
+
+Invarianten er at $A[i+1 .. n]$ er de $n - i$ største
 elementene, sortert, og at $A[1 .. i]$ er en maks-haug. Rota er det største
 elementet i $A[1 .. i]$, så byttet legger det på plass $i$, rett foran de
 $n - i$ elementene som allerede er sortert. Etter byttet er bare den nye rota
@@ -473,15 +499,23 @@ plass: haugen ligger foran i tabellen, og den sorterte delen vokser bakfra.
   src="/steppers/heapsort.js"
   codeId="heapsort"
   title="Heapsort"
-  caption="Haugen er bygd på forhånd. I hver runde bytter rota plass med det siste elementet i haugen, haugen krymper med én, og den nye rota synker. Grønt er utenfor haugen og ferdig sortert."
+  caption="Tabellen $A$ tegnet som tre og som celler, med indekser fra 0 som i koden og haugen bygd på forhånd. Rødt er noden Max-Heapify står på eller de to som bytter. Barna den sammenlignes med er oransje, og grønt er utenfor haugen og ferdig sortert."
   height={300}
 />
 
 Byggingen koster $\Theta(n)$, og så følger $n - 1$ kall til Max-Heapify på
-$O(\lg n)$ hver, altså $O(n \lg n)$. Verste tilfelle er $\Theta(n \lg n)$, og
-Heapsort er sammenligningsbasert, så sorteringsgrensen sier at det ikke kan
-bli bedre. Er alle elementene like, stopper hvert Max-Heapify med en gang, og
-beste tilfelle er $\Theta(n)$.
+$O(\lg n)$ hver, altså $O(n \lg n)$. Heapsort er sammenligningsbasert, så
+sorteringsgrensen gir $\Omega(n \lg n)$ i verste tilfelle, og verste tilfelle
+er derfor $\Theta(n \lg n)$. Er alle elementene like, stopper hvert
+Max-Heapify med en gang, og beste tilfelle er $\Theta(n)$. Med forskjellige
+elementer er også beste tilfelle $\Theta(n \lg n)$, så sortert input gjør ikke
+Heapsort raskere.
+
+<Callout title="Kjøretiden til Heapsort">
+Heapsort sorterer på plass i $\Theta(n \lg n)$ i verste tilfelle. Beste
+tilfelle er $\Theta(n)$ når alle elementene er like, og $\Theta(n \lg n)$ når
+de er forskjellige.
+</Callout>
 
 <Table
   columns={["Algoritme", "Verste", "Snitt", "Beste"]}
@@ -496,7 +530,7 @@ beste tilfelle er $\Theta(n)$.
   ]}
   align={["left", "left", "left", "left"]}
   rowHeader={false}
-  caption="Sorteringsalgoritmene så langt. Snitt er gjennomsnittet over input, for Quicksort over alle rekkefølger og for Bucket-Sort over uniformt fordelt input. Randomized-Quicksort har forventet $\Theta(n \lg n)$ over sine egne tilfeldige valg, for enhver input."
+  caption="Sorteringsalgoritmene så langt. Beste tilfelle for Heapsort er input der alle elementene er like. Snitt er gjennomsnittet over input, for Quicksort over alle rekkefølger og for Bucket-Sort over uniformt fordelt input. Randomized-Quicksort har forventet $\Theta(n \lg n)$ over sine egne tilfeldige valg, for enhver input."
 />
 
 <Example label="Eksamensoppgave" title="Første iterasjon av Heapsort">
@@ -541,5 +575,5 @@ så 6 blir stående.
 - Høyden avhenger av innsettingsrekkefølgen: sortert input gir en kjede med $h = n - 1$, en tilfeldig permutasjon gir forventet $\Theta(\lg n)$, og balanserte søketrær garanterer det.
 - En haug er et nesten komplett binærtre i en tabell: barna til $i$ er $2i$ og $2i + 1$, forelderen $\lfloor i/2 \rfloor$, høyden $\lfloor \lg n \rfloor$. Haugegenskapen for en maks-haug er $A[\text{Parent}(i)] \ge A[i]$.
 - Max-Heapify lar ett element synke, $O(\lg n)$. Build-Max-Heap kaller den nedenfra og opp på de indre nodene og koster $\Theta(n)$, for de fleste nodene står langt nede. Det er ikke det samme som $n$ innsettinger, som koster $\Theta(n \lg n)$.
-- Som prioritetskø gir haugen Maximum i $\Theta(1)$ og Extract-Max, Increase-Key og Insert i $O(\lg n)$. Heapsort bygger haugen og tar ut maksimum $n - 1$ ganger på plass: $\Theta(n \lg n)$ i verste tilfelle, $\Theta(n)$ i beste.
+- Som prioritetskø gir haugen Maximum i $\Theta(1)$ og Extract-Max, Increase-Key og Insert i $O(\lg n)$. Heapsort bygger haugen og tar ut maksimum $n - 1$ ganger på plass: $\Theta(n \lg n)$ i verste tilfelle, $\Theta(n)$ i beste når alle elementene er like.
 </KeyTakeaways>

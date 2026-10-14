@@ -84,22 +84,23 @@ elementer, og hver delinstans trengs av bare én større instans.
 <Term name="Delinstansgraf">Delinstansgrafen</Term> har én node per
 forskjellig delinstans, og en kant fra $u$ til $v$ når svaret for $v$ bygger på
 svaret for $u$. For stavkapping er nodene lengdene 0 til $n$, med en kant fra
-$j$ til $k$ for hver $j < k$. Læreboka tegner kantene motsatt vei, og det
+$j$ til $k$ for hver $j < k$. Læreboka tegner kantene motsatt vei, og retningen
 spiller ingen rolle så lenge det er klart hva som bygger på hva. Grafen må være
 asyklisk, og hver kjede av avhengigheter må ende i et grunntilfelle. Ellers
 bygger en instans til slutt på seg selv, og rekursjonen stopper aldri. Kalltreet
 har én node for hver sti i grafen som ender i instansen, så en delinstans med
 mange stier til instansen står mange steder i treet.
 
+<Callout title="Delinstansgrafen">
+Delinstansgrafen har én node per forskjellig delinstans. Den må være asyklisk,
+og hver kjede av avhengigheter må ende i et grunntilfelle.
+</Callout>
+
 <Term name="Memoisering">Memoisering</Term> gir prosedyren hukommelse. Første
 gang den kalles med et argument, regner den ut svaret og lagrer det. Senere kall
 med samme argument slår opp svaret og returnerer med en gang. For stavkapping
 holder en tabell $r[0 .. n]$ der $-\infty$ betyr at delinstansen ikke er løst.
 Uten de tre linjene som leser og skriver $r$, er `aux` under nøyaktig Cut-Rod.
-I Python gjør dekoratøren `functools.cache` det samme for en funksjon der alle
-argumentene er hashbare, med argumentene som nøkkel i en hashtabell. Prislista
-`p` er ikke hashbar, så den må være en tuppel eller ligge utenfor funksjonen.
-Den har en ubrukt plassholder i `p[0]`, så `p[i]` er prisen for lengde $i$.
 
 <CodeBlock
   id="stavkapping-memo"
@@ -107,7 +108,7 @@ Den har en ubrukt plassholder i `p[0]`, så `p[i]` er prisen for lengde $i$.
   lang="python"
   code={`from math import inf
 
-def memoized_cut_rod(p, n):
+def memoized_cut_rod(p, n):  # p[0] er ubrukt, p[i] er prisen for lengde i
     r = [-inf] * (n + 1)
     return aux(p, n, r)
 
@@ -128,7 +129,7 @@ def aux(p, n, r):
   src="/steppers/stavkapping.js"
   codeId="stavkapping-memo"
   title="Memoized-Cut-Rod"
-  caption="Treet øverst er alle kallene Cut-Rod gjør uten memo. Den memoiserte versjonen går gjennom det i samme rekkefølge, men et kall på en lengde som allerede står i $r$, er et oppslag (oransje), og ingenting under det blir kalt. Raden nederst er $r$, og buene over den er kantene i delinstansgrafen. Grønt er løst og lagret. Endre $n$ for å se hvor mye av treet som faller bort."
+  caption="Treet øverst er alle kallene Cut-Rod gjør uten memo, i den rekkefølgen den memoiserte versjonen går gjennom dem. Et oransje kall er et oppslag i $r$, og de bleke kallene under det blir aldri gjort. Raden nederst er $r$, buene over den er kantene i delinstansgrafen, og grønt er løst og lagret."
   height={380}
 />
 
@@ -180,45 +181,67 @@ def print_cut_rod_solution(p, n):
 
 De to løkkene gir $\Theta(n^2)$, som den memoiserte versjonen. Bottom-up
 slipper kallene og er som regel raskere med en konstant faktor. Memoisering
-løser bare delinstansene som faktisk trengs, og det kan være færre enn alle.
+løser bare delinstansene som faktisk trengs, og de kan være færre enn alle.
+
 Generelt er kjøretiden summen av arbeidet med hver delinstans. Koster hver
-kant i delinstansgrafen konstant tid, er den lineær i antall noder og kanter.
+kant i delinstansgrafen konstant tid, er kjøretiden lineær i antall noder og
+kanter. Stavkapping har $n + 1$ noder og $n(n + 1)/2$ kanter, altså
+$\Theta(n^2)$.
+
+<Callout title="Kjøretid">
+Kjøretiden er summen av arbeidet med hver delinstans. Koster hver kant i
+delinstansgrafen konstant tid, er den lineær i antall noder og kanter.
+</Callout>
 
 ## Optimal delstruktur
 
-Utbyttingen som ga $p_i + r_{n-i}$ viser at en optimal løsning består av
-optimale løsninger på delinstansene. Den egenskapen kalles
+I en optimal kapping er resten etter den første biten selv kappet optimalt,
+ellers kunne du byttet den ut og fått en bedre kapping av hele staven. En
+optimal løsning består altså av optimale løsninger på delinstansene. Den
+egenskapen kalles
 <Term name="Optimal delstruktur">optimal delstruktur</Term>, og den gjør
-dekomponeringen av stavkapping til et riktig induksjonsbevis. Beviset går som
-regel slik: bytt ut en del av løsningen med en bedre løsning på delinstansen,
-og hele løsningen blir bedre.
+rekurrensen for $r_n$ riktig. I beviset bytter du som regel ut en del av en
+optimal løsning med en bedre løsning på delinstansen. Da blir hele løsningen
+bedre, men den var optimal.
 
 Korteste vei har optimal delstruktur. Går en korteste vei fra 1 til 4 innom 2,
 er delen fra 1 til 2 en korteste vei, ellers kunne den byttes ut med en kortere.
-Lengste enkle vei har det ikke. Ta en firkant med kantene 1–2, 2–4, 4–3 og 3–1.
-En lengste enkel vei fra 1 til 4 er 1, 2, 4. Men en lengste enkel vei fra 1 til
-2 er 1, 3, 4, 2, og fra 2 til 4 er den 2, 1, 3, 4. Satt sammen besøker de 1, 3
-og 4 to ganger. De to delene konkurrerer om de samme nodene, og en node den ene
-bruker, kan ikke den andre bruke. Ingen kjenner en effektiv algoritme for
-lengste enkle vei.
+Lengste enkle vei har ikke optimal delstruktur. Ta en firkant med kantene 1–2,
+2–4, 4–3 og 3–1. En lengste enkel vei fra 1 til 4 er 1, 2, 4, men delen fra 1
+til 2 er ingen lengste enkel vei, for 1, 3, 4, 2 er lengre. De lengste enkle
+veiene fra 1 til 2 og fra 2 til 4 er 1, 3, 4, 2 og 2, 1, 3, 4, og satt sammen
+besøker de 1, 3 og 4 to ganger. De to delene konkurrerer om de samme nodene, og
+en node den ene bruker, kan ikke den andre bruke. Ingen kjenner en effektiv
+algoritme for lengste enkle vei.
 
 Dynamisk programmering trenger begge egenskapene: optimal delstruktur for at
 dekomponeringen skal gi riktig svar, og overlappende delinstanser for at det
-skal lønne seg å lagre delsvarene. Læreboka gir en oppskrift i fire trinn.
+skal lønne seg å lagre delsvarene.
+
+<Callout title="To krav">
+Optimal delstruktur gjør at dekomponeringen gir riktig svar. Overlappende
+delinstanser gjør at det lønner seg å lagre delsvarene.
+</Callout>
+
+Læreboka gir en oppskrift i fire trinn, og stavkapping gikk gjennom alle fire.
 
 <Steps>
 <Step title="Struktur">
 Beskriv hvordan en optimal løsning er bygd opp, og hvilket valg som deler den
-i delinstanser som selv må løses optimalt.
+i delinstanser som selv må løses optimalt. For stavkapping er valget lengden $i$
+på den første biten, og resten er en stav med lengde $n - i$.
 </Step>
 <Step title="Rekurrens">
-Definer verdien av en optimal løsning rekursivt, med grunntilfeller.
+Definer verdien av en optimal løsning rekursivt, med grunntilfeller. For
+stavkapping er rekurrensen $r_0 = 0$ og $r_n = \max_{1 \le i \le n} (p_i + r_{n-i})$.
 </Step>
 <Step title="Verdi">
-Regn ut verdien, med memoisering eller nedenfra og opp.
+Regn ut verdien, med memoisering eller nedenfra og opp. Memoized-Cut-Rod og
+Bottom-Up-Cut-Rod fyller begge $r$ i $\Theta(n^2)$.
 </Step>
 <Step title="Løsning">
-Lagre valgene underveis, og les løsningen av bakfra.
+Lagre valgene underveis, og les løsningen av bakfra. Bottom-Up-Cut-Rod lagrer
+den første biten i $s[j]$, og kappingen leses av fra $s[n]$.
 </Step>
 </Steps>
 
@@ -287,7 +310,7 @@ beholde rekkefølgen på resten. «baker» er en delsekvens av både «bakverk»
 «basker», og ingen lengre felles delsekvens finnes. Problemet
 <Term name="Lengste felles delsekvens">LCS</Term> er å finne en lengste felles
 delsekvens av $X = \langle x_1, \ldots, x_m \rangle$ og
-$Y = \langle y_1, \ldots, y_n \rangle$. Det er grunnlaget for blant annet `diff`
+$Y = \langle y_1, \ldots, y_n \rangle$. LCS er grunnlaget for blant annet `diff`
 og for sammenligning av DNA-sekvenser. $X$ har $2^m$ delsekvenser, så å prøve
 alle er uaktuelt.
 
@@ -314,11 +337,11 @@ Delinstansene overlapper, for både $c[i-1, j]$ og $c[i, j-1]$ bygger på
 $c[i-1, j-1]$. Delinstansgrafen er et rutenett med $(m+1)(n+1)$ noder, der
 hver celle bygger på cellen over, cellen til venstre og cellen diagonalt over
 til venstre. Rad for rad fra venstre er derfor en topologisk rekkefølge.
-LCS-Length fyller tabellen $c$ slik og lagrer valget i $b$ som en pil mot
-cellen svaret kom fra. Print-LCS følger pilene bakfra fra $b[m, n]$ og skriver
-ut $x_i$ for hver diagonal pil, etter det rekursive kallet, så bokstavene kommer
-i riktig rekkefølge. Strenger i Python starter på indeks 0, så $x_i$ er
-`X[i - 1]`.
+
+LCS-Length fyller tabellen $c$ i den rekkefølgen og lagrer valget i $b$ som en
+pil mot cellen svaret kom fra. Print-LCS følger pilene bakfra fra $b[m, n]$ og
+skriver ut $x_i$ for hver diagonal pil. Den skriver etter det rekursive kallet,
+så bokstavene kommer forfra selv om pilene følges bakfra.
 
 <CodeBlock
   id="lcs"
@@ -330,7 +353,7 @@ i riktig rekkefølge. Strenger i Python starter på indeks 0, så $x_i$ er
     b = [[""] * (n + 1) for _ in range(m + 1)]
     for i in range(1, m + 1):
         for j in range(1, n + 1):
-            if X[i - 1] == Y[j - 1]:
+            if X[i - 1] == Y[j - 1]:  # x_i og y_j
                 c[i][j] = c[i - 1][j - 1] + 1
                 b[i][j] = "↖"
             elif c[i - 1][j] >= c[i][j - 1]:
@@ -357,7 +380,7 @@ def print_lcs(b, X, i, j):
   src="/steppers/lcs.js"
   codeId="lcs"
   title="LCS-Length og Print-LCS"
-  caption="Tabellen $c$ med $X$ nedover og $Y$ bortover, og pilen fra $b$ i hjørnet av hver celle. Cellene den nye cellen leser, er oransje, og den den kopierer fra, er fylt. Etterpå følger Print-LCS pilene fra nederste høyre hjørne, og de diagonale cellene på veien, bokstavene i LCS-en, blir grønne. Stokk om for et nytt ordpar."
+  caption="Tabellen $c$ med $X$ nedover og $Y$ bortover, og pilen fra $b$ i hjørnet av hver celle. Oransje er cellene den nye cellen leser, og fylt er cellen svaret kommer fra. Grønne celler har diagonal pil og ligger på veien Print-LCS følger, og bokstavene deres er LCS-en."
   height={360}
 />
 
@@ -417,15 +440,15 @@ $$
 Rad $i$ bygger bare på rad $i - 1$, så tabellen fylles rad for rad. Cellen som
 gir verdien med gjenstand $i$, ligger $w_i$ kolonner lenger til venstre, så
 kantene i delinstansgrafen avhenger av vektene. Valgene trenger ikke lagres for
-seg. Er $K[i, j] \ne K[i-1, j]$, var gjenstand $i$ med, og du fortsetter fra
-$K[i-1, j - w_i]$, ellers fra $K[i-1, j]$. I Python har gjenstand $i$ vekt
-`w[i - 1]` og verdi `v[i - 1]`.
+seg. Er $K[i, j] \ne K[i-1, j]$, var gjenstand $i$ med, for uten den er det
+beste $K[i-1, j]$. Da fortsetter du fra $K[i-1, j - w_i]$. Ellers fortsetter
+du fra $K[i-1, j]$.
 
 <CodeBlock
   id="ryggsekk"
   title="ryggsekk.py"
   lang="python"
-  code={`def knapsack(v, w, W):
+  code={`def knapsack(v, w, W):  # gjenstand i har verdi v[i - 1] og vekt w[i - 1]
     n = len(v)
     K = [[0] * (W + 1) for _ in range(n + 1)]
     for i in range(1, n + 1):
@@ -451,7 +474,7 @@ def chosen(K, w, W):
   src="/steppers/ryggsekk.js"
   codeId="ryggsekk"
   title="Knapsack′"
-  caption="Tabellen $K$ med én rad per gjenstand og én kolonne per kapasitet, og vekt $w$ og verdi $v$ til høyre. Den nye cellen leser cellen rett over, uten gjenstanden, og cellen $w_i$ kolonner lenger til venstre, med gjenstanden. Begge er oransje, og den største er fylt. Etterpå leses valget av nedenfra, og gjenstandene som er med, blir grønne."
+  caption="Tabellen $K$ med én rad per gjenstand og én kolonne per kapasitet, og vekt $w$ og verdi $v$ til høyre. Oransje er cellene den nye cellen leser, rett over og $w_i$ kolonner lenger til venstre i raden over, og den som gir størst verdi, er fylt. Grønt er gjenstandene som er med."
   height={300}
 />
 
@@ -459,16 +482,23 @@ Tabellen har $(n + 1)(W + 1)$ celler med konstant arbeid per celle, så
 kjøretiden er $\Theta(nW)$. Det ser polynomisk ut, men er det ikke som funksjon
 av inputstørrelsen, som måles i bits. Tallet $W$ tar bare
 $m = \lfloor \lg W \rfloor + 1$ bits å skrive, så $W$ vokser eksponentielt med
-plassen det tar:
+plassen tallet tar:
 
 $$
 \Theta(nW) = \Theta(n 2^m)
 $$
 
-En kjøretid som er polynomisk i et tall fra inputen, men ikke i antall bits,
-kalles <Term name="Pseudopolynomisk kjøretid">pseudopolynomisk</Term>. Er $W$ begrenset av et polynom i $n$, er kjøretiden polynomisk. Med vilkårlig
-store heltall er ryggsekkproblemet NP-hardt, og ingen kjenner en algoritme som er polynomisk i
+Ett bit til i $W$ kan altså doble kjøretiden. En kjøretid som er polynomisk i et
+tall fra inputen, men ikke i antall bits, kalles
+<Term name="Pseudopolynomisk kjøretid">pseudopolynomisk</Term>. Er $W$ begrenset
+av et polynom i $n$, er kjøretiden polynomisk. Med vilkårlig store heltall er
+ryggsekkproblemet NP-hardt, og ingen kjenner en algoritme som er polynomisk i
 antall bits.
+
+<Callout title="Pseudopolynomisk">
+$\Theta(nW)$ er polynomisk i tallet $W$, men eksponentiell i antall bits som
+trengs for å skrive $W$.
+</Callout>
 
 <Example label="Eksamensoppgave" title="Er ryggsekkløsningen polynomisk?">
 <ExamRef id="2024-aug-kont" task="9" />
@@ -493,7 +523,7 @@ pseudopolynomisk.
   question="Du kaller Cut-Rod på en stav med lengde 5, uten memo. Hvor mange av kallene har lengde 1?"
   options={["1", "4", "8", "16"]}
   answer={2}
-  explanation="Hvert kall på en lengde større enn $k$ kaller lengde $k$ én gang. La $c_k$ være antall kall på lengde $k$. Da er $c_5 = 1$ og $c_k = c_{k+1} + \cdots + c_5$, så $c_4 = 1$, $c_3 = 2$, $c_2 = 4$ og $c_1 = 8$. Med memoisering beregnes lengde 1 én gang."
+  explanation="Hvert kall på en lengde større enn $k$ kaller lengde $k$ én gang. La $c_k$ være antall kall på lengde $k$. Da er $c_5 = 1$ og $c_k = c_{k+1} + \cdots + c_5$, så $c_4 = 1$, $c_3 = 2$, $c_2 = 4$ og $c_1 = 8$. Svaret 4 gjelder en stav med lengde 4, og én lengde til dobler antallet. Med memoisering beregnes lengde 1 én gang."
 />
 
 <KeyTakeaways>

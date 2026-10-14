@@ -10,10 +10,11 @@ updated: 2026-09-27
 
 To metoder kan løse samme problem og likevel ikke være i samme klasse. Skal du
 pare givere og mottakere i et donasjonsregister, kan du prøve alle koblinger
-etter tur eller kjøre Ford-Fulkerson. Med fire personer på hver side har
-opptellingen 24 permutasjoner å gå gjennom, mens Ford-Fulkerson bruker rundt 36
-operasjoner. Opptellingen ser billigst ut. Dobler du til åtte, står det 40 320
-mot 70.
+etter tur eller kjøre Ford-Fulkerson. Med $n$ personer på hver side har
+opptellingen $n!$ koblinger å gå gjennom, mens Ford-Fulkerson gjør i
+størrelsesorden $n^3$ operasjoner. Med fire personer står det $24$ mot $64$,
+og opptellingen ser billigst ut. Dobler du til åtte, står det $40\,320$ mot
+$512$.
 
 <LearningGoals>
 - Les lærebokas pseudokode, og oversett den til kjørbar Python.
@@ -41,6 +42,11 @@ og instruksjonene utføres etter hverandre. Heltallene har begrenset bredde, om
 lag $c \lg n$ bits, akkurat nok til å indeksere hele inputen. Du kan regne med
 større tall enn det, slik kryptografi gjør, men da holder ikke antagelsen om
 konstant tid per operasjon lenger.
+
+<Callout title="RAM-modellen">
+Hver grunnoperasjon koster én tidsenhet, og instruksjonene utføres etter
+hverandre. Tallene har om lag $c \lg n$ bits, nok til å indeksere inputen.
+</Callout>
 
 ## Vekstrater
 
@@ -91,8 +97,11 @@ begge holder samtidig, altså $0 \le c_1 g(n) \le f(n) \le c_2 g(n)$ for
 $n \ge n_0$.
 </Statement>
 
-Derfor er $3n^2 + 100n = \Theta(n^2)$: faktoren $3$ går inn i $c$, og fra en
-$n_0$ og oppover er $100n$ lite mot $n^2$.
+Ta $f(n) = n^2 + 100n$ og $g(n) = n^2$. Den nedre grensen holder med $c_1 = 1$
+for alle $n$. Den øvre holder med $c_2 = 2$ når $100n \le n^2$, altså fra
+$n_0 = 100$. Til venstre for $n_0$ ligger $f$ over $2n^2$, og det er tillatt,
+for definisjonen krever ulikheten bare fra $n_0$ og oppover. Altså er
+$n^2 + 100n = \Theta(n^2)$, og det lavere ordens leddet $100n$ er borte.
 
 <Figure
   src="/figures/asymptotiske-grenser.svg"
@@ -100,8 +109,13 @@ $n_0$ og oppover er $100n$ lite mot $n^2$.
   number={2}
   width={560}
   height={300}
-  caption="$f(n) = n^2 + 100n$ mot $g(n) = n^2$. Den nedre grensen holder med $c_1 = 1$ for alle $n$, den øvre først med $c_2 = 2$ fra $n_0 = 100$. Til venstre for $n_0$ bryter $f$ gjennom, og det er tillatt. Begge sammen gir $\Theta(n^2)$."
+  caption="$f(n) = n^2 + 100n$ mellom $c_1 g(n) = n^2$ og $c_2 g(n) = 2n^2$, med $n_0 = 100$ markert."
 />
+
+<Callout title="Asymptotiske grenser">
+$O$ er en øvre og $\Omega$ en nedre grense, begge opp til en konstantfaktor og
+fra en $n_0$ og oppover. $\Theta$ er begge samtidig.
+</Callout>
 
 ### De to strenge operatorene
 
@@ -129,8 +143,13 @@ til å huske dem:
     ["$f = \\omega(g)$", "vokser strengt raskere enn $g$", "$\\infty$", "$a > b$"],
   ]}
   align={["left", "left", "left", "center"]}
-  caption="Analogien er lærebokas egen (CLRS §3.2). Den holder for transitivitet og for det meste ellers, med ett unntak: to tall kan alltid sammenlignes, men to funksjoner kan mangle et forhold i det hele tatt. $n$ og $n^{1+\sin n}$ er verken $O$ eller $\Omega$ av hverandre."
+  caption="De fem operatorene som sammenligning av to tall $a$ og $b$, etter CLRS §3.2."
 />
+
+Analogien holder for transitivitet og for det meste ellers, med ett unntak. To
+tall kan alltid sammenlignes, men to funksjoner kan mangle et forhold i det hele
+tatt: $n$ og $n^{1+\sin n}$ er verken $O$ eller $\Omega$ av hverandre, fordi
+forholdet $n^{\sin n}$ mellom dem svinger mellom omtrent $1/n$ og $n$.
 
 Notasjonen dukker også opp midt inne i et uttrykk. Da står den for en ukjent
 funksjon av den oppgitte ordenen, slik at $n + O(n)$ betyr «$n$ pluss en eller
@@ -205,36 +224,18 @@ iterasjoner er $n \cdot n$ uansett hvordan inputen ser ut.
 </Solution>
 </Example>
 
-## Løkkeinvarianter
-
-Vil du vise at en løkke gir riktig resultat, gjør du det med induksjon over
-iterasjonene. Induksjonen trenger en påstand om tilstanden som holder ved
-starten av hver iterasjon.
-
-<Statement kind="definition" name="Løkkeinvariant">
-En invariant vises i tre deler. <b>Initialisering</b>: påstanden holder før
-første iterasjon. <b>Vedlikehold</b>: holder den før en iterasjon, holder den
-også før den neste. <b>Terminering</b>: løkka stopper, og påstanden gir da det du
-var ute etter.
-</Statement>
-
-Initialisering er grunntilfellet og vedlikehold er induksjonssteget. Terminering
-er det løkker har i tillegg: beviset er verdiløst om løkka aldri stopper.
-
-Svak induksjon antar bare forrige trinn og passer til løkker. Sterk induksjon
-antar alle mindre tilfeller, og passer når en algoritme kaller seg selv på flere
-mindre instanser.
-
 ## Insertion-Sort
 
-Læreboka skriver algoritmen i pseudokode med indekser fra 1. Under står den i
-Python, med indekser fra 0.
+Insertion-Sort sorterer slik mange sorterer kort på hånden. Den venstre delen
+av tabellen er sortert. Hver iterasjon løfter ut det neste elementet, nøkkelen,
+skyver hvert større element i den sorterte delen ett hakk mot høyre og setter
+nøkkelen inn i den ledige plassen.
 
 <CodeBlock
   id="insertion-sort"
   title="insertion_sort.py"
   lang="python"
-  code={`def insertion_sort(A, n):
+  code={`def insertion_sort(A, n):  # indekser fra 0, læreboka teller fra 1
     for i in range(1, n):
         key = A[i]
         # Sett key inn i den sorterte delen A[0 : i]
@@ -250,22 +251,50 @@ Python, med indekser fra 0.
   src="/steppers/insertion-sort.js"
   codeId="insertion-sort"
   title="Insertion-Sort"
-  caption="Grønt er den sorterte delen. Nøkkelen løftes ut i boksen over tabellen, den ledige plassen flytter seg mot venstre så lenge naboen er større, og nøkkelen settes inn når naboen ikke er det."
+  caption="Grønt er den sorterte delen, og boksen over tabellen holder nøkkelen."
   height={250}
 />
 
-Når løkka er ferdig, skal hele `A` være sortert og inneholde de elementene som
-lå der fra begynnelsen. En invariant som gir det ved terminering, er at `A[0 : i]`
-ved starten av hver iterasjon består av de elementene som lå der fra
-begynnelsen, i sortert rekkefølge.
+### Løkkeinvarianter
 
-- Initialisering: før første iterasjon er `i = 1`, og et utsnitt med ett element
-  er sortert.
-- Vedlikehold: iterasjonen løfter ut nøkkelen `A[i]`, skyver hvert større
-  element i `A[0 : i]` ett hakk mot høyre og setter nøkkelen inn i den ledige
-  plassen, så `A[0 : i + 1]` er sortert ved starten av neste iterasjon.
-- Terminering: siste iterasjon har `i = n - 1`, så når løkka stopper, gir
-  vedlikeholdet at `A[0 : n]`, altså hele tabellen, er sortert.
+Stepperen viser at én tabell blir sortert. For å vise at enhver tabell blir
+det, bruker du induksjon over iterasjonene, med en påstand om tilstanden ved
+starten av hver iterasjon. Når løkka er ferdig, skal hele $A$ være sortert og
+inneholde de elementene som lå der fra begynnelsen. En påstand som gir det til
+slutt, er at $A[0 .. i - 1]$ ved starten av hver iterasjon består av de
+elementene som lå der fra begynnelsen, i sortert rekkefølge. Segmentet
+$A[0 .. i - 1]$ har begge ender med; i Python skrives det `A[0 : i]`.
+
+- Initialisering: før første iterasjon er $i = 1$, og $A[0 .. 0]$ har ett
+  element, så det er sortert.
+- Vedlikehold: iterasjonen løfter ut nøkkelen $A[i]$, skyver hvert større
+  element i $A[0 .. i - 1]$ ett hakk mot høyre og setter nøkkelen inn i den
+  ledige plassen. Da er $A[0 .. i]$ sortert, og det er påstanden for neste
+  verdi av $i$.
+- Terminering: løkka stopper etter iterasjonen med $i = n - 1$, og da gir
+  vedlikeholdet at $A[0 .. n - 1]$, altså hele tabellen, er sortert.
+
+En slik påstand kalles en løkkeinvariant, og de tre delene er det generelle
+mønsteret:
+
+<Statement kind="definition" name="Løkkeinvariant">
+En løkkeinvariant er en påstand om tilstanden som holder ved starten av hver
+iterasjon. Den vises i tre deler. <b>Initialisering</b>: påstanden holder før
+første iterasjon. <b>Vedlikehold</b>: holder den før en iterasjon, holder den
+også før den neste. <b>Terminering</b>: løkka stopper, og påstanden gir da det du
+var ute etter.
+</Statement>
+
+Initialisering er grunntilfellet og vedlikehold er induksjonssteget. Terminering
+er det løkker har i tillegg: beviset er verdiløst om løkka aldri stopper.
+
+Beviset for Insertion-Sort er svak induksjon, for vedlikeholdet bruker bare
+påstanden fra forrige iterasjon. Sterk induksjon antar påstanden for alle
+mindre tilfeller. Den passer når en algoritme kaller seg selv på instanser som
+er mindre enn $n - 1$, for eksempel halvparten: beviset for størrelse $n$
+bruker da påstanden for $n/2$, ikke for $n - 1$.
+
+### Kjøretid
 
 Den ytre løkka går $n-1$ ganger uansett input. Den indre gjør et sted mellom 0
 og $i$ forskyvninger, og det er der forskjellen mellom instansene ligger. Er
@@ -303,14 +332,15 @@ Insertion-Sort bruker $\Theta(n)$ på en tabell som er sortert fra før og
 $\Theta(n^2)$ på en som er sortert synkende, så størrelsen alene bestemmer ikke
 kjøretiden. For hver $n$ finnes det mange instanser, og de koster ulikt. Beste
 tilfelle er den billigste instansen av størrelse $n$, verste tilfelle den
-dyreste, og gjennomsnittstilfellet er middelet over alle instansene av den
-størrelsen. Hvert av de tre er en egen funksjon av $n$.
+dyreste, og gjennomsnittstilfellet er den forventede kostnaden når instansen
+trekkes tilfeldig, for sortering med alle rekkefølger like sannsynlige. Hvert av
+de tre er en egen funksjon av $n$.
 
 <Simulation
   src="/sims/tilfeller.js"
   host="dom"
   title="Beste, verste og gjennomsnittlige tilfelle"
-  caption="Hvert punkt er én instans, kjørt gjennom Insertion-Sort og talt opp. De mørke punktene er den billigste og den dyreste. Velg tilfelle og grense, og se at alle ni kombinasjonene sier noe sant."
+  caption="Hvert lyse punkt er én tilfeldig instans av størrelse $n$ med kostnaden Insertion-Sort fikk på den, og de mørke punktene er den billigste og den dyreste. De fargede kurvene er beste, gjennomsnittlige og verste tilfelle, og de stiplede kurvene er den valgte grensen."
   height={330}
 />
 
@@ -342,6 +372,13 @@ Utelater du tilfellet, gjelder påstanden alle instanser. «Insertion-Sort bruke
 $O(n^2)$» er da riktig, og «$\Omega(n)$» også, mens «$\Theta(n^2)$» er galt: på
 en sortert tabell bruker den $\Theta(n)$.
 
+<Callout title="Grense og tilfelle">
+Tilfellet velger hvilke instanser du ser på, og $O$, $\Omega$ og $\Theta$
+begrenser kostnaden deres, så alle kombinasjonene er lov. Uten tilfelle gjelder
+påstanden alle instanser: Insertion-Sort er $O(n^2)$ og $\Omega(n)$, men ikke
+$\Theta(n^2)$.
+</Callout>
+
 <Example label="Eksamensoppgave" title="Gjennomsnittet kan være lik ett av ytterpunktene">
 <ExamRef id="2025-des" task="4" />
 
@@ -372,20 +409,20 @@ to kjøretider som er ulike som tall kan ha samme asymptotiske vekst.
 ## Sjekk deg selv
 
 <Quiz
-  question="En algoritme har kjøretid beskrevet av $\Omega(n) + \Theta(n^2 \lg n) + O(n^3)$. Hva kan du si om kjøretiden $W(n)$ i verste tilfelle?"
+  question="For enhver input av størrelse $n$ er kjøretiden til en algoritme $\Omega(n) + \Theta(n^2 \lg n) + O(n^3)$. Hva kan du si om kjøretiden $W(n)$ i verste tilfelle?"
   options={[
     "$W(n) = \\Omega(n^2 \\lg n)$",
-    "$W(n) = \\Theta(n)$",
-    "$W(n) = o(n^2 \\lg n)$",
+    "$W(n) = \\Theta(n^2 \\lg n)$",
+    "$W(n) = O(n^3)$",
   ]}
   answer={0}
-  explanation="Uttrykket har $n^2 \lg n$ som nedre grense, så kjøretiden er minst så stor for enhver input. Verste tilfelle er det dyreste, og er dermed også minst $n^2 \lg n$. $\Theta(n)$ og $o(n^2 \lg n)$ sier begge at $W(n)$ vokser saktere enn $n^2 \lg n$, og det motsier den nedre grensen. Leddet $\Omega(n)$ har ikke noe tak, så summen har ingen øvre grense."
+  explanation="Legg sammen de nedre grensene: $n + n^2 \lg n + 0$ vokser som $n^2 \lg n$, så hver input koster minst så mye, også den dyreste. En øvre grense finnes ikke, for leddet $\Omega(n)$ har ikke noe tak. Derfor følger verken $O(n^3)$ eller $\Theta(n^2 \lg n)$: begge krever et tak, og bare de to siste leddene har ett."
 />
 
 <KeyTakeaways>
 - Et problem er relasjonen mellom input og output, en instans er én input, og $n$ er størrelsen på den.
 - RAM-modellen gir én tidsenhet per grunnoperasjon, slik at kjøretid kan sammenlignes uten å nevne en bestemt maskin.
-- Forskjellen mellom faktoriell og kvadratisk kjøretid er 17 elementer mot 56 millioner på hundre år.
+- En bedre algoritme hjelper mer enn en raskere maskin: tusen ganger raskere maskinvare flytter en faktoriell algoritme fra 17 til 20 elementer.
 - $O$, $\Omega$, $\Theta$, $o$ og $\omega$ begrenser vekst. Beste, verste og gjennomsnittlige tilfelle velger input. De to aksene er uavhengige.
 - En løkkeinvariant vises med initialisering, vedlikehold og terminering.
 - Insertion-Sort holder $A[0 .. i - 1]$ sortert, og bruker $\Theta(n)$ i beste og $\Theta(n^2)$ i verste tilfelle.

@@ -275,7 +275,7 @@ symbols:
   - { tex: "n^{\\log_b a}", meaning: "Vannskillefunksjonen, antall løvnoder i rekursjonstreet", section: "Splitt og hersk", term: "Masterteoremet", formula: log-bytte, id: vannskille, note: "Kjøretiden avgjøres av om $f(n)$ er polynomisk større, lik opp til en faktor $\\lg^k n$ med $k \\ge 0$ eller polynomisk mindre. Andre $f(n)$ dekkes ikke av masterteoremet." }
   - { tex: "k", meaning: "Eksponenten til $\\lg n$ i tilfelle 2 av masterteoremet, en konstant $k \\ge 0$", section: "Splitt og hersk", formula: masterteoremet, note: "Gir $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$. I simuleringen av rekursjonstreet er eksponenten i $f(n) = n^d$ en annen størrelse, $d$." }
   - { tex: "\\epsilon", meaning: "Avstanden i tilfelle 1 og 3: $f(n)$ skiller seg fra $n^{\\log_b a}$ med en faktor $n^\\epsilon$", section: "Splitt og hersk", formula: masterteoremet, id: epsilon, note: "En konstant $\\epsilon > 0$. Tilfelle 3 krever i tillegg $a f(n/b) \\le c f(n)$ for en konstant $c < 1$." }
-  - { tex: "x", meaning: "Pivoten, splittelementet", section: "Splitt og hersk", term: "Quicksort", note: "Partition bruker det siste elementet, $x = A[r]$. I Select er $x$ medianen av gruppemedianene." }
+  - { tex: "x", meaning: "Pivoten, elementet segmentet deles rundt", section: "Splitt og hersk", term: "Quicksort", note: "Partition bruker det siste elementet, $x = A[r]$. I Select er $x$ medianen av gruppemedianene." }
   - { tex: "q", meaning: "Plassen segmentet deles ved: midten, eller pivotens endelige plass etter Partition", section: "Splitt og hersk" }
   - { tex: "L,\\ R", meaning: "Venstre og høyre halvdel, kopiert ut før flettingen i Merge-Sort", section: "Splitt og hersk", term: "Merge-Sort", note: "Ikke relasjonen $R$ i et problem." }
   - { tex: "\\infty", meaning: "Vaktposten bakerst i $L$ og $R$, så ingen av halvdelene går tom", section: "Splitt og hersk", note: "$-\\infty$ markerer en delinstans som ikke er løst i memo-tabellen $r$, og er nøkkelen et nytt element får i Max-Heap-Insert før den økes." }
@@ -347,7 +347,7 @@ glossary:
     }
   - {
       term: "Beste, verste og gjennomsnittlige tilfelle",
-      definition: "Tre funksjoner av $n$: kjøretiden for den billigste instansen av størrelse $n$, for den dyreste og middelet over alle. Hvilket tilfelle det gjelder er uavhengig av hvilken asymptotisk operator som brukes på det.",
+      definition: "Tre funksjoner av $n$: kjøretiden for den billigste instansen av størrelse $n$, for den dyreste, og den forventede kostnaden når instansen trekkes tilfeldig. Hvilket tilfelle det gjelder er uavhengig av hvilken asymptotisk operator som brukes på det.",
       section: "Grunnlag",
     }
   - {
@@ -392,7 +392,7 @@ glossary:
     }
   - {
       term: "Perfekt hashing",
-      definition: "For en statisk nøkkelmengde kan hashfunksjonen skreddersys slik at ingen nøkler kolliderer. Søk tar da konstant tid selv i verste fall.",
+      definition: "For en statisk nøkkelmengde: nøklene hashes først inn i $m = n$ plasser, og plass $j$ med $n_j$ nøkler får en sekundærtabell med $n_j^2$ plasser og en hashfunksjon uten kollisjoner der. Søk tar konstant tid selv i verste fall, og plassen er $O(n)$.",
       section: "Datastrukturer",
     }
   - {
@@ -402,7 +402,7 @@ glossary:
     }
   - {
       term: "Tabelldobling",
-      definition: "Når tabellen er full: alloker en dobbelt så stor, kopier alt over og fortsett. Én innsetting kan koste lineær tid, men $n$ innsettinger koster totalt under $3n$ operasjoner, og nøyaktig $2n - 1$ når $n$ er en toerpotens. Det er amortisert konstant per innsetting.",
+      definition: "Når tabellen er full, eller for en hashtabell når $\\alpha$ har nådd en fast grense: alloker en dobbelt så stor, kopier (eller hash på nytt) alt over og fortsett. Én innsetting kan koste lineær tid, men $n$ innsettinger koster totalt under $3n$ operasjoner, og nøyaktig $2n - 1$ når $n$ er en toerpotens. Det er amortisert konstant per innsetting.",
       section: "Datastrukturer",
     }
   - {
@@ -438,7 +438,7 @@ glossary:
 
   - {
       term: "Splitt og hersk",
-      definition: "Designmetode: løs grunntilfellet direkte, ellers del instansen i uavhengige delinstanser, løs dem rekursivt og kombiner delsvarene. Arbeidet ligger som regel i enten delingen eller kombinasjonen. Korrektheten vises ved induksjon over problemstørrelsen.",
+      definition: "Designmetode: løs grunntilfellet direkte, ellers del instansen i uavhengige delinstanser, løs dem rekursivt og kombiner delsvarene. Arbeidet ligger som regel i enten delingen eller kombinasjonen. Korrektheten vises ved sterk induksjon over problemstørrelsen.",
       section: "Splitt og hersk",
     }
   - {
@@ -478,7 +478,7 @@ glossary:
     }
   - {
       term: "Quicksort",
-      definition: "Partition velger siste element som pivot og ordner resten med små elementer til venstre og store til høyre, i $\\Theta(n)$ tid; pivoten havner på sin endelige plass. Delene sorteres rekursivt. $\\Theta(n \\lg n)$ ved jevn deling og i snitt, $\\Theta(n^2)$ når pivoten står alene, som på sortert input. Randomized-Quicksort bytter et tilfeldig element inn som pivot og har forventet $\\Theta(n \\lg n)$ for enhver input.",
+      definition: "Partition velger siste element som pivot og ordner resten med små elementer til venstre og store til høyre, i $\\Theta(n)$ tid; pivoten havner på sin endelige plass. Delene sorteres rekursivt. $\\Theta(n \\lg n)$ ved jevn deling og i snitt over alle rekkefølger, $\\Theta(n^2)$ når pivoten står alene, som på sortert input. Randomized-Quicksort bytter et tilfeldig element inn som pivot. Da er hvert element med i $O(\\lg n)$ delinger i forventning, så forventet kjøretid er $\\Theta(n \\lg n)$ for enhver input.",
       section: "Splitt og hersk",
     }
   - {
@@ -529,7 +529,7 @@ glossary:
     }
   - {
       term: "Radix-Sort",
-      definition: "Sorterer $d$-sifrede tall stabilt på ett siffer om gangen, det minst signifikante først, med Counting-Sort som subrutine. Etter pass $i$ er tallene sortert på de $i$ siste sifrene; stabiliteten er induksjonssteget. $\\Theta(d(n + k))$ når hvert siffer har $k + 1$ verdier.",
+      definition: "Sorterer $d$-sifrede tall stabilt på ett siffer om gangen, det minst signifikante først, med Counting-Sort som subrutine. Etter $i$ pass er tallene sortert på de $i$ siste sifrene; stabiliteten er induksjonssteget. $\\Theta(d(n + k))$ når hvert siffer har $k + 1$ verdier.",
       section: "Rangering i lineær tid",
     }
   - {
@@ -657,7 +657,7 @@ glossary:
     }
   - {
       term: "Aktivitetsutvalg",
-      definition: "Velg flest mulig aktiviteter $[s_i, f_i)$ der ingen to overlapper. Det grådige valget er aktiviteten som slutter først, og delinstansen som er igjen, er aktivitetene som starter etter at den slutter. Greedy-Activity-Selector bruker $\\Theta(n)$ når aktivitetene er sortert etter sluttid.",
+      definition: "Velg flest mulig aktiviteter $[s_i, f_i)$ der ingen to overlapper. Det grådige valget er aktiviteten som slutter først, og delinstansen som er igjen, er aktivitetene som starter ved sluttiden dens eller senere. Greedy-Activity-Selector bruker $\\Theta(n)$ når aktivitetene er sortert etter sluttid.",
       section: "Grådighet",
     }
   - {

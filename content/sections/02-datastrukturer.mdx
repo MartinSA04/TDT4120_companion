@@ -33,9 +33,14 @@ posisjon i minnet.
 En endimensjonal tabell ligger som en sammenhengende blokk. Har blokken
 startadresse $a$, elementbredde $b$ og startindeks $s$, ligger element $s$ på
 adressen $a$, og hvert steg i indeksen flytter adressen $b$ celler. Element $i$
-ligger $i - s$ steg etter element $s$, altså på adressen $a + b(i - s)$. Oppslaget er ett gangestykke og én addisjon uansett hvor
-stor tabellen er, og det er derfor indeksering koster konstant tid i
-<Term name="RAM-modellen" />.
+ligger $i - s$ steg etter element $s$, altså på adressen $a + b(i - s)$.
+Oppslaget er ett gangestykke og én addisjon uansett hvor stor tabellen er, og
+derfor koster indeksering konstant tid i <Term name="RAM-modellen" />.
+
+<Callout title="Indeksering">
+Element $i$ ligger på adressen $a + b(i - s)$, så oppslaget koster konstant tid
+uansett hvor stor tabellen er.
+</Callout>
 
 En matrise må også ned i det samme endimensjonale minnet. Radvis lagring legger
 rad 1, så rad 2, og så videre. Foran rad $i$ ligger da $i - 1$ hele rader med
@@ -67,8 +72,7 @@ En kø er først inn, først ut, med innsetting bakerst og uttak forrest. Legger
 du køen rett inn i en tabell, må alt flyttes hver gang noen går ut forrest.
 Ringbufferen unngår det med to indekser som rykker fremover: `head` peker på
 den første i køen og `tail` på neste ledige plass, og når en av dem passerer
-enden, går den rundt til starten igjen. Boka skriver dette med 1-indeksering og
-en egen test for enden; i Python med 0-indeksering gjør modulo jobben.
+enden, går den rundt til starten igjen.
 
 <CodeBlock
   id="ko-ring"
@@ -82,7 +86,7 @@ en egen test for enden; i Python med 0-indeksering gjør modulo jobben.
 
     def enqueue(self, x):
         self.A[self.tail] = x
-        self.tail = (self.tail + 1) % len(self.A)
+        self.tail = (self.tail + 1) % len(self.A)  # rundt til 0 etter siste plass
 
     def dequeue(self):
         x = self.A[self.head]
@@ -120,8 +124,7 @@ Hva skal den sensurerte biten være?
 <Solution>
 Linje 2 tester om `tail` står på siste plass i tabellen. Da er neste ledige
 plass den første, så `tail` skal gå rundt til starten. Boka bruker
-1-indeksering, så starten er 1. I Python-versjonen over gjør
-`(self.tail + 1) % len(self.A)` den samme jobben, men der er første plass 0.
+1-indeksering, så starten er 1.
 
 <Answer>`Q.tail = 1`</Answer>
 </Solution>
@@ -150,10 +153,16 @@ liste også på forrige. Lista selv er bare en peker til hodet.
 
 Søk følger pekerne fra hodet til nøkkelen dukker opp eller lista tar slutt, og
 koster $\Theta(n)$ i verste fall. Til gjengjeld er innsetting og sletting
-konstant tid, for ingenting må flyttes. Å sette inn en node etter en annen er
-fire pekertilordninger; å slette en node er to, der naboene settes til å peke
-på hverandre og noden hoppes over. Konstant tid forutsetter at du allerede står
-ved noden. Skal den først finnes, betaler du det lineære søket i tillegg.
+konstant tid, for nodene blir liggende der de er, og bare pekerne endres. Å
+sette inn en node etter en annen er fire pekertilordninger; å slette en node er
+to, der naboene settes til å peke på hverandre og noden hoppes over. Konstant
+tid forutsetter at du allerede står ved noden. Skal den først finnes, betaler du
+det lineære søket i tillegg.
+
+<Callout title="Lenket liste">
+Innsetting og sletting koster konstant tid når du står ved noden. Søk, og å
+finne noden først, koster lineær tid.
+</Callout>
 
 <CodeBlock
   id="liste-ops"
@@ -174,7 +183,7 @@ def delete(x):
   src="/steppers/lenket-liste.js"
   codeId="liste-ops"
   title="Pekerne i en dobbeltlenket liste"
-  caption="Rød peker settes i steget, oransje leses. Nodene ligger fast; det er bare pekerne som endres."
+  caption="Rød peker settes i steget, oransje leses."
   height={300}
 />
 
@@ -215,9 +224,9 @@ En <Term name="Hashtabell">hashtabell</Term> beholder ideen, men kjører
 nøkkelen gjennom en hashfunksjon $h$ som krymper den til en gyldig indeks
 $0, \ldots, m-1$. Den enkleste er $h(k) = k \bmod m$. I praksis brukes gjerne
 funksjoner som blander bitene bedre, som multipliser-og-skift, og strenger
-hashes ved å kombinere tegnene aritmetisk. Det viktige er at samme nøkkel
-alltid gir samme indeks, at indeksene ser tilfeldig fordelt ut og at
-utregningen tar konstant tid.
+hashes ved å kombinere tegnene aritmetisk. En god hashfunksjon gir alltid samme
+indeks for samme nøkkel, sprer nøklene så indeksene ser tilfeldig fordelt ut og
+regnes ut i konstant tid.
 
 Med flere mulige nøkler enn plasser må to nøkler før eller siden dele indeks,
 en kollisjon. Kjeding løser det ved å la hver plass i tabellen holde en lenket
@@ -258,18 +267,39 @@ til plass 5 og må gjennom hele kjeden: først 12, så 5, så 19.
   alt="Hashtabellen med sju plasser etter innsettingene: 21 på plass 0, 36 på plass 1, og på plass 5 kjeden 12, 5, 19 med den sist innsatte forrest. Plassene 2, 3, 4 og 6 er tomme. Til høyre står utregningene, blant annet 19 mod 7 = 5, og røde tall 1, 2, 3 over kjeden viser søkerekkefølgen for nøkkel 19."
   width={560}
   height={300}
-  caption="Tabellen etter de fem innsettingene. Innsetting skjer forrest, så kjeden på plass 5 står i motsatt rekkefølge av innsettingene. De røde tallene er sammenligningene i søket etter 19."
+  caption="Tabellen etter de fem innsettingene. De røde tallene er sammenligningene i søket etter 19."
 />
 
 <Answer>21 på plass 0, 36 på plass 1 og kjeden $12 \to 5 \to 19$ på plass 5. Søket etter 19 sammenligner tre nøkler.</Answer>
 </Solution>
 </Example>
 
-Er nøkkelmengden statisk, kjent på forhånd og uforanderlig, kan hashfunksjonen
-skreddersys til akkurat de nøklene, slik at ingen kolliderer. Det kalles
+Er nøkkelmengden statisk, kjent på forhånd og uforanderlig, kan du bygge en
+tabell der ingen nøkler kolliderer. Det kalles
 <Term name="Perfekt hashing">perfekt hashing</Term> og gir søk i garantert
 konstant tid, ikke bare forventet. Et typisk bruksområde er de reserverte
 ordene i en kompilator.
+
+Tabellen har to nivåer. Først hashes de $n$ nøklene inn i $m = n$ plasser,
+med kollisjoner som vanlig. Plass $j$, som fikk $n_j$ nøkler, får så sin egen
+sekundærtabell med $n_j^2$ plasser og sin egen hashfunksjon, valgt slik at ingen
+av de $n_j$ nøklene kolliderer der. En slik funksjon er lett å finne. De $n_j$
+nøklene danner færre enn $n_j^2/2$ par. Trekkes funksjonen tilfeldig fra en
+familie der hvert par kolliderer med sannsynlighet høyst $1/n_j^2$, er
+forventet antall kollisjoner derfor under $\tfrac12$. Da er sannsynligheten for minst én
+kollisjon også under $\tfrac12$, siden hver trekning med kollisjon bidrar med
+minst 1 til forventningen. Du trekker på nytt til funksjonen er kollisjonsfri,
+i snitt færre enn to ganger.
+
+Et søk regner ut to hashverdier og sammenligner med én nøkkel, så det tar
+konstant tid uansett input. Sekundærtabeller på $n_j^2$ plasser ser dyre ut,
+men med en jevn fordeling på første nivå er summen av alle $n_j^2$ forventet
+under $2n$, så tabellene tar $O(n)$ plass til sammen.
+
+<Callout title="Perfekt hashing">
+For en statisk nøkkelmengde gir to nivåer, med kollisjonsfrie sekundærtabeller
+på $n_j^2$ plasser, søk i konstant tid i verste tilfelle og $O(n)$ plass.
+</Callout>
 
 Kostnadene så langt, samlet:
 
@@ -311,16 +341,19 @@ $\Theta(n)$ i stedet for forventet konstant tid.
 
 ## Dynamiske tabeller
 
-Blir en stakk, en kø eller en hashtabell full, må den få mer plass: alloker en
-større tabell, kopier alt over, og fortsett der. Kopieringen tar lineær tid, så
-den bør skje sjelden. Med <Term name="Tabelldobling">tabelldobling</Term>
-allokeres dobbelt så stor plass hver gang tabellen er full.
+Blir en stakk eller en kø full, må den få mer plass: alloker en større tabell,
+kopier alt over, og fortsett der. En hashtabell med kjeding blir aldri full,
+men $\alpha = n/m$ vokser med $n$, så den trenger også en større tabell for at
+søket skal holde seg forventet konstant. Ved utvidelsen hashes hver nøkkel på
+nytt med en funksjon for den nye størrelsen, i konstant tid per nøkkel, så den
+koster like mye som en kopiering. Kopieringen tar lineær tid, så den bør skje
+sjelden. Med <Term name="Tabelldobling">tabelldobling</Term> allokeres dobbelt
+så stor plass hver gang tabellen er full, eller for hashtabellen hver gang
+$\alpha$ når en fast grense.
 
 Én enkelt innsetting kan da koste lineær tid, men de dyre innsettingene blir
-sjeldnere jo større tabellen blir, så kjøretiden per operasjon er et misvisende
-mål. <Term name="Amortisert analyse">Amortisert analyse</Term> ser i stedet på
-en hel operasjonsfølge under ett. Den enkleste varianten er aggregert analyse:
-regn ut det totale arbeidet og del på antallet operasjoner.
+sjeldnere jo større tabellen blir. Tell derfor det totale arbeidet over mange
+innsettinger.
 
 <Example title="Seksten innsettinger med tabelldobling">
 En dynamisk tabell starter med plass til ett element og dobles hver gang den er
@@ -340,7 +373,7 @@ Summen er <FormulaRef id="toerpotenser">toerpotens-summen</FormulaRef>, som
 alltid er én mindre enn neste toerpotens, her $16 - 1$. Totalt blir det
 $16 + 15 = 31$ operasjoner.
 
-<Answer>$31 = 2 \cdot 16 - 1$ operasjoner, i snitt under 2 per innsetting, altså $\Theta(1)$ amortisert.</Answer>
+<Answer>$31 = 2 \cdot 16 - 1$ operasjoner, i snitt under 2 per innsetting.</Answer>
 </Solution>
 </Example>
 
@@ -348,7 +381,8 @@ For $n$ innsettinger skjer kopieringen ved størrelsene $1, 2, 4, \ldots, 2^j$,
 der $2^j$ er den største toerpotensen under $n$. Kopieringsarbeidet er da
 $1 + 2 + \cdots + 2^j = 2^{j+1} - 1$, og det er mindre enn $2n$, ettersom
 $2^j < n$. Med de $n$ skrivingene i tillegg blir totalen under $3n$, så hver
-innsetting koster amortisert færre enn 3 operasjoner.
+innsetting koster i snitt færre enn 3 operasjoner. For $n = 16$ gir grensen
+$48$, og tellingen over ga $31$.
 
 <Figure
   src="/figures/tabelldobling.svg"
@@ -356,15 +390,22 @@ innsetting koster amortisert færre enn 3 operasjoner.
   number={2}
   width={560}
   height={300}
-  caption="Kostnaden per innsetting med tabelldobling. Grønnblått er selve skrivingen, rødt er kopieringen når tabellen dobles. Toppene vokser, men kommer halvparten så ofte for hver gang, så snittet holder seg under den stiplede grensen på 3."
+  caption="Kostnaden per innsetting med tabelldobling. Grønnblått er selve skrivingen, rødt er kopieringen når tabellen dobles, og den stiplede linjen ligger på 3 operasjoner."
 />
 
-Merk hva som ikke ble antatt. Ingen sannsynlighet, ingen snill input; amortisert
-kjøretid er et snitt over operasjonene i en følge, i verste fall.
-Gjennomsnittstilfellet er noe annet, et snitt over instanser med en
-sannsynlighetsfordeling. For en hashtabell som dobles, må elementene settes inn
-på nytt med en hashfunksjon tilpasset den nye størrelsen, og analysen holder
-fortsatt.
+Å regne ut det totale arbeidet for en hel operasjonsfølge og dele på antallet
+operasjoner heter aggregert analyse. Det er den enkleste formen for
+<Term name="Amortisert analyse">amortisert analyse</Term>, og den viser at
+tabelldobling koster amortisert konstant tid per innsetting. Analysen antok ingen
+sannsynlighet og ingen snill input: amortisert kjøretid er et snitt over
+operasjonene i én følge, i verste fall. Gjennomsnittstilfellet er noe annet, et
+snitt over instanser med en sannsynlighetsfordeling.
+
+<Callout title="Amortisert kjøretid">
+$n$ innsettinger med tabelldobling koster under $3n$ operasjoner, altså
+amortisert konstant tid per innsetting. Amortisert kjøretid er et snitt over
+operasjonene i én følge i verste fall, uten sannsynlighet.
+</Callout>
 
 <Derivation title="Multipop på en stakk">
 `Multipop` popper inntil $k$ elementer av en stakk. Én `Multipop` kan koste
@@ -376,19 +417,19 @@ arbeid, amortisert $\Theta(1)$ per operasjon.
 ## Sjekk deg selv
 
 <Quiz
-  question="Du søker etter en nøkkel i en hashtabell med kjeding. Hva vet du om kjøretiden?"
+  question="En hashtabell med kjeding har fast $m = 100$ plasser og blir aldri utvidet. Hashfunksjonen fordeler jevnt. Hvordan vokser forventet søketid når du setter inn $n$ nøkler?"
   options={[
-    "Forventet $\\Theta(1+\\alpha)$, men $\\Theta(n)$ i verste tilfelle",
-    "Garantert $\\Theta(1)$ så lenge tabellen er stor nok",
-    "$\\Theta(\\lg n)$, fordi kjedene halveres for hver sammenligning",
+    "Forventet $\\Theta(n)$, siden $\\alpha = n/100$ vokser med $n$",
+    "Forventet $\\Theta(1)$, siden jevn fordeling holder listene korte",
+    "Forventet $\\Theta(1)$, men $\\Theta(n)$ i verste tilfelle",
   ]}
   answer={0}
-  explanation="Jevn fordeling gir korte kjeder i snitt, men ingenting hindrer at alle nøklene hasher til samme plass; da er søket et lineært søk i én lenket liste. Med kjeding finnes ingen garanti for konstant tid. Garantert konstant søketid i en hashtabell får du med perfekt hashing, og den forutsetter at nøkkelmengden er statisk."
+  explanation="Forventet søketid er $\Theta(1 + \alpha)$, og med $m = 100$ fast er $\alpha = n/100$. Hver liste vokser altså lineært med $n$, bare med en hundre ganger mindre konstant. Jevn fordeling gjør listene like lange, ikke korte. Forventet konstant tid krever $m = \Theta(n)$, altså en tabell som vokser med datamengden, slik tabelldobling sørger for."
 />
 
 <KeyTakeaways>
 - En tabell ligger sammenhengende i minnet, og adressen $a + b(i - s)$ gjør indeksering konstant. Matriser lagres radvis, kolonnevis eller med én tabell per rad.
-- Stakk er sist inn, først ut; kø er først inn, først ut. Ringbufferen gir kø i en fast tabell: `head` og `tail` rykker fremover og går rundt med modulo.
+- Stakk er sist inn, først ut; kø er først inn, først ut. Ringbufferen gir kø i en fast tabell: `head` og `tail` rykker fremover og går rundt til starten når de passerer enden.
 - En lenket liste setter inn og sletter i konstant tid ved noden, men søk følger pekerne og er lineært.
 - En dynamisk mengde er funksjonalitet; strukturen som leverer den, setter prisene på operasjonene.
 - Kjeding gir forventet $\Theta(1+\alpha)$ søk og $\Theta(n)$ i verste tilfelle. Perfekt hashing gir garantert konstant søk for statiske nøkkelmengder.

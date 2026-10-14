@@ -83,7 +83,7 @@ Verifiseringen er enkel i søke- og beslutningsvarianten: gitt et sertifikat
 $H$, sjekk at $H$ består av $k$ noder fra $G$ og at alle par er naboer. Å finne
 en klikk virker derimot svært vanskelig, og det er et åpent spørsmål om å finne
 en klikk egentlig *er* vanskeligere enn å verifisere en. I optimeringsvarianten
-sjekkes det på samme måte at $H$ er en klikk, men ikke at ingen større klikk
+kan du sjekke at $H$ er en klikk på samme måte, men ikke at ingen større klikk
 finnes.
 
 ## Reduksjoner
@@ -101,12 +101,13 @@ def unique(A, n):
 ```
 
 Etter sorteringen står like verdier ved siden av hverandre, så det holder å
-sjekke naboene. Sorteringen har redusert unikhetsproblemet til noe enklere.
+sjekke naboene. Unikhet er da løst med én sortering og én lineær gjennomgang.
 Slik kan du tenke helt generelt: gjør noe arbeid som omformer instansen, og
 overlat resten til en subrutine du later som du har. En slik hypotetisk
 subrutine kalles et <Term name="Orakel">orakel</Term>, og konstruksjonen er en
-<Term name="Reduksjon">reduksjon</Term> fra det ene problemet til det andre.
-Reduksjonene deles inn etter hvor mye de får lov til å gjøre:
+<Term name="Reduksjon">reduksjon</Term> fra det ene problemet til det andre,
+her fra unikhet til sortering. Reduksjonene deles inn etter hvor mye de får
+lov til å gjøre:
 
 <Compare>
 <CompareCol title="Cook">
@@ -127,14 +128,25 @@ Hver type er et spesialtilfelle av den forrige. En Karp-reduksjon er en
 Levin-reduksjon der oversettelsen tilbake er triviell, og en Levin-reduksjon er
 en Cook-reduksjon med nøyaktig ett kall.
 
+`unique` er en Levin-reduksjon. Den kaller sorteringen én gang, og nabosjekken
+oversetter den sorterte tabellen til ja eller nei. Den er ingen Karp-reduksjon,
+for oraklet svarer med en tabell og ikke med ja eller nei. Skal du derimot
+finne en klikk med $k$ noder med et orakel for beslutningsvarianten, trenger du
+mange kall. Fjern én node om gangen, og spør om grafen fortsatt har en klikk
+med $k$ noder. Er svaret nei, legger du noden tilbake. Hadde grafen en klikk
+med $k$ noder fra starten, har de gjenværende nodene etter $n$ kall fortsatt
+en. Hver gjenværende node er med i hver klikk med $k$ noder blant dem, for uten
+noden fantes ingen, så de gjenværende nodene er selve klikken. Det er en
+Cook-reduksjon.
+
 ## Vanskegrad
 
 Reduksjoner er mer enn gjenbruk av kode; de sammenligner problemer. Å åpne en
 skattekiste kan reduseres til å dirke opp låsen: får du opp låsen, får du opp
 kista. Er låsen rusten og lett å dirke, er kista lett å åpne. Kista kan også
-være lett å åpne av helt andre grunner, selv med en solid lås. Det eneste
-umulige er at kista er vanskeligere enn låsen, for gjennom låsen går det alltid
-én vei inn.
+være lett å åpne selv med en solid lås, hvis hengslene sitter løst og gir en
+annen vei inn. Det eneste umulige er at kista er vanskeligere enn låsen, for
+gjennom låsen går det alltid én vei inn.
 
 <Statement kind="principle" name="Reduksjoner og vanskegrad">
 La $X$ kunne reduseres til $Y$ med en billig reduksjon. Da er $Y$ minst like
@@ -146,6 +158,11 @@ Prinsippet virker begge veier. Reduserer du til noe du vet er lett, har du
 funnet en algoritme. Reduserer du fra noe du vet er vanskelig, har du vist at
 målet er minst like vanskelig.
 
+<Callout title="Hvilken vei du reduserer">
+Reduser til et kjent lett problem for å finne en algoritme. Reduser fra et
+kjent vanskelig problem for å vise at målet er minst like vanskelig.
+</Callout>
+
 <Example title="Flest mulig og færrest mulig">
 Velg ut flest mulig blant $n$ personer slik at alle i utvalget kjenner minst
 $k$ av de andre i utvalget. Deretter: velg ut færrest mulig, men minst én, med
@@ -153,7 +170,8 @@ samme krav. Hvorfor er den første oppgaven lett og den andre vanskelig?
 
 <Solution>
 Flest mulig: stryk en person som kjenner færre enn $k$ av de gjenværende, og
-gjenta til ingen flere kan strykes. Ingen gyldig gruppe mister noe medlem på
+gjenta til ingen flere kan strykes. Én stryking kan gjøre at en nabo kjenner
+færre enn $k$ av de gjenværende, så du teller på nytt etter hver stryking. Ingen gyldig gruppe mister noe medlem på
 veien: så lenge hele gruppa står, kjenner hvert medlem minst $k$ innenfor
 gruppa, og dermed minst $k$ blant de gjenværende, så ingen av dem strykes
 først. Når ingen flere kan strykes, kjenner alle som står igjen minst $k$ av de
@@ -178,7 +196,7 @@ vanskelig.
 <Stepper
   src="/steppers/stryking.js"
   title="Flest mulig ved stryking"
-  caption="Kravet er $k = 2$: den oransje kandidaten kjenner færre enn to av de gjenværende og strykes. Én stryking kan gjøre at naboen også må strykes."
+  caption="Bekjentskapsgrafen med kravet $k = 2$. Oransje er en person som kjenner færre enn to av de gjenværende, stiplet grått er strøket, og grønt er gruppa som står igjen."
   height={300}
 />
 
@@ -201,19 +219,30 @@ algoritme for $P$ som går veien om $Q$, så $P$ er også lett.
 
 ## Dekomponering
 
-Reduksjonene over oversetter mellom forskjellige problemer. Like ofte reduserer
-du et problem til mindre instanser av seg selv: du dekomponerer. En rekursiv
-prosedyre dekomponerer, for den bruker seg selv som orakel på mindre
-delinstanser.
+Reduksjonen fra unikhet til sortering oversetter mellom to forskjellige
+problemer. Like ofte reduserer
+du et problem til mindre instanser av seg selv: du dekomponerer.
+<Term name="Insertion-Sort" /> er den enkleste bruken, det læreboka kaller den
+inkrementelle metoden. Dekomponer ved å kutte av det siste elementet, og anta
+at resten kan sorteres. Kombiner ved å sette det siste elementet inn på rett
+plass i den sorterte resten. Dekomponeringen er nesten gratis, så alt arbeidet
+ligger i kombinasjonen. Speilbildet er sortering ved utvelgelse, selection
+sort: ta ut det største elementet, sorter resten og legg det største bakerst.
+Da ligger arbeidet i dekomponeringen, og kombinasjonen er triviell. Rikere
+dekomponeringer, som å dele instansen i to halvdeler, er grunnlaget for splitt
+og hersk.
 
-Beviset for at en rekursiv prosedyre gir riktige svar, er et induksjonsbevis
-over delinstansene. Grunntilfellet er instansene som løses direkte, uten dekomponering, og
-det er ofte trivielt: ett element, én node, en tom mengde.
-Induksjonshypotesen er antagelsen om at delinstansene kan løses, det induktive
-premisset for induksjonssteget. Induksjonssteget viser at dekomponeringen og
-kombinasjonen av delsvar gir et riktig svar for hele instansen. Og
-dekomponeringen må krympe instansen, slik at rekursjonen ender i
-grunntilfellet.
+En rekursiv prosedyre dekomponerer på samme måte, for den bruker seg selv som
+orakel på mindre delinstanser. Beviset for at den gir riktige svar, er et
+induksjonsbevis over delinstansene. Grunntilfellet er instansene som løses
+direkte, uten dekomponering. For Insertion-Sort er grunntilfellet en tabell med
+ett element, som allerede er sortert. Induksjonshypotesen er antagelsen om at
+delinstansene kan løses, her at resten av tabellen kan sorteres.
+Induksjonssteget viser at kombinasjonen av riktige delsvar gir et riktig svar
+for hele instansen: settes det siste elementet inn på rett plass i en sortert
+rest, er hele tabellen sortert. Og dekomponeringen må krympe instansen, slik at
+rekursjonen ender i grunntilfellet. Hvert kutt i Insertion-Sort fjerner ett
+element.
 
 <Figure
   src="/figures/dekomponering.svg"
@@ -229,27 +258,22 @@ riktigheten seg oppover nivåene. En <Term name="Løkkeinvariant">løkkeinvarian
 er det samme beviset sett fra en løkke: initialisering er grunntilfellet, og
 vedlikehold er induksjonssteget.
 
-<Term name="Insertion-Sort" /> er den enkleste bruken, det læreboka kaller den
-inkrementelle metoden. Dekomponer ved å kutte av det siste elementet.
-Induksjonshypotesen sier at resten kan sorteres. Kombinasjonen setter det siste
-elementet inn på rett plass i den sorterte resten. Dekomponeringen er nesten
-gratis, så alt arbeidet ligger i kombinasjonen. Speilbildet finnes også: gjør
-hovedarbeidet i dekomponeringen ved å ta ut det største elementet, så blir
-kombinasjonen triviell, legg det bakerst. Det er sortering ved utvelgelse,
-selection sort. Rikere dekomponeringer, som å dele instansen i to halvdeler,
-er grunnlaget for splitt og hersk.
+<Callout title="Riktighet ved dekomponering">
+En rekursiv prosedyre er riktig når grunntilfellet er riktig, kombinasjonen av
+riktige delsvar gir et riktig svar, og hver dekomponering krymper instansen.
+</Callout>
 
 ## Sjekk deg selv
 
 <Quiz
-  question="En algoritme for problem $X$ omformer instansen, kaller en subrutine for beslutningsproblemet $Y$ én gang, og returnerer ja/nei-svaret uendret. Hva slags reduksjon er dette?"
+  question="Du vil avgjøre om grafen $G$ har en klikk med $k$ noder, og har et orakel som finner en størst mulig klikk. Du kaller oraklet én gang på $G$ og svarer ja hvis klikken det gir, har minst $k$ noder. Hvilken reduksjonstype er den strammeste beskrivelsen?"
   options={[
-    "En Karp-reduksjon",
-    "En Cook-reduksjon, og ikke noe mer spesifikt",
-    "En Levin-reduksjon som også oversetter løsningen tilbake",
+    "Karp, for algoritmen svarer ja eller nei etter ett kall",
+    "Levin, for oraklets klikk må oversettes til ja eller nei",
+    "Cook, for algoritmen gjør eget arbeid etter kallet",
   ]}
-  answer={0}
-  explanation="Ett kall der svaret går rett gjennom er nettopp Karp-reduksjonen. Den er samtidig en Levin- og en Cook-reduksjon, siden hver type er et spesialtilfelle av den neste, men Karp er den strammeste beskrivelsen."
+  answer={1}
+  explanation="Det er ett kall, og oraklet svarer med en klikk. Sammenligningen med $k$ oversetter klikken til et svar på beslutningsvarianten, akkurat som nabosjekken i <code>unique</code> oversetter den sorterte tabellen. Karp krever at oraklet selv svarer ja eller nei, og det gjør ikke et orakel for optimeringsvarianten. Eget arbeid etter kallet er lov i en Levin-reduksjon; det som skiller Cook fra Levin, er antall kall."
 />
 
 <KeyTakeaways>
