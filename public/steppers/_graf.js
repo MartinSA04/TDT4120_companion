@@ -4,6 +4,8 @@
  * it). A graph is a list of nodes on a small grid and a list of directed
  * edges; this file maps the grid into a box on the stage and returns SVG
  * strings, so each stepper only decides what state every node and edge is in.
+ * A graph marked `undirected` (kruskal.js and prim.js in modul 09) is drawn
+ * without arrowheads, and its edges carry a weight `w`.
  *
  * Nodes are drawn in the colours the algorithms use, as ink density: a white
  * node is empty, a gray node is half-filled and a black node is filled with
@@ -111,6 +113,40 @@ export function edgeGeom(a, b, sa, sb, bend = 0) {
 }
 
 /**
+ * Geometry for the undirected edge a – b: a straight line from rim to rim
+ * with no arrowhead (`head` is null). `mid` is the midpoint between the two
+ * centres, where a weight label goes.
+ */
+export function lineGeom(a, b, sa, sb) {
+  const [dx, dy] = unit(b.x - a.x, b.y - a.y);
+  const p = { x: a.x + dx * rim(sa, dx, dy), y: a.y + dy * rim(sa, dx, dy) };
+  const q = { x: b.x - dx * rim(sb, -dx, -dy), y: b.y - dy * rim(sb, -dx, -dy) };
+  return {
+    d: `M${p.x.toFixed(1)} ${p.y.toFixed(1)} L${q.x.toFixed(1)} ${q.y.toFixed(1)}`,
+    head: null,
+    mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+    len: Math.hypot(q.x - p.x, q.y - p.y),
+    nx: -dy,
+    ny: dx,
+  };
+}
+
+/**
+ * A weight on an edge: the number on a small patch of the stage colour, so
+ * the line breaks behind it.
+ */
+export function weightSvg(g, text, color = "var(--muted)", bold = false) {
+  const t = String(text);
+  const wdt = 7 * t.length + 6;
+  return (
+    `<rect x="${(g.mid.x - wdt / 2).toFixed(1)}" y="${(g.mid.y - 8).toFixed(1)}" width="${wdt}" height="16" rx="3" ` +
+    `style="fill:var(--bg-elevated)"/>` +
+    `<text x="${g.mid.x.toFixed(1)}" y="${(g.mid.y + 4).toFixed(1)}" text-anchor="middle" ` +
+    `style="fill:${color};${FONT}${bold ? ";font-weight:600" : ""}">${esc(t)}</text>`
+  );
+}
+
+/**
  * SVG for one edge. `st` is an EDGE style; `badge` an optional letter drawn
  * in a small disc at the middle of the edge.
  */
@@ -125,7 +161,7 @@ export function edgeSvg(g, st, badge) {
   s +=
     `<path d="${g.d}" fill="none"${op} style="stroke:${st.stroke}" stroke-width="${st.wdt}"` +
     `${st.dash ? ` stroke-dasharray="${st.dash}"` : ""}/>`;
-  s += `<polygon points="${g.head}"${op} style="fill:${st.stroke}"/>`;
+  if (g.head) s += `<polygon points="${g.head}"${op} style="fill:${st.stroke}"/>`;
   if (badge) {
     // On a short edge the badge would hide the arrowhead: lift it off the line.
     if (g.len < 46) g = { ...g, mid: { x: g.mid.x + g.nx * 12, y: g.mid.y + g.ny * 12 } };
@@ -185,9 +221,11 @@ export function nodeSvg(p, shape, label, st, ring, sub) {
 }
 
 /**
- * The whole graph: edges first (each from `edgeStyle(e)` → { st, badge }),
- * then nodes (from `nodeStyle(n)` → { st, ring, sub }). `shapeOf(n)` gives the
- * node shape, { r } for a circle or { hw, hh } for a box.
+ * The whole graph: edges first (each from `edgeStyle(e)` → { st, badge,
+ * weight?, weightColor?, weightBold? }), then nodes (from `nodeStyle(n)` →
+ * { st, ring, sub }). `shapeOf(n)` gives the node shape, { r } for a circle
+ * or { hw, hh } for a box. A graph with `undirected: true` is drawn without
+ * arrowheads, and edge weights are drawn on top of all the edges.
  */
 export function graphSvg(graph, pos, shapeOf, nodeStyle, edgeStyle) {
   const byId = new Map(graph.nodes.map((n) => [n.id, n]));
@@ -196,16 +234,17 @@ export function graphSvg(graph, pos, shapeOf, nodeStyle, edgeStyle) {
   const rank = (x) => (x.st === EDGE.plain || x.st === EDGE.faded ? 0 : x.st === EDGE.cur ? 2 : 1);
   drawn.sort((x, y) => rank(x) - rank(y));
   let s = "";
-  for (const { e, st, badge } of drawn) {
-    const g = edgeGeom(
-      pos.get(e.from),
-      pos.get(e.to),
-      shapeOf(byId.get(e.from)),
-      shapeOf(byId.get(e.to)),
-      bendFor(graph.edges, e),
-    );
+  let weights = "";
+  for (const { e, st, badge, weight, weightColor, weightBold } of drawn) {
+    const a = pos.get(e.from);
+    const b = pos.get(e.to);
+    const sa = shapeOf(byId.get(e.from));
+    const sb = shapeOf(byId.get(e.to));
+    const g = graph.undirected ? lineGeom(a, b, sa, sb) : edgeGeom(a, b, sa, sb, bendFor(graph.edges, e));
     s += edgeSvg(g, st, badge);
+    if (weight != null) weights += weightSvg(g, weight, weightColor, weightBold);
   }
+  s += weights;
   for (const n of graph.nodes) {
     const { st, ring, sub } = nodeStyle(n);
     s += nodeSvg(pos.get(n.id), shapeOf(n), n.label ?? n.id, st, ring, sub);
@@ -400,4 +439,33 @@ export function randomGraph(nodes, pairs, { one = 0.4, both = 0.06, min = 10, ma
     }
     if (edges.length >= min && edges.length <= max) return { nodes, edges: shuffle(edges) };
   }
+}
+
+/**
+ * The lecture's weighted graph for minimum spanning trees (the textbook's
+ * figure, with its nodes a–i numbered 1–9), undirected, laid out as in the
+ * book. Its minimum spanning trees have weight 37.
+ */
+export const VEKTET = {
+  undirected: true,
+  nodes: [
+    { id: 1, gx: 0, gy: 1 },
+    { id: 2, gx: 1, gy: 0 },
+    { id: 3, gx: 2, gy: 0 },
+    { id: 4, gx: 3, gy: 0 },
+    { id: 5, gx: 4, gy: 1 },
+    { id: 6, gx: 3, gy: 2 },
+    { id: 7, gx: 2, gy: 2 },
+    { id: 8, gx: 1, gy: 2 },
+    { id: 9, gx: 1.5, gy: 1 },
+  ],
+  edges: [
+    [1, 2, 4], [1, 8, 8], [2, 3, 8], [2, 8, 11], [3, 4, 7], [3, 9, 2], [3, 6, 4],
+    [4, 5, 9], [4, 6, 14], [5, 6, 10], [6, 7, 2], [7, 8, 1], [7, 9, 6], [8, 9, 7],
+  ].map(([from, to, w]) => ({ from, to, w })),
+};
+
+/** The same graph with new random weights from 1 to `max`; ties are allowed. */
+export function reweighted(graph, max = 15) {
+  return { ...graph, edges: graph.edges.map((e) => ({ ...e, w: 1 + Math.floor(Math.random() * max) })) };
 }

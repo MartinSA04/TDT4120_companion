@@ -237,6 +237,37 @@ formulas:
       id: bfs-avstand,
     }
 
+  - {
+      tex: "x.\\mathit{rank} \\le \\lg n",
+      label: "Union by rank: et tre med rot av rang $k$ har minst $2^k$ noder, så med $n$ elementer er ingen rang større enn $\\lg n$. Høyden er høyst rangen, så Find-Set koster $O(\\lg n)$.",
+      section: "Minimale spenntrær",
+      id: rang-grense,
+    }
+  - {
+      tex: "O(m\\,\\alpha(n))",
+      label: "$m$ operasjoner på disjunkte mengder, der $n$ av dem er Make-Set, med union by rank og stikomprimering. $\\alpha(n) \\le 4$ for alle $n$ under $10^{80}$. Med union by rank alene er grensen $O(m \\lg n)$.",
+      section: "Minimale spenntrær",
+      id: disjunkte-mengder-kjoretid,
+    }
+  - {
+      tex: "w(T') = w(T) - w(x, y) + w(u, v) \\le w(T)",
+      label: "Byttet i beviset for at en lett kant $(u, v)$ over et snitt som respekterer $A$, er trygg. $(x, y)$ er kanten der stien fra $u$ til $v$ i $T$ krysser snittet, så $w(u, v) \\le w(x, y)$.",
+      section: "Minimale spenntrær",
+      id: trygg-kant-bytte,
+    }
+  - {
+      tex: "O(E \\lg E) = O(E \\lg V)",
+      label: "MST-Kruskal: sorteringen tar $O(E \\lg E)$, og løkka tar $O(E \\lg V)$ med union by rank. Siden $|E| < |V|^2$, er $\\lg |E| < 2 \\lg |V|$.",
+      section: "Minimale spenntrær",
+      id: kruskal-kjoretid,
+    }
+  - {
+      tex: "O(V \\lg V + E \\lg V) = O(E \\lg V)",
+      label: "MST-Prim med binær haug: $|V|$ kall til Extract-Min og $O(E)$ kall til Decrease-Key, hvert $O(\\lg V)$. Med Fibonacci-haug blir det $O(E + V \\lg V)$.",
+      section: "Minimale spenntrær",
+      id: prim-kjoretid,
+    }
+
 # ── Symbols → Symboler page ──────────────────────────────────────────────────
 # Bokstavene modulene bruker, gruppert som modulene. En bokstav med flere
 # betydninger får én rad per betydning, med en advarsel i `note`. Algoritmer har
@@ -326,6 +357,21 @@ symbols:
   - { tex: "u.\\pi", meaning: "Forgjengeren til $u$: noden $u$ ble oppdaget fra", section: "Traversering av grafer", term: "Traverseringstre", id: forgjenger, note: "nil for startnoden og for røttene i en dybde-først-skog." }
   - { tex: "\\delta(s, v)", meaning: "Avstanden fra $s$ til $v$: det minste antallet kanter på en sti", section: "Traversering av grafer", formula: bfs-avstand, id: delta, note: "$\\infty$ når $v$ ikke kan nås fra $s$." }
   - { tex: "G^{\\mathrm T}", meaning: "Den transponerte grafen: $G$ med alle kantene snudd", section: "Traversering av grafer", term: "Sterke komponenter", id: transponert }
+
+  # ── Minimale spenntrær ──
+  - { tex: "x.p", meaning: "Forelderen til $x$ i en disjunkt-mengde-skog", section: "Minimale spenntrær", term: "Disjunkte mengder", id: forelder, note: "En rot har $x.p = x$ og er representanten for mengden. Ikke forgjengeren $u.\\pi$." }
+  - { tex: "x.\\mathit{rank}", meaning: "Rangen til $x$: en øvre grense for høyden til $x$", section: "Minimale spenntrær", term: "Union by rank", formula: rang-grense, id: rank, note: "Ikke rangen $i$ i Randomized-Select." }
+  - { tex: "\\alpha(n)", meaning: "En funksjon som vokser svært sakte, i kjøretiden for disjunkte mengder", section: "Minimale spenntrær", formula: disjunkte-mengder-kjoretid, id: alfa-n, note: "$\\alpha(n) \\le 4$ for alle $n$ under $10^{80}$. Ikke belastningsfaktoren $\\alpha$." }
+  - { tex: "m,\\ n", meaning: "For disjunkte mengder: antall operasjoner, og hvor mange av dem som er Make-Set", section: "Minimale spenntrær", formula: disjunkte-mengder-kjoretid, note: "$n \\le m$, og $n$ er antall elementer." }
+  - { tex: "w(u, v)", meaning: "Vekten til kanten $(u, v)$", section: "Minimale spenntrær", note: "I en urettet graf er $w(u, v) = w(v, u)$. Ikke kapasiteten $W$ i ryggsekkproblemet." }
+  - { tex: "w(T)", meaning: "Vektsummen til kantene i $T$", section: "Minimale spenntrær", term: "Minimalt spenntre", formula: trygg-kant-bytte }
+  - { tex: "T", meaning: "Et spenntre, som regel et minimalt spenntre", section: "Minimale spenntrær", term: "Spenntre", note: "Ikke kjøretiden $T(n)$ eller kodetreet $T$ i Huffman." }
+  - { tex: "A", meaning: "Kantene Generic-MST har valgt så langt", section: "Minimale spenntrær", term: "Trygg kant", note: "Alltid en delmengde av et minimalt spenntre. Ikke en tabell $A$." }
+  - { tex: "(S, V - S)", meaning: "Et snitt: nodene delt i $S$ og resten", section: "Minimale spenntrær", term: "Snitt" }
+  - { tex: "r", meaning: "Startnoden i MST-Prim, rota i spenntreet", section: "Minimale spenntrær", term: "MST-Prim", note: "Ikke segmentgrensen $r$ i $A[p .. r]$." }
+  - { tex: "v.\\mathit{key}", meaning: "I MST-Prim: vekten av den letteste kanten fra $v$ til treet", section: "Minimale spenntrær", term: "MST-Prim", formula: prim-kjoretid, id: key, note: "$\\infty$ før noen slik kant er funnet. Prioriteten til $v$ i $Q$." }
+  - { tex: "v.\\pi", meaning: "I MST-Prim: noden i treet som den letteste kanten fra $v$ går til", section: "Minimale spenntrær", term: "MST-Prim", id: prim-pi, note: "Kantene $(v, v.\\pi)$ er spenntreet til slutt. I traverseringene er $v.\\pi$ forgjengeren." }
+  - { tex: "Q", meaning: "Min-prioritetskøen i MST-Prim, med nøklene $v.\\mathit{key}$", section: "Minimale spenntrær", term: "MST-Prim", note: "I BFS er $Q$ en FIFO-kø." }
 
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
@@ -727,6 +773,57 @@ glossary:
       section: "Traversering av grafer",
     }
 
+  - {
+      term: "Disjunkte mengder",
+      definition: "Datastruktur for mengder uten felles elementer, med operasjonene Make-Set, Union og Find-Set. Hver mengde har ett av elementene som representant. I en disjunkt-mengde-skog er hver mengde et tre av foreldrepekere $x.p$ med representanten i rota. Med union by rank og stikomprimering tar $m$ operasjoner $O(m\\,\\alpha(n))$.",
+      section: "Minimale spenntrær",
+    }
+  - {
+      term: "Union by rank",
+      definition: "Heuristikk for disjunkt-mengde-skoger. Hver node har en rang $x.\\mathit{rank}$, en øvre grense for høyden. Link henger rota med lavest rang under rota med høyest rang, og har røttene samme rang, får den nye rota rangen økt med 1. Et tre med rot av rang $k$ har minst $2^k$ noder, så med $n$ elementer er høyden høyst $\\lg n$.",
+      section: "Minimale spenntrær",
+    }
+  - {
+      term: "Stikomprimering",
+      definition: "Heuristikk for disjunkt-mengde-skoger: Find-Set$(x)$ setter foreldrepekeren til hver node på stien fra $x$ rett på rota, så neste Find-Set fra noen av dem går rett dit. Rangene endres ikke og er derfor bare øvre grenser for høyden.",
+      section: "Minimale spenntrær",
+    }
+  - {
+      term: "Spenntre",
+      definition: "Et tre av kanter fra en sammenhengende, urettet graf som når alle nodene. Har $|V| - 1$ kanter.",
+      section: "Minimale spenntrær",
+    }
+  - {
+      term: "Minimalt spenntre",
+      definition: "Et spenntre med lavest mulig vektsum $w(T)$. En graf kan ha flere. MST-Kruskal og MST-Prim finner et, og begge er tilfeller av Generic-MST.",
+      section: "Minimale spenntrær",
+    }
+  - {
+      term: "Snitt",
+      definition: "En deling $(S, V - S)$ av nodene i en graf i to mengder. En kant krysser snittet når den har én ende i hver mengde, og snittet respekterer kantmengden $A$ når ingen kant i $A$ krysser det.",
+      section: "Minimale spenntrær",
+    }
+  - {
+      term: "Lett kant",
+      definition: "En kant med lavest vekt blant kantene som krysser et snitt. Er flere like lette, er alle lette. En lett kant over et snitt som respekterer $A$, er trygg for $A$.",
+      section: "Minimale spenntrær",
+    }
+  - {
+      term: "Trygg kant",
+      definition: "Er $A$ en delmengde av et minimalt spenntre, er kanten $(u, v)$ trygg for $A$ når $A \\cup \\{(u, v)\\}$ også er det. Generic-MST legger bare til trygge kanter, så $A$ ender som et minimalt spenntre.",
+      section: "Minimale spenntrær",
+    }
+  - {
+      term: "MST-Kruskal",
+      definition: "Kruskals algoritme. Går gjennom kantene i stigende vekt og legger hver kant til $A$ når endene er i ulike trær i skogen $(V, A)$. Trærne holdes i disjunkte mengder. $O(E \\lg V)$.",
+      section: "Minimale spenntrær",
+    }
+  - {
+      term: "MST-Prim",
+      definition: "Prims algoritme. Bygger ett tre fra en startnode $r$. Nodene utenfor treet står i en min-prioritetskø med nøkkelen $v.\\mathit{key}$, vekten av den letteste kanten til treet, og Extract-Min gir neste node. $O(E \\lg V)$ med binær haug og $O(E + V \\lg V)$ med Fibonacci-haug.",
+      section: "Minimale spenntrær",
+    }
+
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──
 # A curated newest-first selection. Dates are the verified exam days, read off
 # page 1 of each oppgavesett ("Eksamen, <dato>") — not guessed.
@@ -779,6 +876,13 @@ exams:
       date: 2022-12-19,
       url: "https://algdat.idi.ntnu.no/arkiv/2022.des.tdt4120.oppg.no.pdf",
       solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2022.des.tdt4120.losn.no.pdf",
+    }
+  - {
+      label: "Kontinuasjonseksamen, august 2022",
+      id: "2022-aug-kont",
+      date: 2022-08-09,
+      url: "https://algdat.idi.ntnu.no/arkiv/2022.aug.tdt4120.oppg.no.pdf",
+      solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2022.aug.tdt4120.losn.no.pdf",
     }
   - {
       label: "Ordinær eksamen, november 2019",
