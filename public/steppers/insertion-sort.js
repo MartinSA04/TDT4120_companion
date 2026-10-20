@@ -191,7 +191,7 @@ export default {
     const xOf = (i) => PAD_X + i * (barW + gapW);
     const maxV = Math.max(1, ...data);
     // Labels are dropped rather than shrunk below the type ramp when the bars
-    // get narrow (WRITING.md §6: framework type tokens only).
+    // get narrow (WRITING.md §8.2: framework type tokens only).
     const showLabels = barW >= 18;
 
     const sorted = new Set(frame.sorted || []);
