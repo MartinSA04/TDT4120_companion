@@ -99,7 +99,7 @@ og hver kjede av avhengigheter må ende i et grunntilfelle.
 <Term name="Memoisering">Memoisering</Term> gir prosedyren hukommelse. Første
 gang den kalles med et argument, regner den ut svaret og lagrer det. Senere kall
 med samme argument slår opp svaret og returnerer med en gang. For stavkapping
-holder en tabell $r[0 .. n]$ der $-\infty$ betyr at delinstansen ikke er løst.
+holder en tabell ${r[0 : n]}$ der $-\infty$ betyr at delinstansen ikke er løst.
 Uten de tre linjene som leser og skriver $r$, er `aux` under nøyaktig Cut-Rod.
 
 <CodeBlock
@@ -146,7 +146,7 @@ En slik rekkefølge er en topologisk sortering av delinstansgrafen, og for
 stavkapping er det bare $0, 1, \ldots, n$. Denne formen kalles iterasjon
 nedenfra og opp, bottom-up, og memoisering kalles tilsvarende ovenfra og ned,
 top-down. Bottom-Up-Cut-Rod fyller $r$ fra venstre, og når den kommer til
-$r[j]$, er $r[0 .. j - 1]$ ferdige.
+$r[j]$, er ${r[0 : j - 1]}$ ferdige.
 
 Tabellen $r$ gir bare den beste prisen. For å finne kappingen lagrer du også
 valget: $s[j]$ er lengden på den første biten i en optimal kapping av lengde

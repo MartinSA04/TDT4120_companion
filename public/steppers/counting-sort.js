@@ -18,7 +18,7 @@
  *
  * Equal values are told apart by prime marks in order of appearance in A
  * (2, 2′, 2″), the lecturer's own notation, so stability can be read off B.
- * Values are integers in 0 .. K with K fixed at 5; indices are 0-based, as in
+ * Values are integers 0 to K with K fixed at 5; indices are 0-based, as in
  * the Python.
  *
  * Colours are framework tokens only, so frames re-theme on the light/dark
@@ -68,10 +68,10 @@ export default {
 
     snap(
       1,
-      `counting_sort(A, ${n}, ${K}): verdiene er heltall i 0 .. ${K}. Like verdier har merker (${dupeText}) så rekkefølgen kan følges.`,
+      `counting_sort(A, ${n}, ${K}): verdiene er heltall fra 0 til ${K}. Like verdier har merker (${dupeText}) så rekkefølgen kan følges.`,
       { n, k: K },
     );
-    snap([2, 3], `B er tom, og C[0 .. ${K}] skal telle forekomster av hver verdi. Alt er 0.`, { n, k: K });
+    snap([2, 3], `B er tom, og C[0\u00a0:\u00a0${K}] skal telle forekomster av hver verdi. Alt er 0.`, { n, k: K });
 
     for (let j = 0; j < n; j++) {
       const v = A[j];

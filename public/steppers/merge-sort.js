@@ -15,8 +15,8 @@
  *    9     merge(A, p, q, r)
  *   10
  *   11 def merge(A, p, q, r):
- *   12     L = A[p : q + 1] + [inf]
- *   13     R = A[q + 1 : r + 1] + [inf]
+ *   12     L = A[p:q+1] + [inf]
+ *   13     R = A[q+1:r+1] + [inf]
  *   14     i = j = 0
  *   15     for k in range(p, r + 1):
  *   16         if L[i] <= R[j]:
@@ -26,10 +26,10 @@
  *   20             A[k] = R[j]
  *   21             j = j + 1
  *
- * Indices are 0-based and the segment A[p .. r] is inclusive, as in the
+ * Indices are 0-based and the segment A[p : r] is inclusive, as in the
  * Python. During a merge the two children show the copies L and R (with the
  * sentinel drawn as an ∞ marker past the last cell), because merge overwrites
- * A[p .. r] while it reads them.
+ * A[p : r] while it reads them.
  *
  * Colours are framework tokens only, so frames re-theme on the light/dark
  * toggle without the module knowing which theme is active.
@@ -95,7 +95,7 @@ export default {
         return;
       }
       const q = Math.floor((p + r) / 2);
-      snap(6, `merge_sort(A, ${p}, ${r}): q = ${q}. Halvdelene er A[${p} .. ${q}] og A[${q + 1} .. ${r}].`, {
+      snap(6, `merge_sort(A, ${p}, ${r}): q = ${q}. Halvdelene er A[${p}\u00a0:\u00a0${q}] og A[${q + 1}\u00a0:\u00a0${r}].`, {
         p,
         q,
         r,
@@ -157,7 +157,7 @@ export default {
       left.vals = L.slice(0, -1);
       right.state = "done";
       right.vals = R.slice(0, -1);
-      snap(15, `Løkka er ferdig: A[${p} .. ${r}] er sortert.`, { p, q, r });
+      snap(15, `Løkka er ferdig: A[${p}\u00a0:\u00a0${r}] er sortert.`, { p, q, r });
     };
 
     const root = nodes.get(key(0, n - 1));

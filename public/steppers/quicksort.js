@@ -22,8 +22,8 @@
  *   15         quicksort(A, q + 1, r)
  *
  * The segment being partitioned is shaded, and inside it the three zones of
- * the loop invariant are the colours: A[p .. i] small (yellow), A[i+1 .. j-1]
- * large (orange), A[j .. r-1] not seen yet (grey), the pivot A[r] in the accent
+ * the loop invariant are the colours: A[p : i] small (yellow), A[i+1 : j-1]
+ * large (orange), A[j : r-1] not seen yet (grey), the pivot A[r] in the accent
  * colour. Green is reserved for elements that are finished: placed pivots and
  * one-element segments, outside the segment. Faint bars are segments still
  * waiting for their call. The green grows until the last frame is all green. Indices are 0-based, as in the Python. Empty segments get no frame of their own; the caller's step text
@@ -59,7 +59,7 @@ const esc = (v) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
   );
 
-const seg = (p, r) => `A[${p} .. ${r}]`;
+const seg = (p, r) => `A[${p}\u00a0:\u00a0${r}]`;
 
 export default {
   sizeRange: { min: 5, max: 12, default: 8 },

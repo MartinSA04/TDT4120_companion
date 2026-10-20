@@ -210,8 +210,8 @@ def merge_sort(A, p, r):
     merge(A, p, q, r)
 
 def merge(A, p, q, r):
-    L = A[p : q + 1] + [inf]
-    R = A[q + 1 : r + 1] + [inf]
+    L = A[p:q+1] + [inf]
+    R = A[q+1:r+1] + [inf]
     i = j = 0
     for k in range(p, r + 1):
         if L[i] <= R[j]:
@@ -229,6 +229,9 @@ def merge(A, p, q, r):
   caption="Rekursjonstreet til Merge-Sort, med hele tabellen øverst og ett nivå per rad. Grønt er sorterte halvdeler, oransje er elementene som sammenlignes, rødt er segmentet flettingen skriver til, og $\infty$ er vaktposten."
   height={300}
 />
+
+Stepperen skriver et segment slik boka gjør: ${A[p : q]}$ er $A[p]$ til og med $A[q]$.
+I koden er det samme segmentet `A[p:q+1]`, fordi Python stopper før sluttindeksen.
 
 Læreboka skriver flettingen uten vaktposter, med en egen test for at en
 halvdel er tom. Flettingen blir like riktig og bruker fortsatt $\Theta(n)$ tid.

@@ -291,7 +291,7 @@ barna til dem, to per node, står først på nivået under. Det første barnet t
 $i$ får da nummeret $2^{d+1} + 2(i - 2^d) = 2i$, og det andre $2i + 1$. Barna
 $2i$ og $2i + 1$ har begge forelderen $i$, så forelderen til en node $j$ er
 $\lfloor j/2 \rfloor$. Numrene er indekser
-i en tabell, så haugen trenger ingen pekere. $A[1 .. n]$ er treet, `Left`,
+i en tabell, så haugen trenger ingen pekere. ${A[1 : n]}$ er treet, `Left`,
 `Right` og `Parent` er regnestykker, og haugstørrelsen `size` sier hvor mye av
 tabellen som er haug.
 
@@ -475,11 +475,11 @@ hvert plukk er en Extract-Max. Bygg haugen av hele $A$. Så, for $i$ fra $n$
 ned til 2: bytt rota $A[1]$ med $A[i]$, minsk haugstørrelsen med én og kall
 Max-Heapify på rota.
 
-Invarianten er at $A[i+1 .. n]$ er de $n - i$ største
-elementene, sortert, og at $A[1 .. i]$ er en maks-haug. Rota er det største
-elementet i $A[1 .. i]$, så byttet legger det på plass $i$, rett foran de
+Invarianten er at ${A[i + 1 : n]}$ er de $n - i$ største
+elementene, sortert, og at ${A[1 : i]}$ er en maks-haug. Rota er det største
+elementet i ${A[1 : i]}$, så byttet legger det på plass $i$, rett foran de
 $n - i$ elementene som allerede er sortert. Etter byttet er bare den nye rota
-feilplassert i $A[1 .. i - 1]$, og Max-Heapify flytter den på plass. Sorteringen skjer på
+feilplassert i ${A[1 : i - 1]}$, og Max-Heapify flytter den på plass. Sorteringen skjer på
 plass: haugen ligger foran i tabellen, og den sorterte delen vokser bakfra.
 
 <CodeBlock

@@ -9,7 +9,7 @@
  * called. Those subtrees fade as soon as the lookup happens, so the reader
  * sees the tree shrink to what is actually computed.
  *
- * The bottom row is r[0 .. n], the delinstansgraf drawn as cells: an arc from
+ * The bottom row is r[0 : n], the delinstansgraf drawn as cells: an arc from
  * k to j < k is the edge "k builds on j". Every arc is followed exactly once,
  * when aux(k) calls aux(j), so the number of arcs is the work done.
  *
@@ -108,7 +108,7 @@ export default {
 
     snap(
       [3, 4],
-      `memoized_cut_rod(p, ${n}): r[0 .. ${n}] starter som −∞: ingen delinstans er løst. Treet er alle ${tree.length} kallene Cut-Rod gjør uten memo.`,
+      `memoized_cut_rod(p, ${n}): r[0\u00a0:\u00a0${n}] starter som −∞: ingen delinstans er løst. Treet er alle ${tree.length} kallene Cut-Rod gjør uten memo.`,
       { n },
     );
 

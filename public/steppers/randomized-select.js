@@ -62,7 +62,7 @@ const esc = (v) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
   );
 
-const seg = (p, r) => `A[${p} .. ${r}]`;
+const seg = (p, r) => `A[${p}\u00a0:\u00a0${r}]`;
 
 export default {
   sizeRange: { min: 5, max: 12, default: 8 },

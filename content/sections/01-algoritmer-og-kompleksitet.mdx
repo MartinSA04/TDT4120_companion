@@ -1,244 +1,138 @@
 ---
 order: 1
 title: Algoritmer og kompleksitet
-summary: Problem, instans og RAM-modellen, asymptotisk notasjon, Insertion-Sort med løkkeinvariant, og forskjellen på grense og tilfelle.
+summary: "Hvordan Insertion-Sort sorterer og hvorfor den alltid gjør det riktig, hvordan du teller arbeidet i beste, verste og gjennomsnittlige tilfelle og hva O, Ω, Θ, o og ω sier om veksten."
 importance: core
 tag: "Uke 34"
 part: "Del 1: Grunnlag"
-updated: 2026-09-27
+updated: 2026-10-20
 ---
 
-To metoder kan løse samme problem og likevel ikke være i samme klasse. Skal du
-pare givere og mottakere i et donasjonsregister, kan du prøve alle koblinger
-etter tur eller kjøre Ford-Fulkerson. Med $n$ personer på hver side har
-opptellingen $n!$ koblinger å gå gjennom, mens Ford-Fulkerson gjør i
-størrelsesorden $n^3$ operasjoner. Med fire personer står det $24$ mot $64$,
-og opptellingen ser billigst ut. Dobler du til åtte, står det $40\,320$ mot
-$512$.
-
 <LearningGoals>
-- Les lærebokas pseudokode, og oversett den til kjørbar Python.
-- Forklar hva <Term name="RAM-modellen">RAM-modellen</Term> koster og hva den ser bort fra.
-- Skill mellom <Term name="Problem og instans">problem, instans og problemstørrelse</Term>.
+
+- Les lærebokas pseudokode og skriv den om til Python.
+- Utfør Insertion-Sort steg for steg på en gitt tabell.
+- Vis at en løkke gjør det den skal, med en <Term name="Løkkeinvariant">løkkeinvariant</Term>: initialisering, vedlikehold og terminering.
+- Skill mellom <Term name="Problem og instans">problem, instans og problemstørrelse</Term>, og tell arbeidet til en algoritme i <Term name="RAM-modellen">RAM-modellen</Term>.
+- Definer <Term name="Beste, verste og gjennomsnittlige tilfelle">beste, verste og gjennomsnittlige tilfelle</Term>, og finn dem for Insertion-Sort.
 - Definer og bruk <Term name="Asymptotisk notasjon">asymptotisk notasjon</Term>: $O$, $\Omega$, $\Theta$, $o$ og $\omega$.
-- Bruk <Term name="Løkkeinvariant">løkkeinvarianter</Term> og induksjon til å vise at en løkke er korrekt.
-- Gjør rede for Insertion-Sort steg for steg.
-- Definer beste, verste og gjennomsnittlige tilfelle.
-- Bruk hvilken som helst av de fem operatorene på hvilket som helst av de tre tilfellene.
+- Bruk hvilken som helst av grensene på hvilket som helst av tilfellene.
+- Regn med asymptotisk notasjon i uttrykk som $O(n^a) + \Omega(n^b) + \Theta(n^c)$.
+
 </LearningGoals>
 
-## Problem, instans og maskin
-
-Et problem er en relasjon mellom input og output. Sortering krever at outputen
-er en stigende omordning av inputen, og sier ingenting om hvilke tall som kommer
-inn. En instans er én bestemt input, for eksempel $\langle 6, 8, 3, 5 \rangle$.
-Problemstørrelsen $n$ er plassen en instans trenger, som regel antall elementer
-i den.
-
-Kjøretiden er en funksjon av $n$. For at den funksjonen skal si noe som gjelder
-på andre maskiner enn din egen, regner du i <Term name="RAM-modellen" />:
-aritmetikk, sammenligning, hopp og oppslag i én celle koster én tidsenhet hver,
-og instruksjonene utføres etter hverandre. Heltallene har begrenset bredde, om
-lag $c \lg n$ bits, akkurat nok til å indeksere hele inputen. Du kan regne med
-større tall enn det, slik kryptografi gjør, men da holder ikke antagelsen om
-konstant tid per operasjon lenger.
-
-<Callout title="RAM-modellen">
-Hver grunnoperasjon koster én tidsenhet, og instruksjonene utføres etter
-hverandre. Tallene har om lag $c \lg n$ bits, nok til å indeksere inputen.
-</Callout>
-
-## Vekstrater
-
-Anta ett mikrosekund per operasjon og hundre år til rådighet. Da rekker du disse
-problemstørrelsene:
+Du har åtte kort på hånden, 6, 8, 3, 5, 2, 7, 4 og 1, og vil ha dem i stigende
+rekkefølge. Den enkleste metoden er å prøve rekkefølgene én etter én til du finner
+den sorterte. Det første kortet kan være ett av åtte, det neste ett av de sju som
+er igjen, og så videre, så åtte kort kan ligge i
+$8 \cdot 7 \cdot 6 \cdots 1 = 8! = 40\,320$ rekkefølger, og den sorterte kan komme
+sist. Med kort i hånden gjør du noe annet. Du tar ett kort om gangen og skyver det
+til venstre forbi kortene som er større. Hvert større kort det passerer, flytter seg
+én plass til høyre, og med åtte kort skjer det høyst 28 ganger.
 
 <Table
-  columns={["Kjøretid", "Navn", "Største $n$ på hundre år"]}
+  columns={["Kort", "Rekkefølger", "Flyttinger"]}
+  caption="Hvor mange rekkefølger kortene kan ligge i, og hvor mange flyttinger innsetting bruker når det går tregest."
   rows={[
-    ["$\\lg n$", "logaritmisk", "$2^{3{,}2 \\cdot 10^{15}}$"],
-    ["$n$", "lineær", "$3{,}2 \\cdot 10^{15}$"],
-    ["$n \\lg n$", "linearitmisk", "$6{,}9 \\cdot 10^{13}$"],
-    ["$n^2$", "kvadratisk", "$56\\,000\\,000$"],
-    ["$n^3$", "kubisk", "$146\\,000$"],
-    ["$2^n$", "eksponentiell", "$51$"],
-    ["$n!$", "faktoriell", "$17$"],
+    ["4", "24", "6"],
+    ["8", "40 320", "28"],
+    ["20", "$2{,}4 \\cdot 10^{18}$", "190"],
   ]}
-  align={["left", "left", "right"]}
-  caption="Alt på formen $n^k$ er polynomisk."
 />
 
-<Figure
-  src="/figures/vekstrater.svg"
-  alt="Logaritmisk plott av antall operasjoner mot problemstørrelse for n, n lg n, n i andre, n i tredje, to opphøyd i n og n fakultet. De to siste stiger langt raskere enn de fire første."
-  number={1}
-  width={560}
-  height={320}
-  caption="Antall operasjoner mot $n$. Y-aksen er logaritmisk, så avstanden mellom to kurver er faktoren mellom dem."
-/>
+Med tjue kort og en maskin som prøver en milliard rekkefølger i sekundet, tar den
+første metoden opptil 77 år. En maskin som er tusen ganger raskere, kommer bare to
+kort lenger på de samme 77 årene, fordi 22 kort kan ligge i $1{,}1 \cdot 10^{21}$
+rekkefølger. Valget av metode betyr altså mer enn hvor rask maskinen er. For å si
+det presist må du kunne telle arbeidet til en algoritme og beskrive hvor fort det
+vokser med antall kort.
 
-En raskere maskin hjelper mindre enn en bedre algoritme. Kjøper du en maskin som
-er tusen ganger raskere, flytter du de 17 faktorielle elementene til 20. Bytter
-du til en kvadratisk algoritme, flytter du dem til titalls millioner.
+## Sortering ved innsetting
 
-## Asymptotisk notasjon
+Metoden med kort i hånden heter <Term name="Insertion-Sort">Insertion-Sort</Term>,
+sortering ved innsetting. Til venstre har du kortene du har sortert så langt. Det
+neste kortet, nøkkelen, løfter du ut. Hvert sortert kort som er større enn
+nøkkelen, flytter du én plass til høyre, og nøkkelen legger du i plassen som blir
+ledig. Da er ett kort til sortert, og du tar det neste.
 
-For å sammenligne vekst uten å telle enkeltoperasjoner må du se bort fra
-konstantfaktorer og lavere ordens ledd. Konstantfaktorene forsvinner hvis $g$
-får skaleres med en konstant $c$ før sammenligningen. De lavere ordens leddene
-forsvinner hvis sammenligningen bare trenger å holde fra en $n_0$ og oppover,
-der det ledende leddet har tatt over. De to kravene gir definisjonen:
-
-<Statement kind="definition" name="Asymptotiske grenser">
-$f(n) = O(g(n))$ når det finnes konstanter $c > 0$ og $n_0$ slik at
-$0 \le f(n) \le c\,g(n)$ for alle $n \ge n_0$. Tilsvarende er
-$f(n) = \Omega(g(n))$ når $0 \le c\,g(n) \le f(n)$, og $f(n) = \Theta(g(n))$ når
-begge holder samtidig, altså $0 \le c_1 g(n) \le f(n) \le c_2 g(n)$ for
-$n \ge n_0$.
-</Statement>
-
-Ta $f(n) = n^2 + 100n$ og $g(n) = n^2$. Den nedre grensen holder med $c_1 = 1$
-for alle $n$. Den øvre holder med $c_2 = 2$ når $100n \le n^2$, altså fra
-$n_0 = 100$. Til venstre for $n_0$ ligger $f$ over $2n^2$, og det er tillatt,
-for definisjonen krever ulikheten bare fra $n_0$ og oppover. Altså er
-$n^2 + 100n = \Theta(n^2)$, og det lavere ordens leddet $100n$ er borte.
-
-<Figure
-  src="/figures/asymptotiske-grenser.svg"
-  alt="Tre kurver mot n. Fra n lik hundre ligger f mellom n i andre og to n i andre. Til venstre for hundre ligger f over begge."
-  number={2}
-  width={560}
-  height={300}
-  caption="$f(n) = n^2 + 100n$ mellom $c_1 g(n) = n^2$ og $c_2 g(n) = 2n^2$, med $n_0 = 100$ markert."
-/>
-
-<Callout title="Asymptotiske grenser">
-$O$ er en øvre og $\Omega$ en nedre grense, begge opp til en konstantfaktor og
-fra en $n_0$ og oppover. $\Theta$ er begge samtidig.
-</Callout>
-
-### De to strenge operatorene
-
-$O$ sier at $f$ vokser høyst så raskt som $g$, og tillater at de to vokser like
-raskt. $2n^2 = O(n^2)$ og $2n = O(n^2)$ er begge sanne, men bare den første er
-stram. For en øvre grense som ikke er stram bruker du $o$, og der må
-$f(n) < c\,g(n)$ holde for enhver $c > 0$, ikke bare for én eneste. Det er en
-langt sterkere påstand, og den er ekvivalent med at $f(n)/g(n)$ går mot null. Så
-$2n = o(n^2)$, mens $2n^2 \ne o(n^2)$.
-
-$\omega$ er det samme speilvendt: en nedre grense som ikke er stram, med
-$c\,g(n) < f(n)$ for enhver $c$. Da vokser $f(n)/g(n)$ over alle grenser, og
-$f(n) = o(g(n))$ er nøyaktig det samme som $g(n) = \omega(f(n))$.
-
-Alle fem oppfører seg som sammenligning av to tall, og det er den raskeste veien
-til å huske dem:
-
-<Table
-  columns={["Utsagn", "Leses som", "Grensen $f(n)/g(n)$", "Som tall"]}
-  rows={[
-    ["$f = O(g)$", "vokser høyst så raskt som $g$", "endelig", "$a \\le b$"],
-    ["$f = \\Omega(g)$", "vokser minst så raskt som $g$", "større enn null", "$a \\ge b$"],
-    ["$f = \\Theta(g)$", "vokser like raskt som $g$", "en konstant, verken $0$ eller $\\infty$", "$a = b$"],
-    ["$f = o(g)$", "vokser strengt saktere enn $g$", "$0$", "$a < b$"],
-    ["$f = \\omega(g)$", "vokser strengt raskere enn $g$", "$\\infty$", "$a > b$"],
-  ]}
-  align={["left", "left", "left", "center"]}
-  caption="De fem operatorene som sammenligning av to tall $a$ og $b$, etter CLRS §3.2."
-/>
-
-Analogien holder for transitivitet og for det meste ellers, med ett unntak. To
-tall kan alltid sammenlignes, men to funksjoner kan mangle et forhold i det hele
-tatt: $n$ og $n^{1+\sin n}$ er verken $O$ eller $\Omega$ av hverandre, fordi
-forholdet $n^{\sin n}$ mellom dem svinger mellom omtrent $1/n$ og $n$.
-
-Notasjonen dukker også opp midt inne i et uttrykk. Da står den for en ukjent
-funksjon av den oppgitte ordenen, slik at $n + O(n)$ betyr «$n$ pluss en eller
-annen funksjon som er $O(n)$». Slike ligninger leses fra venstre mot høyre, og
-høyresiden må være minst like generell som venstresiden. Derfor stemmer
-$n + O(n) = O(n)$, mens $O(n) = n + O(n)$ er galt.
-
-<Example title="Forenkle $O(n^a) + \Omega(n^b) + \Theta(n^c)$">
-Finn det enkleste ekvivalente uttrykket, uten å tape presisjon.
-
-<Solution>
-Ta de øvre og de nedre grensene hver for seg. $O(n^a)$ gir en øvre grense $n^a$
-og ingen nedre, så den nedre er $0$. $\Omega(n^b)$ gir en nedre grense $n^b$ og
-ingen øvre. $\Theta(n^c)$ gir begge, $n^c$.
-
-Summen av de nedre grensene er $0 + n^b + n^c$. Summen av de øvre er ubegrenset,
-fordi $\Omega(n^b)$ ikke setter noen tak. Da står en nedre grense
-alene igjen, og en nedre grense alene skrives med $\Omega$. Regelen står som
-<FormulaRef id="sum-grenser">én rad i Formelsamlingen</FormulaRef>.
-
-<Answer>$\Omega(n^b + n^c)$</Answer>
-</Solution>
-</Example>
-
-<Example label="Eksamensoppgave" title="Velg én beskrivelse av kjøretiden">
-<ExamRef id="2025-des" task="2" />
-
-Din venn Lurvik har klart å vise at to av følgende beskrivelser av kjøretiden
-til en algoritme er korrekte, men han husker ikke hvilke to:
-
-1. $T(n) = O(n^3)$
-2. $T(n) = \Omega(n^3)$
-3. $T(n) = \Theta(n^3)$
-
-Sjefen hans har bedt ham velge ut én av beskrivelsene, og nå har Lurvik bedt
-deg om hjelp. Hvilken av de tre velger du (nummer 1, 2 eller 3)? Forklar kort
-hvorfor dette er et godt valg.
-
-<Solution>
-$\Theta$ betyr «både $O$ og $\Omega$». Har Lurvik vist to av de tre, er enten
-nummer 3 en av dem, eller så har han vist både 1 og 2, og de to til sammen er
-nettopp nummer 3. Uansett stemmer $T(n) = \Theta(n^3)$, og det er den mest
-informative beskrivelsen, siden den gir både en øvre og en nedre grense.
-
-<Answer>Nummer 3, $T(n) = \Theta(n^3)$.</Answer>
-</Solution>
-</Example>
-
-<Example label="Eksamensoppgave" title="Kjøretiden til Fung-Sort">
-<ExamRef id="2023-aug-kont" task="1" />
-
-Algoritme 1 sorterer tabellen $A[1 : n]$. Hva er kjøretiden, som funksjon av
-$n$? Oppgi svaret i asymptotisk notasjon.
+Læreboka skriver algoritmen slik, med tabellen ${A[1 : n]}$ som hånden og `key` som
+nøkkelen. ${A[1 : n]}$ betyr elementene $A[1]$ til og med $A[n]$. I Python betyr `A[1:n]` noe annet: der stopper utsnittet før `A[n]`.
 
 <CodeBlock
-  title="Algoritme 1"
+  id="insertion-sort-bok"
   lang="text"
-  code={`Fung-Sort(A, n)
-1 for i = 1 to n
-2     for j = 1 to n
-3         if A[i] < A[j]
-4             swap A[i] and A[j]`}
+  code={`Insertion-Sort(A, n)
+1  for i = 2 to n
+2      key = A[i]
+3      j = i - 1
+4      while j > 0 and A[j] > key
+5          A[j + 1] = A[j]
+6          j = j - 1
+7      A[j + 1] = key`}
 />
 
-<Solution>
-Den ytre løkka kjører $n$ ganger, og for hver av dem kjører den indre løkka
-$n$ ganger. Kroppen er en sammenligning og eventuelt et bytte, begge konstant
-tid. Ingen av løkkene har en betingelse som kan stoppe dem tidlig, så antallet
-iterasjoner er $n \cdot n$ uansett hvordan inputen ser ut.
+<Stepper
+  src="/steppers/innsetting.js"
+  codeId="insertion-sort-bok"
+  title="Insertion-Sort"
+  height={260}
+  caption="Tabellen $A$ som en rad med kort, der høyden følger verdien og indeksen står under. Klammen dekker den sorterte delen, og den stiplede plassen er den ledige plassen nøkkelen skal ned i. Oransje kant er kortet som sammenlignes med nøkkelen, oransje fyll er kortet som nettopp ble flyttet og grønt er ferdig sortert."
+/>
 
-<Answer>$\Theta(n^2)$</Answer>
-</Solution>
-</Example>
+Bla gjennom stepperen. I hver iterasjon løfter linje 2 nøkkelen $A[i]$ ut, og
+plassen den sto på, blir ledig. Den ledige plassen er tegnet stiplet. Så
+sammenligner while-løkka nøkkelen med kortene i klammen, fra høyre mot venstre.
+Kortet den sammenligner med, får oransje kant, og er det større enn nøkkelen,
+flyttes det én plass til høyre og får oransje fyll. Da flytter den ledige plassen
+seg én plass til venstre. Klammen merket «sortert» dekker ${A[1 : i - 1]}$ og blir
+ett kort lengre for hver iterasjon. I siste steg er alle kortene grønne, og teksten
+under sier hvor mange ganger de har flyttet seg. Knappen med de kryssede pilene gir
+en ny hånd, og glidebryteren ved siden av velger antall kort.
 
-## Insertion-Sort
+Linje 4 til 6 gjør to ting på én gang. De leter etter plassen til nøkkelen,
+fra høyre mot venstre, og de flytter kortene som står i veien. Løkka stopper ved
+det første kortet som ikke er større enn nøkkelen, eller når $j = 0$ og det ikke
+er flere kort igjen. Den ledige plassen er da plass $j + 1$, rett til høyre for
+der løkka stoppet, og der legger linje 7 nøkkelen. Algoritmen sorterer på plass:
+kortene flyttes inne i $A$, og utenom tabellen trenger den bare variablene `i`, `j`
+og `key`.
 
-Insertion-Sort sorterer slik mange sorterer kort på hånden. Den venstre delen
-av tabellen er sortert. Hver iterasjon løfter ut det neste elementet, nøkkelen,
-skyver hvert større element i den sorterte delen ett hakk mot høyre og setter
-nøkkelen inn i den ledige plassen.
+<Quiz
+  question={"Hvor mange flyttinger gjør Insertion-Sort på $\\langle 2, 4, 1, 3 \\rangle$?"}
+  options={["2", "3", "5", "6"]}
+  answer={1}
+  explanation={"Nøkkelen 4 er større enn 2, så den blir liggende. Nøkkelen 1 må forbi 4 og 2, som gir to flyttinger. Nøkkelen 3 må forbi 4, men ikke 2, som gir én. Til sammen er det 3. To er antall nøkler som må flytte seg, fem er antall sammenligninger $A[j] > key$, og seks er verste tilfelle for fire kort."}
+/>
+
+### Pseudokoden og Python
+
+Lærebokas pseudokode ligner Python, men fem ting skiller dem:
+
+<Table
+  columns={["Boka", "Python"]}
+  rowHeader={false}
+  rows={[
+    ["Første element er $A[1]$", "Første element er <code>A[0]</code>"],
+    ["<code>for i = 2 to n</code> tar med $n$", "<code>range(1, n)</code> stopper før <code>n</code>"],
+    ["Etter løkka er $i = n + 1$", "Etter løkka er <code>i</code> lik <code>n - 1</code>"],
+    ["${A[1 : n]}$ tar med begge ender", "<code>A[0:n]</code> stopper før <code>A[n]</code>"],
+    ["<code>//</code> innleder en kommentar", "<code>#</code> innleder en kommentar"],
+  ]}
+/>
+
+Resten er likt. Innrykk lager blokkene, `=` setter en verdi og `==` sammenligner.
+I begge språk leser `and` leddene fra venstre og stopper ved det første som er
+usant. Derfor står `j > 0` først i linje 4: når $j = 0$, blir $A[0]$ aldri lest, og
+boka har ingen $A[0]$. Med indekser fra 0 blir hvert indeksnummer én mindre enn i
+boka:
 
 <CodeBlock
   id="insertion-sort"
   title="insertion_sort.py"
   lang="python"
-  code={`def insertion_sort(A, n):  # indekser fra 0, læreboka teller fra 1
+  code={`def insertion_sort(A, n):
     for i in range(1, n):
         key = A[i]
-        # Sett key inn i den sorterte delen A[0 : i]
         j = i - 1
         while j >= 0 and A[j] > key:
             A[j + 1] = A[j]
@@ -247,183 +141,557 @@ nøkkelen inn i den ledige plassen.
     return A`}
 />
 
-<Stepper
-  src="/steppers/insertion-sort.js"
-  codeId="insertion-sort"
-  title="Insertion-Sort"
-  caption="Grønt er den sorterte delen, og boksen over tabellen holder nøkkelen."
-  height={250}
-/>
+## Hvorfor den sorterer riktig
 
-### Løkkeinvarianter
+Kortene til venstre for $i$ er sortert hver gang en ny iterasjon starter, både i
+stepperen og for enhver annen input. Påstanden
 
-Stepperen viser at én tabell blir sortert. For å vise at enhver tabell blir
-det, bruker du induksjon over iterasjonene, med en påstand om tilstanden ved
-starten av hver iterasjon. Når løkka er ferdig, skal hele $A$ være sortert og
-inneholde de elementene som lå der fra begynnelsen. En påstand som gir det til
-slutt, er at $A[0 .. i - 1]$ ved starten av hver iterasjon består av de
-elementene som lå der fra begynnelsen, i sortert rekkefølge. Segmentet
-$A[0 .. i - 1]$ har begge ender med; i Python skrives det `A[0 : i]`.
+> ${A[1 : i - 1]}$ består av kortene som lå der fra starten, i sortert rekkefølge
 
-- Initialisering: før første iterasjon er $i = 1$, og $A[0 .. 0]$ har ett
-  element, så det er sortert.
-- Vedlikehold: iterasjonen løfter ut nøkkelen $A[i]$, skyver hvert større
-  element i $A[0 .. i - 1]$ ett hakk mot høyre og setter nøkkelen inn i den
-  ledige plassen. Da er $A[0 .. i]$ sortert, og det er påstanden for neste
-  verdi av $i$.
-- Terminering: løkka stopper etter iterasjonen med $i = n - 1$, og da gir
-  vedlikeholdet at $A[0 .. n - 1]$, altså hele tabellen, er sortert.
-
-En slik påstand kalles en løkkeinvariant, og de tre delene er det generelle
-mønsteret:
+holder ved starten av hver iterasjon av for-løkka. En påstand som holder ved
+starten av hver iterasjon, kalles en løkkeinvariant, og den er verktøyet for å
+vise at en løkke gjør det den skal.
 
 <Statement kind="definition" name="Løkkeinvariant">
-En løkkeinvariant er en påstand om tilstanden som holder ved starten av hver
-iterasjon. Den vises i tre deler. <b>Initialisering</b>: påstanden holder før
-første iterasjon. <b>Vedlikehold</b>: holder den før en iterasjon, holder den
-også før den neste. <b>Terminering</b>: løkka stopper, og påstanden gir da det du
-var ute etter.
+En løkkeinvariant er en påstand om variablene i en løkke som holder ved starten av
+hver iterasjon. Du viser at den holder, og at den gir det du vil vise, i tre deler:
+
+- Initialisering: påstanden holder før første iterasjon.
+- Vedlikehold: holder den før en iterasjon, holder den også før den neste.
+- Terminering: løkka stopper, og da gir påstanden resultatet.
 </Statement>
 
-Initialisering er grunntilfellet og vedlikehold er induksjonssteget. Terminering
-er det løkker har i tillegg: beviset er verdiløst om løkka aldri stopper.
+Beviset virker som en rekke dominobrikker. Initialiseringen velter den første
+brikken, og vedlikeholdet sier at hver brikke som faller, velter den neste. Da
+faller alle, helt til den siste. Den siste brikken er invarianten når løkka stopper,
+og det er den du er ute etter. Et slikt bevis er induksjon over antall iterasjoner,
+som du kjenner fra diskret matematikk: initialiseringen er grunntilfellet og
+vedlikeholdet er induksjonssteget. Termineringen er det nye. Et induksjonsbevis viser
+en påstand for alle heltall, mens en løkke stopper etter et bestemt antall
+iterasjoner, og beviset er bare ferdig når invarianten etter den siste sier at
+algoritmen har gjort jobben.
 
-Beviset for Insertion-Sort er svak induksjon, for vedlikeholdet bruker bare
-påstanden fra forrige iterasjon. Sterk induksjon antar påstanden for alle
-mindre tilfeller. Den passer når en algoritme kaller seg selv på instanser som
-er mindre enn $n - 1$, for eksempel halvparten: beviset for størrelse $n$
-bruker da påstanden for $n/2$, ikke for $n - 1$.
+Induksjonssteget her antar bare at påstanden holdt før forrige iterasjon. Det kalles
+svak induksjon, og det passer for løkker. I sterk induksjon antar du at påstanden
+holder for alle mindre tilfeller. Den beviser ikke mer enn svak induksjon, men den er
+det naturlige verktøyet når en algoritme løser en instans ved å løse mindre
+instanser av samme problem, for eksempel hver halvdel av tabellen.
 
-### Kjøretid
+For Insertion-Sort ser de tre delene slik ut:
 
-Den ytre løkka går $n-1$ ganger uansett input. Den indre gjør et sted mellom 0
-og $i$ forskyvninger, og det er der forskjellen mellom instansene ligger. Er
-tabellen sortert fra før, er `A[j]` aldri større enn nøkkelen, `while`-testen
-slår feil med én gang, og arbeidet er $\Theta(n)$ totalt. I en tilfeldig
-rekkefølge er nøkkelen i snitt mindre enn halvparten av elementene foran seg, så
-iterasjon $i$ gjør i snitt $i/2$ forskyvninger, til sammen omtrent $n^2/4$, og
-det er $\Theta(n^2)$. Insertion-Sort bruker $O(1)$ ekstra minne, og like
-elementer beholder rekkefølgen sin.
+- Initialisering: før første iterasjon er $i = 2$, og ${A[1 : 1]}$ er ett kort, det
+  som lå der fra starten. Ett kort er alltid sortert.
+- Vedlikehold: anta at ${A[1 : i - 1]}$ består av de opprinnelige kortene i sortert
+  rekkefølge når iterasjonen starter. Linje 4 til 6 flytter $A[i - 1]$, $A[i - 2]$
+  og så videre én plass til høyre så lenge de er større enn nøkkelen, og stopper ved
+  det første kortet som ikke er større, eller ved starten av tabellen. Nøkkelen
+  legges i plassen som er ledig. Kortene til venstre for den er ikke større enn
+  nøkkelen, og kortene til høyre er større. Begge gruppene var sortert fra før, så
+  ${A[1 : i]}$ er sortert og består av de opprinnelige kortene på plass 1 til $i$.
+  Når $i$ øker med én, holder invarianten igjen.
+- Terminering: for-løkka stopper når $i = n + 1$. Da sier invarianten at
+  ${A[1 : n]}$, hele tabellen, består av de opprinnelige kortene i sortert
+  rekkefølge.
 
-<Example title="Tabell sortert synkende">
-Tabellen er sortert synkende, $\langle n, n-1, \ldots, 1 \rangle$. Hvor mange
-forskyvninger gjør algoritmen?
+I stepperen ser du alle tre delene. I steg 1 dekker klammen bare kort 1. Hver gang
+en nøkkel er lagt ned, blir klammen ett kort lengre, og i siste steg dekker den hele
+tabellen. Invarianten sier bare noe om starten av hver iterasjon. Så snart et kort
+er flyttet, står den ledige plassen inne i klammen.
+
+Leddet «kortene som lå der fra starten» har også en jobb. Uten det ville
+invarianten holdt for en algoritme som bare skrev 1, 2, 3 og så videre inn i
+tabellen, og en slik algoritme sorterer ingenting.
+
+<Callout title="Løkkeinvarianten til Insertion-Sort">
+Ved starten av hver iterasjon består ${A[1 : i - 1]}$ av de opprinnelige kortene i
+sortert rekkefølge. Når løkka stopper ved $i = n + 1$, er det hele tabellen.
+</Callout>
+
+Prøv metoden på en annen løkke. Maks finner det største tallet i en tabell:
+
+<CodeBlock
+  lang="text"
+  code={`Maks(A, n)
+1  m = A[1]
+2  for i = 2 to n
+3      if A[i] > m
+4          m = A[i]
+5  return m`}
+/>
+
+<Quiz
+  question={"Hvilken påstand er en løkkeinvariant som viser at Maks returnerer det største tallet i ${A[1 : n]}$?"}
+  options={[
+    "$m$ er det største tallet i ${A[1 : n]}$.",
+    "$m$ er det største tallet i ${A[1 : i - 1]}$.",
+    "${A[1 : i - 1]}$ er sortert.",
+    "$m$ er minst like stort som $A[i]$.",
+  ]}
+  answer={1}
+  explanation={"Før første iterasjon er $i = 2$ og $m = A[1]$, det største i ${A[1 : 1]}$. Er $A[i] > m$, blir $m = A[i]$, ellers er $m$ fortsatt størst, så $m$ er det største i ${A[1 : i]}$ når $i$ øker. Løkka stopper ved $i = n + 1$, og da er $m$ det største i ${A[1 : n]}$. Det er målet, men det holder ikke før løkka har sett hele tabellen, så det kan ikke være invarianten. Maks flytter ingen tall, så tabellen blir ikke sortert, og $m \\ge A[i]$ er usant hver gang $A[i]$ er et nytt største tall."}
+/>
+
+## Hva algoritmen koster
+
+For å sammenligne algoritmer trenger du et mål på arbeidet som ikke avhenger av
+maskinen, og som sier hvordan arbeidet vokser når inputen blir større. Først må det
+være klart hva som vokser. Et <Term name="Problem og instans">problem</Term> er en
+relasjon mellom input og output: det sier hvilke output som er riktige for hver
+input. Sorteringsproblemet er: gitt en sekvens $\langle a_1, a_2, \ldots, a_n \rangle$,
+finn en omordning $\langle a'_1, a'_2, \ldots, a'_n \rangle$ der
+$a'_1 \le a'_2 \le \cdots \le a'_n$. En instans er én bestemt input, som
+$\langle 6, 8, 3, 5, 2, 7, 4, 1 \rangle$. Problemstørrelsen $n$ er lagringsplassen en
+instans trenger, her antall tall. For andre problemer måles størrelsen på andre
+måter: skal du gange sammen to store heltall, er det naturlig å telle bits.
+
+Arbeidet telles i <Term name="RAM-modellen">RAM-modellen</Term>, en tenkt maskin som
+utfører én instruksjon om gangen. Hver enkel instruksjon tar konstant tid:
+aritmetikk, sammenligning, å flytte en verdi, å slå opp i en tabell, hopp og kall.
+Hvor lang tid hver tar, lar modellen være åpent. Det eneste som teller, er at tiden
+ikke avhenger av $n$. Heltallene er høyst $c \lg n$ bits brede, der $c \ge 1$ er en
+konstant. At $c \ge 1$, gjør at et heltall kan holde indeksen til hvert element. At
+$c$ er en konstant, gjør at heltallene ikke vokser mer enn det. Uten den grensen
+kunne én instruksjon regnet på et tall som hele tabellen var pakket inn i.
+
+I Insertion-Sort tar hver linje konstant tid. Arbeidet er derfor hvor mange ganger
+hver linje kjøres, ganget med hva den koster. Gi hver linje kostnad 1, og kall
+antall flyttinger i linje 5 for $S$:
+
+<Table
+  columns={["Linje", "Kjøres"]}
+  rows={[
+    ["1 <code>for i = 2 to n</code>", "$n$ ganger"],
+    ["2, 3 og 7", "$n - 1$ ganger hver"],
+    ["4 <code>while …</code>", "$n - 1 + S$ ganger"],
+    ["5 og 6", "$S$ ganger hver"],
+  ]}
+/>
+
+For-testen kjøres én gang mer enn antall iterasjoner, fordi den siste testen, med
+$i = n + 1$, er den som avslutter løkka. While-testen kjøres én gang per flytting og
+én gang til i hver iterasjon, testen som stopper while-løkka. Til sammen kjøres
+
+$$
+\begin{aligned}
+T &= n + 3(n - 1) \\
+  &\quad + (n - 1 + S) + 2S \\
+  &= 5n - 4 + 3S
+\end{aligned}
+$$
+
+linjer. De åtte kortene fra starten flyttes $0 + 2 + 2 + 4 + 1 + 4 + 7 = 20$
+ganger, så $T = 5 \cdot 8 - 4 + 3 \cdot 20 = 96$. Stepperen tar ett steg per linje
+som kjøres, pluss startbildet, så telleren under den ender på $T + 1$. Siste steg
+sier hva $S$ er for hånden du har i stepperen. Regn ut $T + 1$ med den og
+sammenlign med telleren. På en ekte maskin koster linjene forskjellig, og da blir
+tallene 5, 4 og 3 andre. Formen blir den samme: noe som vokser som $n$, pluss noe ganger $S$.
+
+### Rekkefølgen avgjør
+
+Antall flyttinger $S$ avhenger av mer enn $n$. Det avhenger av rekkefølgen kortene
+ligger i.
+
+<Simulation
+  src="/sims/arbeidet.js"
+  host="dom"
+  title="Arbeidet til Insertion-Sort"
+  height={360}
+  caption="Rad $i$ viser kortene på plass 1 til $i$ når iterasjon $i$ starter, med nøkkelen ytterst til høyre. Kortene etter plass $i$ er ikke tegnet."
+/>
+
+Simuleringen tegner én rad per iterasjon. Rad $i$ er kortene på plass 1 til $i$ når
+iterasjonen starter: den sorterte delen, og nøkkelen ytterst til høyre. De oransje
+kortene er større enn nøkkelen, og hvert av dem flyttes én plass til høyre i
+iterasjonen, så antall oransje kort er $S$. Antallet står øverst til høyre.
+
+Velg «sortert». Ingen kort i den sorterte delen er større enn nøkkelen, så ingenting
+flyttes. Da er $S = 0$ og $T = 5n - 4$: linje 2, 3, 4 og 7 én gang per iterasjon,
+pluss for-testene. Velg så «omvendt». Nå er hvert kort i den sorterte delen større
+enn nøkkelen, og alle blir oransje: 1 flytting i første rad, 2 i den neste og så
+videre opp til $n - 1$. Til sammen er det
+
+$$
+1 + 2 + \cdots + (n - 1) = \frac{n(n - 1)}{2}
+$$
+
+flyttinger, 28 for åtte kort. De oransje kortene fyller hele trekanten som radene
+danner, og flere flyttinger enn det er ikke mulig. Dra $n$ opp til 16. Trekanten får
+omtrent dobbelt så mange rader og kolonner, og antallet går fra 28 til 120, omtrent
+fire ganger så mange. Med «tilfeldig» og «Stokk» havner antallet et sted mellom de
+to ytterpunktene.
+
+### Beste, verste og gjennomsnittlige tilfelle
+
+For hver $n$ finnes det $n!$ rekkefølger, og de koster forskjellig. For å beskrive
+kostnaden som én funksjon av $n$ må du derfor si hvilken instans du mener.
+<Term name="Beste, verste og gjennomsnittlige tilfelle">Beste tilfelle</Term> er
+kostnaden til den billigste instansen av størrelse $n$, og verste tilfelle er
+kostnaden til den dyreste. Gjennomsnittlige tilfelle er snittet over alle
+instansene av størrelse $n$, med hver rekkefølge like sannsynlig. For Insertion-Sort:
+
+- Beste tilfelle er en sortert tabell. Da er $S = 0$, og $T = 5n - 4$.
+- Verste tilfelle er omvendt rekkefølge, der hver nøkkel må forbi alle kortene foran
+  seg. Da er $S = n(n - 1)/2$, og $T = \tfrac32 n^2 + \tfrac72 n - 4$.
+- I gjennomsnittlige tilfelle er hver rekkefølge like sannsynlig. Blant de $i$
+  første kortene er nøkkelen da like ofte den minste, den nest minste og så videre
+  opp til den største, så den hører like gjerne hjemme på hver av de $i$ plassene i
+  ${A[1 : i]}$ og passerer i snitt $(i - 1)/2$ kort. Summert over iterasjonene er det
+  halvparten av verste tilfelle, $S = n(n - 1)/4$, og
+  $T = \tfrac34 n^2 + \tfrac{17}{4} n - 4$.
+
+<Figure
+  src="/figures/tilfeller.svg"
+  alt="Diagram med n fra 2 til 10 langs x-aksen og antall linjer langs y-aksen. Over hver n står en søyle av grå prikker, én for hver mulig verdi av T, tydeligst på midten. En rød kurve går gjennom toppen av søylene, en grønn rett linje gjennom bunnen og en fiolett kurve gjennom midten."
+  caption="Kostnaden til Insertion-Sort for hver $n$ fra 2 til 10. Hver prikk er en verdi av $T$, antall linjer som kjøres, som noen av de $n!$ rekkefølgene gir, og jo tydeligere prikken er, jo flere rekkefølger gir den verdien. Kurvene er beste, gjennomsnittlige og verste tilfelle."
+  number={1}
+  width={340}
+  height={300}
+/>
+
+Figur 1 viser alle instansene på én gang. Over hver $n$ står en søyle av prikker,
+fra den sorterte tabellen nederst til den omvendte øverst, og de fleste
+rekkefølgene havner nær midten. Hvert tilfelle plukker ut én verdi per søyle, så
+hvert tilfelle er en funksjon av $n$, og de tre kurvene er forskjellige. Verste
+tilfelle brukes oftest, fordi det er en garanti: ingen instans av størrelse $n$
+koster mer.
+
+<Callout title="Tre tilfeller, tre funksjoner">
+Beste, verste og gjennomsnittlige tilfelle er tre funksjoner av $n$: kostnaden til
+den billigste instansen, til den dyreste og snittet over alle. Insertion-Sort
+flytter ingen kort når tabellen er sortert, og $n(n - 1)/2$ kort når den står i
+omvendt rekkefølge.
+</Callout>
+
+## Asymptotisk notasjon
+
+Formlene over er presise, men de sier mer enn du trenger. Tallene 5, 4 og 3 kom av
+at hver linje kostet 1, og på en annen maskin blir de andre. Leddene av lavere orden
+betyr lite når $n$ er stor: ved $n = 1000$ er $\tfrac32 n^2 = 1\,500\,000$, mens
+$\tfrac72 n - 4 = 3\,496$, under 0,3 prosent av summen. Tabellen viser hvor stor $n$
+en algoritme rekker hvis den bruker $f(n)$ mikrosekunder:
+
+<Table
+  columns={["$f(n)$", "1 sekund", "100 år"]}
+  rows={[
+    ["$n$<br>lineær", "$10^6$", "$3 \\cdot 10^{15}$"],
+    ["$n \\lg n$<br>linearitmisk", "62 746", "$7 \\cdot 10^{13}$"],
+    ["$n^2$<br>kvadratisk", "1 000", "$6 \\cdot 10^{7}$"],
+    ["$n^3$<br>kubisk", "100", "$1{,}5 \\cdot 10^{5}$"],
+    ["$2^n$<br>eksponentiell", "19", "51"],
+    ["$n!$<br>faktoriell", "9", "17"],
+  ]}
+/>
+
+Hundre år er tre milliarder ganger så lenge som et sekund. For en lineær algoritme
+betyr det tre milliarder ganger så stor input, for en faktoriell 17 kort i stedet
+for 9. <Term name="Asymptotisk notasjon">Asymptotisk notasjon</Term> beskriver
+derfor en funksjon med formen på veksten alene. Du dropper konstantfaktorene og
+leddene av lavere orden. Verste tilfelle for Insertion-Sort,
+$f(n) = \tfrac32 n^2 + \tfrac72 n - 4$, blir da $n^2$, og du skriver
+$f(n) = \Theta(n^2)$. Det betyr at $f$, fra en viss $n$ og utover, ligger mellom to
+multipler av $n^2$. I simuleringen heter funksjonen du sammenligner med $g(n)$, og
+den er $n^2$ når simuleringen starter. Du velger multiplene $c_1 \cdot g(n)$ under
+og $c_2 \cdot g(n)$ over, og $n_0$, der de skal begynne å holde.
+
+<Simulation
+  src="/sims/grenser.js"
+  host="dom"
+  title="Grensene $O$, $\Omega$ og $\Theta$"
+  height={340}
+  caption="Den tykke kurven er $f(n) = \tfrac32 n^2 + \tfrac72 n - 4$, og de stiplede kurvene er $c \cdot g(n)$. Det tonede feltet er $n \ge n_0$, og en rød prikk er en $n$ der grensen ikke holder. Teksten øverst gjelder også $n$ til høyre for tegningen."
+/>
+
+Simuleringen starter med $c_1 = 1$, $c_2 = 2$ og $n_0 = 1$, så grensene er
+$1 \cdot n^2$ og $2n^2$. Teksten øverst sier «brytes ved n = 2»: $f(2) = 9$, mens $2 \cdot 2^2 = 8$. Det samme
+skjer til og med $n = 5$, der $f(5) = 51$ og $2 \cdot 5^2 = 50$, og de fire røde
+prikkene nederst til venstre er disse. Dra $n_0$ til 6. Nå holder begge grensene for
+alle $n \ge 6$, og det er nok: $f(n) = \Theta(n^2)$ med $c_1 = 1$, $c_2 = 2$ og
+$n_0 = 6$. Definisjonen sier nettopp dette:
+
+<Statement kind="definition" name="Θ-notasjon" id="theta-notasjon">
+$f(n) = \Theta(g(n))$ betyr at det finnes positive konstanter $c_1$, $c_2$ og $n_0$
+slik at
+
+$$
+0 \le c_1\,g(n) \le f(n) \le c_2\,g(n)
+$$
+
+for alle $n \ge n_0$.
+</Statement>
+
+Konstantene velger du selv, og $n_0$ gjør at små $n$ ikke teller. Gjør $c_2$ mindre.
+Ved 1,6 ligger $f$ over $1{,}6\,n^2$ helt til $n = 33$, og du må dra $n_0$ til 34.
+Ved 1,5 brytes grensen for hver $n \ge 2$, så ingen $n_0$ hjelper. Grunnen ser du
+når du deler på $n^2$:
+
+$$
+\frac{f(n)}{n^2} = \frac32 + \frac{7}{2n} - \frac{4}{n^2}
+$$
+
+nærmer seg $\tfrac32$ ovenfra. Enhver $c_2$ over $\tfrac32$ holder fra en $n_0$, og
+jo nærmere $\tfrac32$ den er, jo større må $n_0$ være. Konstanten foran $n^2$ i $f$
+avgjør hvilke konstanter som går an, og leddene av lavere orden avgjør bare $n_0$.
+
+<Statement kind="definition" name="O- og Ω-notasjon" id="o-og-omega">
+$f(n) = O(g(n))$ betyr at det finnes positive konstanter $c$ og $n_0$ slik at
+$0 \le f(n) \le c\,g(n)$ for alle $n \ge n_0$. Det er en øvre grense.
+
+$f(n) = \Omega(g(n))$ betyr at det finnes positive konstanter $c$ og $n_0$ slik at
+$0 \le c\,g(n) \le f(n)$ for alle $n \ge n_0$. Det er en nedre grense.
+</Statement>
+
+Sett $n_0$ tilbake til 1. Velg $g(n) = n$ og $O$, og sett $c$ til 20: teksten øverst
+sier «brytes ved n = 12». Øk $c$ til 100. Da ligger $100n$ over $f$ i hele
+tegningen, men grensen brytes ved $n = 65$. Uansett hvor stor $c$ du velger, tar
+$f$ igjen $cn$, fordi $f(n)/n = \tfrac32 n + \tfrac72 - 4/n$ vokser uten grense. En
+større $c$ flytter bare bruddet lenger ut. Derfor er $f(n)$ ikke $O(n)$. Velg
+$\Omega$ og sett $c$ til 1: $1 \cdot n$ ligger under $f$ for alle $n$, så
+$f(n) = \Omega(n)$.
+
+Med $g(n) = n^3$ er det omvendt. Velg $n^3$ og $O$, og sett $c$ til 2: $f$ ligger
+under $2n^3$ for alle $n$, så $f(n) = O(n^3)$. Velg $\Omega$ og sett $c$ til 0,05:
+grensen brytes ved $n = 33$. En mindre $c$ flytter bare bruddet lenger ut, fordi
+$f(n)/n^3$ går mot 0, så $f(n)$ er ikke $\Omega(n^3)$.
+
+Θ er de to grensene sammen: $f(n) = \Theta(g(n))$ akkurat når både
+$f(n) = O(g(n))$ og $f(n) = \Omega(g(n))$.
+
+<Example label="Eksamensoppgave" title="Velg én beskrivelse av kjøretiden">
+<ExamRef id="2025-des" task="2" />
+
+Din venn Lurvik har klart å vise at to av følgende beskrivelser av kjøretiden til
+en algoritme er korrekte, men han husker ikke hvilke to:
+
+1. $T(n) = O(n^3)$
+2. $T(n) = \Omega(n^3)$
+3. $T(n) = \Theta(n^3)$
+
+Sjefen hans har bedt ham velge ut én av beskrivelsene, og nå har Lurvik bedt deg om
+hjelp. Hvilken av de tre velger du (nummer 1, 2 eller 3)? Forklar kort hvorfor dette
+er et godt valg.
 
 <Solution>
-I iterasjon $i$ er `A[i]` mindre enn hvert av de $i$ elementene foran seg, så
-nøkkelen må forbi dem alle. Det er $i$ forskyvninger. Lagt sammen over
-iterasjonene $i = 1, \ldots, n-1$:
+Velg nummer 3. Hvis Lurvik har vist nummer 3, er den riktig. Hvis han har vist
+nummer 1 og 2, er $T(n)$ både $O(n^3)$ og $\Omega(n^3)$, og det er det samme som
+$\Theta(n^3)$. Nummer 3 holder altså uansett hvilke to han har vist, og den sier mest,
+fordi den gir både den øvre og den nedre grensen.
 
-$$
-\sum_{i=1}^{n-1} i \;=\; \frac{n(n-1)}{2}
-$$
-
-Summen er <FormulaRef id="trekanttall">trekanttallet</FormulaRef>, et halvt
-rektangel med sider $n$ og $n-1$. Uten konstantfaktoren og det lineære leddet
-står $n^2$ igjen.
-
-<Answer>$n(n-1)/2$ forskyvninger, altså $\Theta(n^2)$</Answer>
+<Answer>Nummer 3, $T(n) = \Theta(n^3)$.</Answer>
 </Solution>
 </Example>
 
-## Grenser og tilfeller
+Grensen $O(n^3)$ er løs. Velg $n^3$ og $O$ igjen, og gjør $c$ mindre: med $c = 0{,}1$
+holder grensen når du drar $n_0$ til 17, med $c = 0{,}05$ når du drar den til 33.
+Uansett hvor liten $c$ er, holder grensen fra en $n_0$, fordi $f(n)/n^3$ går mot 0.
+Når en øvre grense holder for hver $c > 0$, vokser $f$ saktere enn $g$, og grensen
+har et eget navn. Det samme gjelder en nedre grense som holder for hver $c$. Med
+$g(n) = n$ og $\Omega$ er det slik, fordi $f$ tar igjen $cn$ uansett hvor stor $c$
+er.
 
-Insertion-Sort bruker $\Theta(n)$ på en tabell som er sortert fra før og
-$\Theta(n^2)$ på en som er sortert synkende, så størrelsen alene bestemmer ikke
-kjøretiden. For hver $n$ finnes det mange instanser, og de koster ulikt. Beste
-tilfelle er den billigste instansen av størrelse $n$, verste tilfelle den
-dyreste, og gjennomsnittstilfellet er den forventede kostnaden når instansen
-trekkes tilfeldig, for sortering med alle rekkefølger like sannsynlige. Hvert av
-de tre er en egen funksjon av $n$.
+<Statement kind="definition" name="o- og ω-notasjon" id="lille-o-og-omega">
+$f(n) = o(g(n))$ betyr at for hver konstant $c > 0$ finnes en $n_0$ slik at
+$0 \le f(n) < c\,g(n)$ for alle $n \ge n_0$. Da går $f(n)/g(n)$ mot 0.
 
-<Simulation
-  src="/sims/tilfeller.js"
-  host="dom"
-  title="Beste, verste og gjennomsnittlige tilfelle"
-  caption="Hvert lyse punkt er én tilfeldig instans av størrelse $n$ med kostnaden Insertion-Sort fikk på den, og de mørke punktene er den billigste og den dyreste. De fargede kurvene er beste, gjennomsnittlige og verste tilfelle, og de stiplede kurvene er den valgte grensen."
-  height={330}
+$f(n) = \omega(g(n))$ betyr at for hver konstant $c > 0$ finnes en $n_0$ slik at
+$0 \le c\,g(n) < f(n)$ for alle $n \ge n_0$. Da vokser $f(n)/g(n)$ over alle grenser.
+</Statement>
+
+Funksjonen fra simuleringen er altså $o(n^3)$ og $\omega(n)$. De fem grensene
+oppfører seg som sammenligninger av tall:
+
+<Table
+  columns={["Grense", "Som tall", "$f$ vokser"]}
+  rows={[
+    ["$O$", "$a \\le b$", "høyst like fort som $g$"],
+    ["$\\Omega$", "$a \\ge b$", "minst like fort som $g$"],
+    ["$\\Theta$", "$a = b$", "like fort som $g$"],
+    ["$o$", "$a < b$", "saktere enn $g$"],
+    ["$\\omega$", "$a > b$", "fortere enn $g$"],
+  ]}
 />
 
-Hvilket tilfelle du snakker om, og hvor stramt du begrenser det, er to
-uavhengige valg. Hver av $O$, $\Omega$ og $\Theta$ kan brukes på hvert av de tre
-tilfellene, og $o$ og $\omega$ på samme måte. For Insertion-Sort gir det disse
+<Callout title="Asymptotisk notasjon">
+$f(n) = \Theta(g(n))$ når $f$ ligger mellom $c_1\,g(n)$ og $c_2\,g(n)$ fra en $n_0$
+og utover. $O$ er bare den øvre grensen, $\Omega$ bare den nedre og $\Theta$ begge.
+$o$ og $\omega$ krever grensen for hver $c > 0$.
+</Callout>
+
+<Quiz
+  question={"Hvilke av funksjonene $2^{n+1}$ og $2^{2n}$ er $\\Theta(2^n)$?"}
+  options={[
+    "Begge",
+    "Bare $2^{n+1}$",
+    "Bare $2^{2n}$",
+    "Ingen av dem",
+  ]}
+  answer={1}
+  explanation={"$2^{n+1} = 2 \\cdot 2^n$, en konstant faktor, så $c_1 = c_2 = 2$ holder. $2^{2n} = 2^n \\cdot 2^n$, så forholdet $2^{2n}/2^n = 2^n$ vokser over alle grenser, og ingen $c_2$ holder. Den er $\\omega(2^n)$. En konstant faktor i eksponenten er ikke en konstant faktor foran funksjonen."}
+/>
+
+## Grense og tilfelle
+
+Når du skriver «Insertion-Sort bruker $O(n^2)$ tid i verste tilfelle», har du gjort
+to valg. Det ene er hvilken funksjon av $n$ du snakker om: beste, verste eller
+gjennomsnittlige tilfelle. Det andre er hvilken grense du setter på den: $O$,
+$\Omega$ eller $\Theta$. Valgene er uavhengige, og alle ni kombinasjonene gir mening.
+
+Det ligner på å beskrive høyden til elevene i en klasse. «Den høyeste i klassen er
+minst én meter» er en nedre grense på et maksimum: den er sann, men sier lite. For
+Insertion-Sort er klassen alle instansene av størrelse $n$, høyden er kostnaden, og
+den høyeste er verste tilfelle. «Verste tilfelle er $\Omega(n)$» er like sant og like
+svakt. Den beste beskrivelsen er $\Theta$ der den finnes, fordi den gir begge
 grensene:
 
 <Table
   columns={["Tilfelle", "$O$", "$\\Omega$", "$\\Theta$"]}
   rows={[
-    ["Beste", "$O(n)$", "$\\Omega(n)$", "$\\Theta(n)$"],
-    ["Gjennomsnittlige", "$O(n^2)$", "$\\Omega(n^2)$", "$\\Theta(n^2)$"],
-    ["Verste", "$O(n^2)$", "$\\Omega(n^2)$", "$\\Theta(n^2)$"],
-    ["Ukjent input", "$O(n^2)$", "$\\Omega(n)$", "ingen"],
+    ["Beste", "$n$", "$n$", "$n$"],
+    ["Gjennomsnitt", "$n^2$", "$n^2$", "$n^2$"],
+    ["Verste", "$n^2$", "$n^2$", "$n^2$"],
+    ["Alle", "$n^2$", "$n$", "–"],
   ]}
-  align={["left", "left", "left", "left"]}
-  caption="Insertion-Sort, stramme grenser i hver rute. Vet du ikke hvilken instans du får, må den øvre grensen dekke det verste tilfellet og den nedre det beste, og da finnes det ingen $\Theta$."
 />
 
-<Callout type="warning" title="Snubletråd">
-Det er lov å skrive at verste tilfelle er $\Omega(n^2)$. Utsagnet sier at den
-dyreste instansen av størrelse $n$ koster minst kvadratisk tid, altså en nedre
-grense for et maksimum. Det tilsvarer å si at den høyeste i klassen er minst
-1 m høy.
-</Callout>
-
-Utelater du tilfellet, gjelder påstanden alle instanser. «Insertion-Sort bruker
-$O(n^2)$» er da riktig, og «$\Omega(n)$» også, mens «$\Theta(n^2)$» er galt: på
-en sortert tabell bruker den $\Theta(n)$.
-
-<Callout title="Grense og tilfelle">
-Tilfellet velger hvilke instanser du ser på, og $O$, $\Omega$ og $\Theta$
-begrenser kostnaden deres, så alle kombinasjonene er lov. Uten tilfelle gjelder
-påstanden alle instanser: Insertion-Sort er $O(n^2)$ og $\Omega(n)$, men ikke
-$\Theta(n^2)$.
-</Callout>
+Den siste raden, «Alle», er det du kan si uten å nevne noe tilfelle. Da må grensen
+holde for hver instans. Den øvre grensen må dekke den dyreste, så den blir
+$O(n^2)$, og den nedre må ligge under den billigste, så den blir $\Omega(n)$. Noen
+$\Theta$ finnes ikke: i figur 1 vokser forholdet mellom verste og beste tilfelle som
+$n$, og to konstanter $c_1$ og $c_2$ kan ikke holde et forhold som vokser.
 
 <Example label="Eksamensoppgave" title="Gjennomsnittet kan være lik ett av ytterpunktene">
 <ExamRef id="2025-des" task="4" />
 
-Lurvik og Smartnes har en heftig diskusjon. Smartnes mener man kan ha en
-algoritme med ulik asymptotisk kjøretid i beste og verste tilfelle, der den
-gjennomsnittlige kjøretiden likevel er lik én av de to. Lurvik mener dette er
-umulig, siden gjennomsnittet $y$ av $x$ og $z$ alltid vil ligge imellom dem,
-altså $x < y < z$.
+Lurvik og Smartnes har en heftig diskusjon. Smartnes mener man kan ha en algoritme
+med ulik asymptotisk kjøretid i beste og verste tilfelle, der den gjennomsnittlige
+kjøretiden likevel er lik én av de to. Lurvik mener dette er umulig, siden
+gjennomsnittet $y$ av $x$ og $z$ alltid vil ligge imellom dem, altså $x < y < z$.
+Bruk et eksempel fra pensum for å vise at Smartnes har rett. Forklar kort hvorfor
+det er mulig.
 
-Bruk et eksempel fra pensum for å vise at Smartnes har rett. Forklar kort
-hvorfor det er mulig.
-
-Smartnes mener altså at average-case kan være lik enten best-case eller
-worst-case, selv om best-case og worst-case er forskjellige.
+Smartnes mener altså at average-case kan være lik enten best-case eller worst-case,
+selv om best-case og worst-case er forskjellige.
 
 <Solution>
-Insertion-Sort er eksempelet: beste tilfelle er $\Theta(n)$, verste tilfelle
-er $\Theta(n^2)$, og gjennomsnittet er også $\Theta(n^2)$. Lurviks innvending
-holder for tall, men ikke for vekstrater. Målt i antall operasjoner ligger
-gjennomsnittet for Insertion-Sort omtrent på halvparten av verste tilfelle,
-og den faktoren forsvinner i notasjonen. $\Theta$ skjuler konstantfaktorer, så
-to kjøretider som er ulike som tall kan ha samme asymptotiske vekst.
+Insertion-Sort bruker $\Theta(n)$ i beste tilfelle og $\Theta(n^2)$ i verste. I
+gjennomsnitt flytter den $n(n - 1)/4$ kort, halvparten av verste tilfelle, så
+gjennomsnittet er også $\Theta(n^2)$. Lurvik har rett for de nøyaktige antallene:
+$5n - 4 < \tfrac34 n^2 + \tfrac{17}{4} n - 4 < \tfrac32 n^2 + \tfrac72 n - 4$ for
+$n \ge 2$. Men $\Theta$ skjuler konstantfaktorer, og en faktor $\tfrac12$ skiller
+gjennomsnittet fra verste tilfelle. Derfor er begge $\Theta(n^2)$.
 
-<Answer>Insertion-Sort: $\Theta(n)$ i beste tilfelle, $\Theta(n^2)$ i både gjennomsnittlig og verste tilfelle. Notasjonen skjuler konstantfaktoren mellom de to siste.</Answer>
+<Answer>Insertion-Sort: beste $\Theta(n)$, gjennomsnitt og verste $\Theta(n^2)$.</Answer>
 </Solution>
 </Example>
 
-## Sjekk deg selv
+Kortene fra starten kan beskrives på samme måte. Å prøve rekkefølger tar ett forsøk
+i beste tilfelle, $n!$ i verste og i snitt halvparten av det, så verste og
+gjennomsnittlige tilfelle er $\Theta(n!)$. Uten å nevne noe tilfelle er metoden
+$O(n!)$. Insertion-Sort er $\Theta(n^2)$ i verste tilfelle. For tjue kort er det
+forskjellen på 77 år og 666 linjer, som en maskin med en milliard instruksjoner i
+sekundet kjører på under ett mikrosekund.
 
-<Quiz
-  question="For enhver input av størrelse $n$ er kjøretiden til en algoritme $\Omega(n) + \Theta(n^2 \lg n) + O(n^3)$. Hva kan du si om kjøretiden $W(n)$ i verste tilfelle?"
-  options={[
-    "$W(n) = \\Omega(n^2 \\lg n)$",
-    "$W(n) = \\Theta(n^2 \\lg n)$",
-    "$W(n) = O(n^3)$",
+<Callout title="Grense og tilfelle">
+Tilfellet sier hvilken funksjon av $n$ du beskriver, og grensen sier hva du vet om
+den. Uten et tilfelle må grensen holde for alle instanser: Insertion-Sort er da
+$O(n^2)$ og $\Omega(n)$, men ikke $\Theta$ av noe.
+</Callout>
+
+## Regning med asymptotisk notasjon
+
+Inne i et uttrykk står $O(n)$ for en ukjent funksjon som du bare vet er $O(n)$.
+Uttrykket $n^2 + O(n)$ er altså $n^2$ pluss en funksjon som fra en $n_0$ er høyst
+$cn$. Likhetstegnet leses som «er». $n^2 + O(n) = O(n^2)$ sier at hver funksjon av
+formen til venstre er $O(n^2)$, og det er sant. Det omvendte er ikke sant: $2n^2$ er
+$O(n^2)$, men $2n^2 - n^2 = n^2$ er ikke $O(n)$, så $2n^2$ kan ikke skrives som
+$n^2 + O(n)$. Det er som «Ola er student», som ikke betyr at hver student er Ola.
+Høyresiden kan være mindre presis enn venstresiden, men aldri mer.
+
+En sum av grenser regner du ut ved å finne det minste og det største hvert ledd kan
+være, og legge sammen hver for seg. For et ledd med grensen $g$ er det slik, for
+store $n$:
+
+<Table
+  columns={["Ledd", "Minst", "Høyst"]}
+  rows={[
+    ["$O(g)$", "$0$", "$c\\,g$"],
+    ["$o(g)$", "$0$", "under hver $c\\,g$"],
+    ["$\\Theta(g)$", "$c_1 g$", "$c_2 g$"],
+    ["$\\Omega(g)$", "$c\\,g$", "ingen grense"],
+    ["$\\omega(g)$", "over hver $c\\,g$", "ingen grense"],
   ]}
-  answer={0}
-  explanation="Legg sammen de nedre grensene: $n + n^2 \lg n + 0$ vokser som $n^2 \lg n$, så hver input koster minst så mye, også den dyreste. En øvre grense finnes ikke, for leddet $\Omega(n)$ har ikke noe tak. Derfor følger verken $O(n^3)$ eller $\Theta(n^2 \lg n)$: begge krever et tak, og bare de to siste leddene har ett."
 />
 
+Er den minste og den største summen like opp til en konstantfaktor, skrives summen
+med $\Theta$: $O(n^2) + \Theta(n^3)$ ligger mellom $n^3$ og $n^2 + n^3$, og er
+$\Theta(n^3)$. Står det bare en nedre grense igjen, skrives den med $\Omega$, eller
+med $\omega$ når et $\omega$-ledd gjør summen større enn hver multippel av den.
+Står det bare en øvre grense igjen, skrives den med $O$.
+
+<Example label="Eksamensoppgave" title="Forenkle en sum av grenser">
+<ExamRef id="2022-aug-kont" task="6" />
+
+Forenkle følgende uttrykk:
+
+$$
+O(n^a) + \Omega(n^b) + \Theta(n^c)
+$$
+
+Uttrykk svaret med asymptotisk notasjon. Forklar kort.
+
+Du kan anta at $a$, $b$ og $c$ er positive heltallskonstanter.
+
+<Solution>
+Finn det minste og det største hvert ledd kan være, opp til konstantfaktorer og for
+store $n$:
+
+<Table
+  columns={["Ledd", "Minst", "Høyst"]}
+  rows={[
+    ["$O(n^a)$", "$0$", "$n^a$"],
+    ["$\\Omega(n^b)$", "$n^b$", "ingen grense"],
+    ["$\\Theta(n^c)$", "$n^c$", "$n^c$"],
+    ["Summen", "$n^b + n^c$", "ingen grense"],
+  ]}
+/>
+
+$O$-leddet kan være 0, så det bidrar ikke til den nedre grensen. $\Omega$-leddet har
+ikke noe tak, så summen har det heller ikke. Bare den nedre grensen står igjen.
+
+<Answer>$\Omega(n^b + n^c)$</Answer>
+</Solution>
+</Example>
+
+<Example label="Eksamensoppgave" title="Alle fem grensene i én sum">
+<ExamRef id="2019-nov" task="10" />
+
+Hva er $O(n) + \Omega(n) + \Theta(n) + o(n) + \omega(n)$?
+
+<Solution>
+Leddene $O(n)$ og $o(n)$ kan være 0. $\Omega(n)$ og $\Theta(n)$ er minst en
+multippel av $n$, og $\omega(n)$ er større enn hver multippel av $n$. Summen er
+derfor større enn hver multippel av $n$ fra en $n_0$, og det er $\omega(n)$.
+$\Omega(n)$ og $\omega(n)$ har ikke noe tak, så summen har ingen øvre grense. Svaret
+$\Theta(n)$ er nærliggende fordi uttrykket inneholder både øvre og nedre grenser,
+men to av leddene kan bli vilkårlig store.
+
+<Answer>$\omega(n)$</Answer>
+</Solution>
+</Example>
+
+<Callout title="Regneregler">
+Likhetstegnet leses som «er», så $n^2 + O(n) = O(n^2)$ er sant og $O(n^2) = n^2 + O(n)$
+er usant. En sum av grenser får summen av de minste verdiene som nedre grense og
+summen av de største som øvre.
+</Callout>
+
 <KeyTakeaways>
-- Et problem er relasjonen mellom input og output, en instans er én input, og $n$ er størrelsen på den.
-- RAM-modellen gir én tidsenhet per grunnoperasjon, slik at kjøretid kan sammenlignes uten å nevne en bestemt maskin.
-- En bedre algoritme hjelper mer enn en raskere maskin: tusen ganger raskere maskinvare flytter en faktoriell algoritme fra 17 til 20 elementer.
-- $O$, $\Omega$, $\Theta$, $o$ og $\omega$ begrenser vekst. Beste, verste og gjennomsnittlige tilfelle velger input. De to aksene er uavhengige.
-- En løkkeinvariant vises med initialisering, vedlikehold og terminering.
-- Insertion-Sort holder $A[0 .. i - 1]$ sortert, og bruker $\Theta(n)$ i beste og $\Theta(n^2)$ i verste tilfelle.
+
+- Insertion-Sort holder ${A[1 : i - 1]}$ sortert, løfter ut nøkkelen $A[i]$, flytter de større kortene én plass til høyre og legger nøkkelen i plassen som blir ledig.
+- En løkkeinvariant vises med initialisering, vedlikehold og terminering. Beviset er induksjon over iterasjonene, og termineringen gir resultatet.
+- I RAM-modellen tar hver enkel instruksjon konstant tid. Insertion-Sort kjører $5n - 4 + 3S$ linjer, der $S$ er antall flyttinger.
+- Beste tilfelle er en sortert tabell, $\Theta(n)$. Verste er omvendt rekkefølge med $n(n - 1)/2$ flyttinger, $\Theta(n^2)$. Gjennomsnittet er halvparten av det verste, også $\Theta(n^2)$.
+- $\Theta$ er en øvre og en nedre grense sammen, $O$ er bare den øvre og $\Omega$ bare den nedre. $o$ og $\omega$ krever grensen for hver $c > 0$.
+- Tilfelle og grense er to uavhengige valg. Uten et tilfelle er Insertion-Sort $O(n^2)$ og $\Omega(n)$.
+- I uttrykk leses likhetstegnet som «er», og en sum av grenser regnes ut med de minste og de største verdiene hver for seg.
+
 </KeyTakeaways>

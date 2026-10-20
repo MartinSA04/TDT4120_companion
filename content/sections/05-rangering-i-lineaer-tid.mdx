@@ -323,7 +323,7 @@ rangering kan gjøres i lineær tid også i verste tilfelle.
 
 Select og Randomized-Select går under sorteringsgrensen ved å be om mindre enn
 en sortert tabell. Den andre veien er å anta mer om inputen: verdiene er
-heltall i et lite område $0 .. k$. Da trenger du ikke sammenligne dem. Du kan bruke dem
+heltall i et lite område, fra 0 til $k$. Da trenger du ikke sammenligne dem. Du kan bruke dem
 som indekser.
 
 Elementer bærer ofte mer enn nøkkelen de sorteres på. Sorterer du en
@@ -364,7 +364,7 @@ hakk til venstre.
   src="/steppers/counting-sort.js"
   codeId="counting-sort"
   title="Counting-Sort"
-  caption="Radene er inputen $A$ med heltall i $0 .. 5$, tellingene $C$ og outputen $B$. Like verdier har merker (2, 2′, 2″) så rekkefølgen kan følges, og de uthevede cellene er dem steget leser eller skriver."
+  caption="Radene er inputen $A$ med heltall fra 0 til 5, tellingene $C$ og outputen $B$. Like verdier har merker (2, 2′, 2″) så rekkefølgen kan følges, og de uthevede cellene er dem steget leser eller skriver."
   height={260}
 />
 
@@ -505,8 +505,8 @@ $\Theta(n^2)$.
   rows={[
     ["Randomized-Select", "bare rang $i$", "forventet $\\Theta(n)$, verste $\\Theta(n^2)$"],
     ["Select", "bare rang $i$", "$\\Theta(n)$"],
-    ["Counting-Sort", "heltall i $0 .. k$", "$\\Theta(n + k)$"],
-    ["Radix-Sort", "$d$ siffer i $0 .. k$", "$\\Theta(d(n + k))$"],
+    ["Counting-Sort", "heltall fra 0 til $k$", "$\\Theta(n + k)$"],
+    ["Radix-Sort", "$d$ siffer fra 0 til $k$", "$\\Theta(d(n + k))$"],
     ["Bucket-Sort", "uniformt fordelt i $[0, 1)$", "forventet $\\Theta(n)$, verste $\\Theta(n^2)$"],
   ]}
   align={["left", "left", "left"]}
@@ -517,7 +517,7 @@ $\Theta(n^2)$.
 ## Sjekk deg selv
 
 <Quiz
-  question="Du skal sortere $n$ heltall i området $0 .. n^3 - 1$. Hvilken algoritme gjør det i $O(n)$ tid i verste tilfelle?"
+  question="Du skal sortere $n$ heltall i området fra 0 til $n^3 - 1$. Hvilken algoritme gjør det i $O(n)$ tid i verste tilfelle?"
   options={[
     "Counting-Sort direkte på tallene",
     "Radix-Sort med tre siffer i base $n$",
@@ -525,7 +525,7 @@ $\Theta(n^2)$.
     "Ingen, sorteringsgrensen gjelder her",
   ]}
   answer={1}
-  explanation="Et tall under $n^3$ har tre siffer i base $n$, hvert i $0 .. n - 1$. Radix-Sort med Counting-Sort på hvert siffer har da $d = 3$ og $k = n - 1$ og bruker $\Theta(3(2n - 1)) = \Theta(n)$. Counting-Sort direkte har $k = n^3 - 1$ og bruker $\Theta(n^3)$. Bucket-Sort er lineær bare i forventning for uniformt fordelt input, og havner alt i én bøtte, bruker den $\Theta(n^2)$. Sorteringsgrensen gjelder bare algoritmer som sammenligner, og Radix-Sort bruker sifrene som indekser."
+  explanation="Et tall under $n^3$ har tre siffer i base $n$, hvert fra 0 til $n - 1$. Radix-Sort med Counting-Sort på hvert siffer har da $d = 3$ og $k = n - 1$ og bruker $\Theta(3(2n - 1)) = \Theta(n)$. Counting-Sort direkte har $k = n^3 - 1$ og bruker $\Theta(n^3)$. Bucket-Sort er lineær bare i forventning for uniformt fordelt input, og havner alt i én bøtte, bruker den $\Theta(n^2)$. Sorteringsgrensen gjelder bare algoritmer som sammenligner, og Radix-Sort bruker sifrene som indekser."
 />
 
 <KeyTakeaways>
