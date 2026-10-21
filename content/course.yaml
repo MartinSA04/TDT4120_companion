@@ -73,6 +73,36 @@ formulas:
       section: "Tabelldobling",
       id: toerpotenser,
     }
+  - {
+      tex: "n + (1 + 2 + 4 + \\cdots + 2^j) < 3n",
+      label: "Kostnaden for $n$ innsettinger med tabelldobling: $n$ innsettinger og kopieringer ved kapasitetene $1, 2, 4, \\ldots, 2^j$, der $2^j < n$. Amortisert under 3 per innsetting.",
+      section: "Tabelldobling",
+      id: tabelldobling-sum,
+    }
+  - {
+      tex: "a + b(i - s)",
+      label: "Adressen til $A[i]$ når tabellen starter på adressen $a$, hvert element tar $b$ byte og første indeks er $s$",
+      section: "Tabeller og matriser",
+      id: adresse,
+    }
+  - {
+      tex: "c(i - 1) + (j - 1) + 1",
+      label: "Plassen til $M[i, j]$ i tabellen når matrisen har $c$ kolonner og lagres radvis",
+      section: "Tabeller og matriser",
+      id: radvis,
+    }
+  - {
+      tex: "r(j - 1) + (i - 1) + 1",
+      label: "Plassen til $M[i, j]$ i tabellen når matrisen har $r$ rader og lagres kolonnevis",
+      section: "Tabeller og matriser",
+      id: kolonnevis,
+    }
+  - {
+      tex: "\\Theta(1 + \\alpha)",
+      label: "Forventet tid for et søk i en hashtabell med kjeding og uavhengig uniform hashing, der $\\alpha = n/m$ er belastningsfaktoren. Konstant når $m$ er proporsjonal med $n$.",
+      section: "Hashtabeller",
+      id: kjeding-sok,
+    }
 
   - {
       tex: "a^{\\log_b n} = n^{\\log_b a}",
@@ -289,11 +319,14 @@ symbols:
   - { tex: "A[i]", meaning: "Element nummer $i$ i tabellen $A$", section: "Grunnlag", note: "Læreboka teller fra 1, Python fra 0. Hauger regnes fra 1 i teksten og fra 0 i koden." }
   - { tex: "A[p : r]", meaning: "Segmentet fra $A[p]$ til og med $A[r]$", section: "Grunnlag", id: segment, note: "Python stopper før sluttindeksen, så med de samme indeksene er segmentet <code>A[p:r+1]</code> i Python. Bokas $A[1 : n]$ er <code>A[0:n]</code>." }
   # ── Datastrukturer ──
-  - { tex: "a + b(i - s)", meaning: "Adressen til element $i$: startadresse $a$, elementbredde $b$ og startindeks $s$", section: "Datastrukturer", note: "Ikke $a$ og $b$ i masterteoremet." }
-  - { tex: "k", meaning: "En nøkkel, i hashtabeller og søketrær", section: "Datastrukturer", note: "Ikke eksponenten $k$ i masterteoremet eller den største verdien $k$ i Counting-Sort." }
+  - { tex: "a + b(i - s)", meaning: "Adressen til element $i$: startadresse $a$, elementbredde $b$ og startindeks $s$", section: "Datastrukturer", formula: adresse, note: "Ikke $a$ og $b$ i masterteoremet." }
+  - { tex: "r,\\ c", meaning: "Antall rader og kolonner i en matrise", section: "Datastrukturer", note: "Radvis ligger $M[i, j]$ på plass $c(i - 1) + (j - 1) + 1$. Ikke konstanten $c$ i asymptotisk notasjon." }
+  - { tex: "k", meaning: "En nøkkel, i hashtabeller og søketrær", section: "Datastrukturer", note: "Ikke eksponenten $k$ i masterteoremet, den største verdien $k$ i Counting-Sort eller antallet $k$ i Multipop." }
   - { tex: "h(k)", meaning: "Hashfunksjonen: plassen nøkkelen $k$ hører til, en av $0, \\ldots, m - 1$", section: "Datastrukturer", term: "Hashtabell", note: "Den enkleste er $h(k) = k \\bmod m$. Ikke høyden $h$ i et tre." }
   - { tex: "m", meaning: "Antall plasser i hashtabellen", section: "Datastrukturer", note: "I LCS er $m$ lengden av $X$, og for ryggsekken antall bits i $W$." }
-  - { tex: "\\alpha", meaning: "Belastningsfaktoren, $n/m$", section: "Datastrukturer", term: "Belastningsfaktor", id: alfa, note: "Med kjeding og jevn fordeling tar et søk forventet $\\Theta(1 + \\alpha)$." }
+  - { tex: "A", meaning: "Konstanten i multiplikasjonsmetoden, $0 < A < 1$", section: "Datastrukturer", term: "Hashfunksjon", note: "Ikke en tabell $A$. Knuth foreslår $A = (\\sqrt5 - 1)/2 \\approx 0{,}618$." }
+  - { tex: "w,\\ \\ell", meaning: "Antall bits i et maskinord og i en plass, når $m = 2^\\ell$", section: "Datastrukturer", term: "Hashfunksjon", note: "I multipliser-og-skift er $a = A \\cdot 2^w$, ikke startadressen $a$ til en tabell." }
+  - { tex: "\\alpha", meaning: "Belastningsfaktoren, $n/m$: antall elementer per plass", section: "Datastrukturer", term: "Belastningsfaktor", formula: kjeding-sok, id: alfa, note: "Med kjeding og uavhengig uniform hashing tar et søk forventet $\\Theta(1 + \\alpha)$." }
   # ── Problemer og reduksjoner ──
   - { tex: "R \\subseteq I \\times O", meaning: "Et problem, som relasjonen mellom mengden inputs $I$ og mengden outputs $O$", section: "Problemer og reduksjoner", term: "Problem og instans", note: "$O$ er her en mengde, ikke $O$-notasjonen, og $R$ er ikke hjelpetabellen i Merge-Sort." }
   - { tex: "x,\\ y", meaning: "En instans og en løsning: $(x, y) \\in R$ når $y$ er et riktig svar på $x$", section: "Problemer og reduksjoner", term: "Søkeproblem", note: "Et sertifikat er en påstått løsning $y$ som verifiseres." }
@@ -408,47 +441,62 @@ glossary:
     }
   - {
       term: "Stakk",
-      definition: "Sist inn, først ut (LIFO). Alt skjer på toppen: <code>Push</code> legger på og <code>Pop</code> tar av, begge i konstant tid. Implementeres med en tabell og en toppindeks.",
+      definition: "Sist inn, først ut. En tabell ${S[1 : n]}$ og indeksen $S.top$, som er antall elementer og plassen til det øverste. <code>Push</code> legger et element på toppen og <code>Pop</code> tar det øverste av, begge i konstant tid. Push på en full stakk gir overflow, Pop på en tom gir underflow.",
       section: "Datastrukturer",
     }
   - {
       term: "Kø",
-      definition: "Først inn, først ut (FIFO). <code>Enqueue</code> legger til bakerst og <code>Dequeue</code> tar ut forrest, begge i konstant tid. Implementeres gjerne som ringbuffer: en tabell der indeksene <code>head</code> og <code>tail</code> rykker fremover og går rundt til starten når de passerer enden.",
+      definition: "Først inn, først ut. I en tabell ${Q[1 : n]}$ er $Q.head$ plassen til den første og $Q.tail$ den ledige plassen bak den siste. <code>Enqueue</code> skriver på $Q.tail$ og <code>Dequeue</code> leser $Q.head$, og begge indeksene flytter seg én plass til høyre og går rundt til plass 1 etter plass $n$, en ringbuffer. Køen er tom når $Q.head = Q.tail$, så den rommer høyst $n - 1$ elementer. Begge operasjonene tar konstant tid.",
       section: "Datastrukturer",
     }
   - {
       term: "Lenket liste",
-      definition: "Noder som peker på neste node, og i en dobbeltlenket liste også på forrige. Innsetting og sletting koster konstant tid når du står ved noden; søk følger pekerne og koster lineær tid.",
+      definition: "Elementene ligger i noder hvor som helst i minnet, og hver node $x$ peker på den neste, $x.next$, og i en dobbeltlenket liste også på den forrige, $x.prev$. <code>List-Search</code> følger pekerne fra $L.head$ og tar lineær tid. <code>List-Prepend</code>, <code>List-Insert</code> og <code>List-Delete</code> endrer noen få pekere ved en node du har, i konstant tid.",
       section: "Datastrukturer",
     }
   - {
       term: "Dynamisk mengde",
-      definition: "Funksjonalitet, ikke en bestemt struktur: hold en mengde elementer med nøkler, og støtt <code>Search</code>, <code>Insert</code> og <code>Delete</code>, for ordnede nøkler også <code>Minimum</code>, <code>Maximum</code>, <code>Successor</code> og <code>Predecessor</code>. Finnes ikke svaret, returneres NIL.",
+      definition: "En samling elementer med nøkler som støtter <code>Search</code>, <code>Insert</code> og <code>Delete</code>, og for nøkler som kan ordnes også <code>Minimum</code>, <code>Maximum</code>, <code>Successor</code> og <code>Predecessor</code>. Finnes ikke svaret, returneres nil. Den sier hva operasjonene gjør, og datastrukturen som holder elementene, bestemmer hva de koster.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Direkte adressering",
+      definition: "Elementet med nøkkel $k$ ligger på plass $k$ i en tabell med én plass for hver nøkkel som kan forekomme. Søk, innsetting og sletting er ett oppslag hver, men tabellen blir like stor som mengden av mulige nøkler.",
       section: "Datastrukturer",
     }
   - {
       term: "Hashtabell",
-      definition: "Oppslagstabell der en hashfunksjon regner indeksen ut fra nøkkelen, for eksempel $h(k) = k \\bmod m$. To nøkler kan få samme indeks, en kollisjon; med kjeding får hver plass en lenket liste som tar imot alle sine nøkler.",
+      definition: "En tabell ${T[0 : m - 1]}$ der en hashfunksjon $h$ regner ut plassen $h(k)$ fra nøkkelen $k$. To nøkler med samme plass er en kollisjon. Med kjeding holder hver plass en lenket liste, og søk tar forventet $\\Theta(1 + \\alpha)$ og $\\Theta(n)$ i verste tilfelle.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Hashfunksjon",
+      definition: "Gir nøkkelen $k$ en plass $h(k)$ fra 0 til $m - 1$, alltid den samme for samme nøkkel, regnes ut i konstant tid og sprer nøklene så jevnt som mulig. Divisjonsmetoden $h(k) = k \\bmod m$ virker best når $m$ er et primtall som ikke ligger nær en toerpotens. For multiplikasjonsmetoden $h(k) = \\lfloor m\\,(kA \\bmod 1) \\rfloor$ betyr valget av $m$ lite.",
+      section: "Datastrukturer",
+    }
+  - {
+      term: "Kjeding",
+      definition: "Tar vare på nøkler som kolliderer i en hashtabell: plass $j$ holder en lenket liste med alle elementene som har $h(k) = j$. Innsetting setter elementet først i lista, og søk går gjennom lista på plassen $h(k)$.",
       section: "Datastrukturer",
     }
   - {
       term: "Belastningsfaktor",
-      definition: "$\\alpha = n/m$: antall elementer delt på antall plasser i hashtabellen. Med kjeding og jevn fordeling er forventet søketid $\\Theta(1 + \\alpha)$, så tabellen bør vokse i takt med datamengden.",
+      definition: "$\\alpha = n/m$: antall elementer delt på antall plasser i hashtabellen, altså snittlengden til listene. Med kjeding og uavhengig uniform hashing tar et søk forventet $\\Theta(1 + \\alpha)$, så $m$ bør vokse med $n$.",
       section: "Datastrukturer",
     }
   - {
       term: "Perfekt hashing",
-      definition: "For en statisk nøkkelmengde: nøklene hashes først inn i $m = n$ plasser, og plass $j$ med $n_j$ nøkler får en sekundærtabell med $n_j^2$ plasser og en hashfunksjon uten kollisjoner der. Søk tar konstant tid selv i verste fall, og plassen er $O(n)$.",
+      definition: "For nøkler som er kjent på forhånd og aldri endres: en hashfunksjon som gir hver nøkkel sin egen plass. Ingen nøkler kolliderer, så søk tar konstant tid også i verste tilfelle.",
       section: "Datastrukturer",
     }
   - {
       term: "Amortisert analyse",
-      definition: "Snitt per operasjon over en hel operasjonsfølge, i verste fall. Aggregert analyse: regn ut totalt arbeid og del på antall operasjoner. Ingen sannsynlighet er involvert, i motsetning til gjennomsnittstilfellet, som er et snitt over instanser.",
+      definition: "Snittkostnaden per operasjon over en følge av operasjoner, i verste tilfelle. Aggregert analyse viser at $n$ operasjoner koster høyst $T(n)$ til sammen og gir hver operasjon den amortiserte kostnaden $T(n)/n$. Ingen sannsynlighet er med, i motsetning til gjennomsnittlig tilfelle, som er et snitt over instanser.",
       section: "Datastrukturer",
     }
   - {
       term: "Tabelldobling",
-      definition: "Når tabellen er full, eller for en hashtabell når $\\alpha$ har nådd en fast grense: alloker en dobbelt så stor, kopier (eller hash på nytt) alt over og fortsett. Én innsetting kan koste lineær tid, men $n$ innsettinger koster totalt under $3n$ operasjoner, og nøyaktig $2n - 1$ når $n$ er en toerpotens. Det er amortisert konstant per innsetting.",
+      definition: "Når tabellen er full, allokeres en dobbelt så stor tabell, elementene kopieres over, og den gamle frigjøres. En hashtabell dobles når $\\alpha$ passerer en fast grense, og elementene settes inn på nytt med den nye hashfunksjonen. Én innsetting kan koste lineær tid, men $n$ innsettinger koster til sammen under $3n$, amortisert konstant tid per innsetting. Å vokse med et fast antall plasser gir $\\Theta(n^2)$.",
       section: "Datastrukturer",
     }
   - {

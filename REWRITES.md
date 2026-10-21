@@ -21,7 +21,7 @@ maintainer), **rewritten** (approved and committed).
 | Module | Status | Notes |
 |---|---|---|
 | 01 Algoritmer og kompleksitet | **rewritten** | Rewritten from scratch with a new stepper, two sims and a figure; approved and committed 2026-10-20. The same commit moves the whole guide to the lecturer’s range notation `A[1 : n]`. |
-| 02 Datastrukturer | to rewrite |  |
+| 02 Datastrukturer | **rewritten** | Rewritten from scratch with two sims for the stack and the queue, a list stepper, a hash-table sim, a table-doubling sim and two figures; approved after round 1 and committed 2026-10-21. |
 | 03 Problemer og reduksjoner | to rewrite |  |
 | 04 Splitt og hersk | to rewrite |  |
 | 05 Rangering i lineær tid | to rewrite |  |
