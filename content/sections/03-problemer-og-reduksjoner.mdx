@@ -2,285 +2,508 @@
 order: 3
 num: "02b"
 title: Problemer og reduksjoner
-summary: "Problemer som relasjoner, søke-, beslutnings- og optimeringsproblemer, verifisering med sertifikat, Cook-, Levin- og Karp-reduksjoner, og dekomponering begrunnet med induksjon."
+summary: "Hva et problem er og hvorfor det kan være mye billigere å verifisere et svar enn å finne det. Hvordan en reduksjon løser ett problem med et annet og viser hvor vanskelig et problem er, og hvordan induksjon viser at en rekursiv algoritme er riktig."
 importance: core
 tag: "Uke 35"
 part: "Del 1: Grunnlag"
-updated: 2026-09-27
+updated: 2026-10-21
 ---
 
-«Du skal velge ut flest mulig blant $n$ personer slik at alle kjenner minst $k$
-av de andre.» Det var en eksamensoppgave i august 2010. En oppgave fra august
-2011 byttet ut ett ord: velg ut *færrest* mulig. Den første har en enkel,
-effektiv løsning. Den andre er, så vidt noen vet, ikke mulig å løse effektivt i
-det hele tatt. Ordlyden røper ikke forskjellen. Den blir synlig når du vet hva
-et problem er, hvilke typer problemer som finnes og hvordan du sammenligner
-vanskegrad med en reduksjon, som oversetter ett problem til et annet.
-
 <LearningGoals>
-- Skill mellom spesifikke og generelle problemer, og se et problem som en relasjon mellom input og output.
-- Definer <Term name="Søkeproblem">søkeproblemer</Term>, <Term name="Beslutningsproblem">beslutningsproblemer</Term> og <Term name="Optimeringsproblem">optimeringsproblemer</Term>, og verifisering med <Term name="Sertifikat">sertifikat</Term>.
-- Forklar Cook-, Levin- og Karp-<Term name="Reduksjon">reduksjoner</Term> og forholdet mellom dem.
-- Bruk reduksjoner til å sammenligne vanskegrad: det du reduserer til, er minst like vanskelig som det du reduserer fra.
-- Design algoritmer ved dekomponering, og begrunn dem med induksjon over delinstanser.
+
+- Beskriv et problem som en relasjon mellom instanser og riktige svar, og skill mellom <Term name="Søkeproblem">søkeproblem</Term>, <Term name="Beslutningsproblem">beslutningsproblem</Term> og <Term name="Optimeringsproblem">optimeringsproblem</Term>.
+- Forklar hva det vil si å verifisere et <Term name="Sertifikat">sertifikat</Term>, og hvorfor det kan være mye billigere enn å finne et svar.
+- Skriv en <Term name="Reduksjon">reduksjon</Term> som en prosedyre med et <Term name="Orakel">orakel</Term>, og skill mellom Turing-, Cook-, Levin- og Karp-reduksjoner.
+- Bruk en reduksjon til å sammenligne hvor vanskelige to problemer er, og velg retningen ut fra hva du vil vise.
+- Lag en rekursiv algoritme ved <Term name="Dekomponering">dekomponering</Term>, og vis at den er riktig med induksjon over delinstansene.
+
 </LearningGoals>
+
+Blant $n$ personer skal du velge ut en gruppe der alle i gruppa kjenner minst $k$ av de
+andre i gruppa. Skal gruppa være så stor som mulig, finnes det en kort algoritme som løser
+oppgaven raskt. Skal den være så liten som mulig, men ha minst én person, har ingen funnet
+en algoritme som løser oppgaven raskt for store $n$. Oppgavene skiller seg med ett ord, og
+ordlyden sier ikke hvilken av dem som er vanskelig. En reduksjon viser at den minste gruppa
+er minst like vanskelig å finne som et kjent problem ingen har klart å løse raskt, og en
+dekomponering gir algoritmen for den største.
 
 ## Hva et problem er
 
-Et spesifikt problem er en beskrivelse av akseptable løsninger for én bestemt
-input, som å sortere $\langle 5, 2, 4, 6, 1, 3 \rangle$. Et generelt problem er
-en familie av spesifikke problemer, og det er et slikt problem ordet vanligvis
-betyr. Hvert medlem av familien er en <Term name="Problem og instans">instans</Term>.
+Et problem er en relasjon mellom input og output, og den sier hvilke svar som er riktige
+for hver instans. Sortering har ett riktig svar for hver instans:
+$\langle 5, 2, 4, 6, 1, 3 \rangle$ har bare $\langle 1, 2, 3, 4, 5, 6 \rangle$. Mange
+problemer har flere riktige svar, og noen instanser har ingen. Klikkproblemet, CLIQUE, har
+begge deler. En <Term name="Klikk">klikk</Term> er en gruppe personer der alle kjenner
+alle. En instans av CLIQUE er et tall $k$ og $n$ personer der det er gitt hvem som kjenner
+hvem, og et riktig svar er en klikk med $k$ personer.
 
-Formelt er et problem en binær relasjon $R \subseteq I \times O$ mellom en
-mengde inputs $I$ og en mengde outputs $O$: $R$ angir hvilke outputs som er
-riktige svar på hvilke inputs. Én instans kan ha mange riktige svar, og noen
-instanser har ingen, og de kan regnes som ugyldige. Skal input og output være
-helt konkrete, kodes de som bitstrenger, altså
-$R \subseteq \{0,1\}^* \times \{0,1\}^*$.
+Simuleringen under viser en instans av CLIQUE med seks personer og $k = 4$. En strek mellom
+to personer betyr at de kjenner hverandre. Trykk på personene du vil velge, og simuleringen
+slår opp om hvert par av valgte personer kjenner hverandre.
 
-<Figure
-  src="/figures/problem-relasjon.svg"
-  alt="To kolonner med punkter, inputs I til venstre og outputs O til høyre. Grønnblå streker kobler input x1 til to outputs og x2 til ett, og ett av parene er merket som medlem av R. Input x3 er nedtonet og har ingen strek, med merknaden ingen akseptable svar."
-  number={1}
-  width={560}
-  height={240}
-  caption="Et problem som relasjon: strekene er parene i $R$. Instansen $x_1$ har to riktige svar, $x_2$ har ett, og $x_3$ har ingen."
+<Simulation
+  src="/sims/klikk.js"
+  host="dom"
+  title="CLIQUE"
+  height={360}
+  caption="En instans av CLIQUE med $k = 4$. Hver sirkel er en person, og en tynn strek betyr at to personer kjenner hverandre. En valgt person er fylt og har tykk ring. For hvert par av valgte personer blir streken tykk når de to kjenner hverandre, og en rød stiplet linje står mellom dem når de ikke gjør det. Valgte personer som er en klikk med $k$ personer, er grønne, med et bånd under strekene."
 />
 
-<Statement kind="definition" name="Problemtyper">
-Gitt en relasjon $R$ og en instans $x$ kan du <b>søke</b>: finn en $y$ slik at
-$(x, y) \in R$; <b>beslutte</b>: avgjør om en slik $y$ finnes; eller
-<b>optimere</b>: finn en akseptabel $y$ som er best mulig etter et gitt mål. Å
-<b>verifisere</b> er å sjekke, gitt både $x$ og $y$, om $(x, y) \in R$.
-</Statement>
+Velg personene 1, 2, 4 og 5. I alle seks parene kjenner de to hverandre, så de fire er en
+klikk og blir grønne, og $\{1, 2, 4, 5\}$ er et riktig svar på instansen. Velg 1, 3, 4 og 5 i stedet.
+Personene 3 og 5 kjenner ikke hverandre, og da er de fire ikke en klikk. Med $k = 5$ har
+instansen ikke noe riktig svar: alle i en klikk med fem personer kjenner de fire andre, og
+bare 1, 2 og 4 kjenner så mange.
 
-Verifisering er ofte langt billigere enn søk. Å sjekke at en foreslått
-permutasjon $\pi$ sorterer tabellen $A$ er én gjennomgang: sammenlign
-$A[\pi[i]]$ med $A[\pi[i+1]]$ for hver $i$. Det tar lineær tid. Å *finne* $\pi$ krever
-derimot $\Omega(n \lg n)$ sammenligninger i verste fall. Den foreslåtte
-løsningen som verifiseres, kalles et <Term name="Sertifikat">sertifikat</Term>.
+Det du gjorde med de fire personene, er å verifisere et foreslått svar. Et foreslått svar
+kalles et <Term name="Sertifikat">sertifikat</Term>, og for en klikk med $k$ personer er
+verifiseringen $k(k - 1)/2$ oppslag, ett for hvert par. Formelt er problemet en relasjon
+${R \subseteq I \times O}$ mellom mengden $I$ av instanser og mengden $O$ av mulige svar,
+og paret $(x, y)$ er med i $R$ når $y$ er et riktig svar på instansen $x$. Med én relasjon
+kan du stille tre spørsmål om en instans $x$:
 
-Klikkproblemet CLIQUE viser alle variantene på én gang. En instans er en
-urettet graf $G$ og et positivt heltall $k$; en akseptabel løsning er en
-komplett delgraf med $k$ noder, en klikk.
+- *Finn* et svar $y$ med $(x, y) \in R$. Det er et
+  <Term name="Søkeproblem">søkeproblem</Term>. Har $x$ ikke noe riktig svar, skal
+  algoritmen si fra om det, for eksempel ved å returnere nil.
+- *Verifiser* et gitt sertifikat $y$, altså avgjør om $(x, y) \in R$.
+- *Avgjør* om det finnes et riktig svar. Det er et
+  <Term name="Beslutningsproblem">beslutningsproblem</Term>, og svaret er ja eller nei. Et
+  beslutningsproblem kan også skrives som mengden av instansene der svaret er ja.
 
-<Compare>
-<CompareCol title="Søkeproblem">
-Finn en klikk med $k$ noder i $G$. Søket feiler hvis ingen finnes.
-</CompareCol>
-<CompareCol title="Beslutningsproblem">
-Har $G$ en klikk med $k$ noder? Svaret er ja eller nei, og et nei tilsvarer at
-søket feiler.
-</CompareCol>
-<CompareCol title="Optimeringsproblem">
-Finn en størst mulig klikk i $G$. Beslutningsvarianten spør om optimum er minst
-$k$.
-</CompareCol>
-</Compare>
+Å finne en klikk er en annen sak enn å verifisere en. Trykk «Ny instans» og prøv selv:
+simuleringen har gjemt én klikk med fire personer blant ti, og «Første instans» tar deg
+tilbake. Den enkleste algoritmen prøver hver gruppe med $k$ personer, og det finnes
+$\binom{n}{k}$ av dem: 15 for den første instansen, 210 for den nye. For $n = 100$ og
+$k = 50$ er det omtrent $10^{29}$, mens et sertifikat verifiseres med 1225 oppslag. Det
+finnes smartere algoritmer enn å prøve alt, men ingen kjent algoritme finner en klikk i
+polynomisk tid, $O(n^c)$ for en konstant $c$, når $k$ er en del av instansen. Om hvert
+problem der et svar kan verifiseres i polynomisk tid, også kan løses i polynomisk tid, er
+et av de store åpne spørsmålene i informatikken.
 
-Verifiseringen er enkel i søke- og beslutningsvarianten: gitt et sertifikat
-$H$, sjekk at $H$ består av $k$ noder fra $G$ og at alle par er naboer. Å finne
-en klikk virker derimot svært vanskelig, og det er et åpent spørsmål om å finne
-en klikk egentlig *er* vanskeligere enn å verifisere en. I optimeringsvarianten
-kan du sjekke at $H$ er en klikk på samme måte, men ikke at ingen større klikk
-finnes.
+Sudoku viser det samme. Å verifisere et utfylt brett er å se over hver rad, kolonne og boks
+én gang, mens å fylle ut et brett der bare noen av tallene er gitt, kan ta lang tid. Det
+utfylte brettet er sertifikatet, og reglene er relasjonen.
+
+Også for sortering er det billigere å verifisere enn å finne. Et svar på sorteringen av
+${A[1 : n]}$ kan gis som en permutasjon ${\pi[1 : n]}$, der $\pi[i]$ sier hvilket element
+som skal stå på plass $i$. Sorts verifiserer et slikt sertifikat med én gjennomgang:
+
+<CodeBlock
+  lang="text"
+  code={`Sorts(A, π, n)
+1  for i = 1 to n - 1
+2      if A[π[i]] > A[π[i + 1]]
+3          return false
+4  return true`}
+/>
+
+Sorts tar $\Theta(n)$, og det tar også lineær tid å verifisere at $\pi$ inneholder hvert tall
+fra 1 til $n$ nøyaktig én gang. Å finne $\pi$ krever derimot $\Omega(n \lg n)$
+sammenligninger i verste tilfelle for enhver algoritme som sorterer ved å sammenligne
+elementer. Sertifikatet må knyttes til instansen: en prosedyre som bare avgjør om en tabell
+er sortert, godtar også en sortert tabell med helt andre elementer.
+
+Et problem kan også be om det beste svaret. I et
+<Term name="Optimeringsproblem">optimeringsproblem</Term> har hvert svar en verdi, og du
+skal finne et svar med størst eller minst verdi, for eksempel en størst mulig klikk. Den
+største og den minste gruppa der alle kjenner minst $k$ av de andre, er to
+optimeringsproblemer over de samme gruppene. Hvert optimeringsproblem har et
+beslutningsproblem i seg, nemlig om det finnes et svar som er minst så godt som en gitt
+terskel. For klikker spør beslutningsproblemet om det finnes en klikk med $k$ personer, og
+det er CLIQUE.
+
+<Callout title="Finne, verifisere og avgjøre">
+Et søkeproblem ber om et riktig svar, et beslutningsproblem om ja eller nei, og et
+optimeringsproblem om et best mulig svar. Å verifisere et sertifikat kan være mye billigere
+enn å finne et svar.
+</Callout>
+
+<Quiz
+  question={"$n$ personer skal sitte ved et rundt bord, slik at alle sitter mellom to personer de kjenner. Et sertifikat er en liste $\\langle p_1, \\ldots, p_n \\rangle$ med personene i rekkefølge rundt bordet. Hva må en verifikasjonsalgoritme sjekke?"}
+  options={[
+    "Hver av de $n$ personene står nøyaktig én gang i lista",
+    "$p_i$ og $p_{i + 1}$ kjenner hverandre for hver $i < n$",
+    "$p_n$ og $p_1$ kjenner hverandre",
+    "Ingen annen rekkefølge rundt bordet oppfyller kravet",
+    "Alle kjenner nøyaktig to av de andre",
+  ]}
+  answer={[0, 1, 2]}
+  explanation={"Lista er en riktig bordplassering når hver person er med én gang og hvert par som sitter ved siden av hverandre, kjenner hverandre. Kravet gjelder også $p_n$ og $p_1$, som sitter ved siden av hverandre fordi bordet er rundt. Uten den første sjekken godtas en liste der samme person sitter to steder og en annen mangler, og uten den tredje godtas en rekke som ikke lukker seg rundt bordet. Et sertifikat skal bare vise at én riktig plassering finnes, så det spiller ingen rolle om det finnes flere. Alle kan også kjenne mange flere enn de to de sitter mellom."}
+/>
 
 ## Reduksjoner
 
-Oppgaven er å avgjøre om alle elementene i en tabell er forskjellige. I stedet
-for å løse den direkte kan du omforme problemet:
+Du skal avgjøre om alle elementene i en tabell ${A[1 : n]}$ er forskjellige. Sorter
+tabellen først. Da står like elementer ved siden av hverandre: $\langle 3, 1, 4, 1, 5 \rangle$
+blir $\langle 1, 1, 3, 4, 5 \rangle$, og de to 1-tallene står side om side. Det som er
+igjen, er å avgjøre om to naboer i tabellen er like. Med det som gjenstår som en
+TODO-kommentar:
 
-```python
-def unique(A, n):
-    insertion_sort(A, n)
-    for i in range(n - 1):
-        if A[i] == A[i + 1]:
-            return False
-    return True
-```
+<CodeBlock
+  lang="text"
+  code={`Unique(A, n)
+1  Insertion-Sort(A, n)
+2  // TODO: Er naboverdier forskjellige?`}
+/>
 
-Etter sorteringen står like verdier ved siden av hverandre, så det holder å
-sjekke naboene. Unikhet er da løst med én sortering og én lineær gjennomgang.
-Slik kan du tenke helt generelt: gjør noe arbeid som omformer instansen, og
-overlat resten til en subrutine du later som du har. En slik hypotetisk
-subrutine kalles et <Term name="Orakel">orakel</Term>, og konstruksjonen er en
-<Term name="Reduksjon">reduksjon</Term> fra det ene problemet til det andre,
-her fra unikhet til sortering. Reduksjonene deles inn etter hvor mye de får
-lov til å gjøre:
+Linje 2 er ikke skrevet ennå, men problemet har blitt enklere. Det opprinnelige problemet,
+kall det $X$, er å avgjøre om alle elementene er forskjellige. Etter sorteringen gjenstår
+problemet $Y$: å avgjøre om alle naboer er forskjellige. Unique er en
+<Term name="Reduksjon">reduksjon</Term> fra $X$ til $Y$: en prosedyre som løser $X$, og
+som overlater resten til en prosedyre for $Y$ som du antar finnes. En slik antatt
+prosedyre kalles et <Term name="Orakel">orakel</Term>. Sorteringen i linje 1 er arbeidet
+reduksjonen gjør selv.
 
-<Compare>
-<CompareCol title="Cook">
-Turing-reduksjon i polynomisk tid: løs $X$ med vilkårlig eget arbeid og så
-mange orakelkall for $Y$ du vil. Dette er den minst restriktive formen.
-</CompareCol>
-<CompareCol title="Levin">
-Omform instansen, gjør ett orakelkall, og oversett løsningen tilbake til en
-løsning for $X$.
-</CompareCol>
-<CompareCol title="Karp">
-For beslutningsproblemer: omform instansen og gjør ett orakelkall. Ja/nei-svaret
-går uendret gjennom.
-</CompareCol>
-</Compare>
+Reduksjonen er riktig hvis Unique svarer riktig hver gang oraklet svarer riktig. Det gjør
+den her, fordi tabellen har to like elementer nøyaktig når den sorterte tabellen har to
+like naboer. Kjøretiden til en reduksjon regnes som om hvert kall på oraklet tar konstant
+tid. For Unique er den $\Theta(n^2)$ i verste tilfelle, kjøretiden til Insertion-Sort.
 
-Hver type er et spesialtilfelle av den forrige. En Karp-reduksjon er en
-Levin-reduksjon der oversettelsen tilbake er triviell, og en Levin-reduksjon er
-en Cook-reduksjon med nøyaktig ett kall.
+En reduksjon er nyttig når du har en algoritme for $Y$. Sett den inn der oraklet står, og
+du har en algoritme for $X$. Naboene sjekkes med én løkke gjennom tabellen, så Unique blir
+ferdig med $\Theta(n)$ ekstra arbeid.
 
-`unique` er en Levin-reduksjon. Den kaller sorteringen én gang, og nabosjekken
-oversetter den sorterte tabellen til ja eller nei. Den er ingen Karp-reduksjon,
-for oraklet svarer med en tabell og ikke med ja eller nei. Skal du derimot
-finne en klikk med $k$ noder med et orakel for beslutningsvarianten, trenger du
-mange kall. Fjern én node om gangen, og spør om grafen fortsatt har en klikk
-med $k$ noder. Er svaret nei, legger du noden tilbake. Hadde grafen en klikk
-med $k$ noder fra starten, har de gjenværende nodene etter $n$ kall fortsatt
-en. Hver gjenværende node er med i hver klikk med $k$ noder blant dem, for uten
-noden fantes ingen, så de gjenværende nodene er selve klikken. Det er en
-Cook-reduksjon.
+Reduksjoner skilles etter hvordan de bruker oraklet. Unique kaller det én gang, helt til
+slutt, og svaret fra oraklet er svaret på $X$. Både $X$ og $Y$ er beslutningsproblemer.
+En slik reduksjon er en Karp-reduksjon: den gjør i polynomisk tid en instans av $X$ om til
+en instans av $Y$ som har svaret ja hvis og bare hvis den opprinnelige har svaret ja.
+
+Er $X$ og $Y$ søkeproblemer, må svaret ofte oversettes tilbake. Det minste elementet i en
+tabell kan finnes med et orakel for det største:
+
+<CodeBlock
+  lang="text"
+  code={`Min(A, n)
+1  let B[1 : n] be a new array
+2  for i = 1 to n
+3      B[i] = -A[i]
+4  m = Max(B, n)        // orakel
+5  return -m`}
+/>
+
+Det største elementet i $B$ er det minste i $A$ med motsatt fortegn. Linje 1 til 3
+oversetter instansen fram, linje 4 kaller oraklet én gang, og linje 5 oversetter svaret
+tilbake. Max er lett å skrive, så Min er bare et lite eksempel på formen. En reduksjon i
+polynomisk tid med ett kall, der instansen oversettes fram og svaret tilbake, er en
+Levin-reduksjon. Hvert svar oraklet kan gi, må oversettes til et riktig svar på $X$, og har
+$Y$-instansen ikke noe riktig svar, har heller ikke den opprinnelige instansen det.
+
+En reduksjon kan også kalle oraklet mange ganger. Det samme problemet $X$, om alle
+elementene er forskjellige, kan løses med et orakel Contains som avgjør om tallet $x$ finnes
+i en tabell:
+
+<CodeBlock
+  lang="text"
+  code={`Unique-Lookup(A, n)
+1  for i = 1 to n - 1
+2      if Contains(A[i + 1 : n], A[i])    // orakel
+3          return false
+4  return true`}
+/>
+
+Unique-Lookup spør for hvert element om det finnes igjen lenger ut i tabellen, så to like
+elementer blir funnet når løkka kommer til det første av dem. Den kaller oraklet $n - 1$
+ganger, og med hvert kall regnet som konstant tid tar den $\Theta(n)$. En reduksjon som kan
+kalle oraklet mange ganger, er en Turing-reduksjon, og tar den polynomisk tid, er den en
+Cook-reduksjon. Setter du inn et lineært søk for Contains, tar Unique-Lookup $\Theta(n^2)$,
+fordi hvert kall da koster opptil $n$ sammenligninger.
+
+Karp- og Levin-reduksjoner tar polynomisk tid og kaller oraklet én gang, så begge er
+spesialtilfeller av en Cook-reduksjon. En Karp-reduksjon gjelder beslutningsproblemer, og en
+Levin-reduksjon søkeproblemer. Figur 1 viser de tre formene ved siden av hverandre: Unique
+er en Karp-reduksjon, Min en Levin-reduksjon og Unique-Lookup en Cook-reduksjon.
+
+<Figure
+  src="/figures/reduksjoner.svg"
+  alt="Tre små diagrammer side om side, merket Cook, Levin og Karp. Hvert har to kolonner av punkter, X til venstre og Y til høyre. Cook: en grå pil fra X til Y øverst, en kort rød pil ned i Y-kolonnen, en grå pil tilbake til X, tre prikker nedover i X-kolonnen, og så det samme én gang til: grå pil til Y, kort rød pil ned, grå pil tilbake til det nederste X-punktet. En stiplet blågrønn pil bøyer seg utenfor på venstre side fra det øverste til det nederste punktet i X-kolonnen. Levin: en grå pil fra X til Y øverst, en lang rød pil ned hele Y-kolonnen, en grå pil fra det nederste Y-punktet tilbake til det nederste X-punktet, og en stiplet blågrønn pil rett ned X-kolonnen. Karp: en grå pil fra X til Y øverst og en lang rød pil ned Y-kolonnen til et punkt merket ja/nei. En stiplet blågrønn pil går fra det øverste X-punktet direkte til ja/nei-punktet."
+  number={1}
+  width={340}
+  height={236}
+  caption="Tre slags reduksjoner fra $X$ til $Y$, med en instans øverst og et svar nederst i hver kolonne. Grå piler er reduksjonens eget arbeid, røde piler er kall på oraklet for $Y$, og den stiplede blågrønne pilen er svaret på $X$ som det hele gir. Prikkene i Cook står for flere runder med kall."
+/>
+
+<Callout title="Fire slags reduksjoner">
+En reduksjon fra $X$ til $Y$ løser $X$ med et orakel for $Y$, og kjøretiden regnes med hvert
+kall som ett steg. En Turing-reduksjon kan kalle oraklet mange ganger, og en Cook-reduksjon
+er en Turing-reduksjon i polynomisk tid. En Levin-reduksjon kaller oraklet én gang og
+oversetter svaret tilbake, og en Karp-reduksjon kaller det én gang til slutt og lar ja
+eller nei gå rett gjennom.
+</Callout>
+
+<Quiz
+  question={"Du skal sortere ${A[1 : n]}$ og har et orakel som finner det minste elementet i en tabell. Du kaller oraklet, legger svaret sist i en ny tabell, fjerner elementet fra $A$ og gjentar til $A$ er tom. Hva slags reduksjon er det?"}
+  options={[
+    "En Karp-reduksjon",
+    "En Levin-reduksjon",
+    "En Cook-reduksjon som ikke er en Levin-reduksjon",
+  ]}
+  answer={2}
+  explanation={"Reduksjonen kaller oraklet $n$ ganger og gjør polynomisk arbeid mellom kallene, så den er en Cook-reduksjon. En Levin-reduksjon kaller oraklet nøyaktig én gang, selv om hvert svar her blir brukt videre. En Karp-reduksjon kaller det også én gang, og den gjelder beslutningsproblemer, mens sortering og å finne det minste elementet er søkeproblemer."}
+/>
 
 ## Vanskegrad
 
-Reduksjoner er mer enn gjenbruk av kode; de sammenligner problemer. Å åpne en
-skattekiste kan reduseres til å dirke opp låsen: får du opp låsen, får du opp
-kista. Er låsen rusten og lett å dirke, er kista lett å åpne. Kista kan også
-være lett å åpne selv med en solid lås, hvis hengslene sitter løst og gir en
-annen vei inn. Det eneste umulige er at kista er vanskeligere enn låsen, for
-gjennom låsen går det alltid én vei inn.
+Du vil åpne en skattekiste som er låst med en hengelås. Å åpne kista kan reduseres til å
+åpne låsen: får du opp låsen, får du opp kista. Er låsen rusten og lett å få opp, er kista
+lett å åpne. Er låsen solid, kan kista likevel være lett å åpne, fordi hengslene kan sitte
+løst, og da finnes det en annen vei inn. Men kista kan ikke være vanskelig å åpne når låsen
+er lett, fordi veien gjennom låsen finnes alltid. Kista er $X$, låsen er $Y$, og å åpne er
+å løse.
+
+En algoritme er effektiv når kjøretiden er polynomisk i størrelsen på instansen. Et
+problem er lett når det har en effektiv algoritme, og vanskelig når det ikke har det. Kan
+$X$ reduseres til $Y$ med en reduksjon som tar polynomisk tid, skrives det
+$X \le_\text{P} Y$. Kravet om polynomisk tid gjelder reduksjonen selv. Får den bruke så lang
+tid den vil, kan den løse $X$ på egen hånd og gi oraklet en $Y$-instans der svaret er kjent
+på forhånd, en med svaret ja når $X$-svaret er ja og en med svaret nei ellers. Da sier
+reduksjonen ingenting om $Y$. Med en reduksjon i polynomisk tid er $X$ ikke vanskeligere
+enn $Y$:
 
 <Statement kind="principle" name="Reduksjoner og vanskegrad">
-La $X$ kunne reduseres til $Y$ med en billig reduksjon. Da er $Y$ minst like
-vanskelig som $X$: en effektiv algoritme for $Y$ gir en effektiv algoritme for
-$X$, og kan $X$ ikke løses effektivt, kan heller ikke $Y$.
+Hvis $X \le_\text{P} Y$ og $Y$ kan løses i polynomisk tid, kan også $X$ det. Hvis $X$ ikke
+kan løses i polynomisk tid, kan heller ikke $Y$ det.
 </Statement>
 
-Prinsippet virker begge veier. Reduserer du til noe du vet er lett, har du
-funnet en algoritme. Reduserer du fra noe du vet er vanskelig, har du vist at
-målet er minst like vanskelig.
+Sett en algoritme for $Y$ inn der oraklet står. Reduksjonen gjør polynomisk mange kall, og
+hvert kall får en instans den har rukket å skrive på polynomisk tid, så instansen er høyst
+polynomisk stor. En polynomisk algoritme på en polynomisk stor instans tar polynomisk tid,
+og summen av polynomisk mange slike kall er også polynomisk. Den andre setningen er den
+første snudd: kunne $Y$ løses i polynomisk tid, kunne $X$ også det.
+
+Retningen avgjør hva du kan vise. Reduserer du problemet ditt til et lett problem, har du en
+effektiv algoritme, slik Unique får det. Reduserer du det til et vanskelig problem, har du
+ikke lært noe om problemet ditt, akkurat som en solid lås ikke sier noe om kista. Vil du
+vise at problemet ditt er vanskelig, må du redusere motsatt vei, fra et problem som er kjent
+som vanskelig, til ditt eget. Da ville en effektiv algoritme for ditt problem gi en effektiv
+algoritme for det kjente, og det er for godt til å være sant.
 
 <Callout title="Hvilken vei du reduserer">
-Reduser til et kjent lett problem for å finne en algoritme. Reduser fra et
-kjent vanskelig problem for å vise at målet er minst like vanskelig.
+For å vise at problemet ditt er lett, reduser det til et lett problem. For å vise at det er
+vanskelig, reduser et problem som er kjent som vanskelig, til ditt.
 </Callout>
 
-<Example title="Flest mulig og færrest mulig">
-Velg ut flest mulig blant $n$ personer slik at alle i utvalget kjenner minst
-$k$ av de andre i utvalget. Deretter: velg ut færrest mulig, men minst én, med
-samme krav. Hvorfor er den første oppgaven lett og den andre vanskelig?
+Nå kan du vise at det er vanskelig å finne den minste gruppa der alle kjenner minst $k$ av
+de andre. Reduksjonen går fra CLIQUE, som ingen har funnet en effektiv algoritme for, til
+oppgaven med den minste gruppa. Gitt en instans av CLIQUE, med personene, hvem som kjenner
+hvem og tallet $k$: spør etter den minste gruppa av de samme personene der alle kjenner minst
+$k - 1$ av de andre i gruppa. Alle i en slik gruppe kjenner minst $k - 1$ andre, så gruppa har minst $k$ personer. Har den
+nøyaktig $k$, kjenner hver av dem alle de $k - 1$ andre, og gruppa er en klikk med $k$
+personer. En klikk med $k$ personer er også en slik gruppe. Den minste gruppa har altså
+nøyaktig $k$ personer hvis og bare hvis det finnes en klikk med $k$ personer. Blant de seks
+personene i den første instansen i simuleringen «CLIQUE» er den minste gruppa der alle
+kjenner minst tre av de andre, klikken $\{1, 2, 4, 5\}$.
 
-<Solution>
-Flest mulig: stryk en person som kjenner færre enn $k$ av de gjenværende, og
-gjenta til ingen flere kan strykes. Én stryking kan gjøre at en nabo kjenner
-færre enn $k$ av de gjenværende, så du teller på nytt etter hver stryking. Ingen gyldig gruppe mister noe medlem på
-veien: så lenge hele gruppa står, kjenner hvert medlem minst $k$ innenfor
-gruppa, og dermed minst $k$ blant de gjenværende, så ingen av dem strykes
-først. Når ingen flere kan strykes, kjenner alle som står igjen minst $k$ av de
-gjenværende, så de gjenværende er selv en gyldig gruppe. De er altså en gyldig
-gruppe som inneholder alle andre gyldige grupper, og dermed den største. Det
-strykes høyst $n$ personer, og hver stryking finnes ved å telle bekjentskaper
-blant de gjenværende, så hele prosessen er polynomisk.
-
-Færrest mulig: alle i gruppa skal kjenne minst $k$ andre i gruppa, så gruppa må
-ha minst $k + 1$ personer. En gruppe på $k + 1$ personer er gyldig nøyaktig
-når alle kjenner alle, ettersom hver av dem må kjenne de $k$ andre og
-gruppa ikke har flere. Svaret er altså $k + 1$ hvis og bare hvis
-bekjentskapsgrafen har en klikk med $k + 1$ noder, så en algoritme for
-færrest-varianten avgjør CLIQUE.
-Klikkproblemet er redusert til færrest-varianten, så den er minst like
-vanskelig.
-
-<Answer>Flest-varianten løses i polynomisk tid ved stryking. Færrest-varianten er minst like vanskelig som CLIQUE.</Answer>
-</Solution>
-</Example>
-
-<Stepper
-  src="/steppers/stryking.js"
-  title="Flest mulig ved stryking"
-  caption="Bekjentskapsgrafen med kravet $k = 2$. Oransje er en person som kjenner færre enn to av de gjenværende, stiplet grått er strøket, og grønt er gruppa som står igjen."
-  height={300}
-/>
+Reduksjonen gjør nesten ingenting: den sender personene og hvem som kjenner hvem videre, trekker 1 fra $k$ og
+sammenligner størrelsen på svaret med $k$. Stilt som beslutningsproblem spør oppgaven om
+det finnes en gruppe med høyst $k$ personer der alle kjenner minst $k - 1$ av de andre, og
+da er reduksjonen en Karp-reduksjon: svaret er ja nøyaktig når det finnes en klikk med $k$
+personer. En effektiv algoritme for den minste gruppa ville gi en effektiv algoritme for
+CLIQUE.
 
 <Example label="Eksamensoppgave" title="Hvilken vei reduserer du?">
 <ExamRef id="2025-des" task="9" />
 
-Du studerer et problem $P$, og vil sammenligne det med et annet, kjent
-problem $Q$ ved å finne en effektiv reduksjon. Hvilken vei vil du redusere
-for å vise hva? Forklar kort.
+Du studerer et problem $P$, og vil sammenligne det med et annet, kjent problem $Q$ ved å
+finne en effektiv reduksjon. Hvilken vei vil du redusere for å vise hva? Forklar kort.
 
 <Solution>
-Det kommer an på hva du vet om $Q$. Er $Q$ vanskelig, reduserer du fra $Q$
-til $P$: da kan enhver instans av $Q$ løses ved hjelp av $P$, så $P$ er minst
-like vanskelig. Er $Q$ lett, reduserer du fra $P$ til $Q$: da har du en
-algoritme for $P$ som går veien om $Q$, så $P$ er også lett.
+Det avhenger av hva du vet om $Q$. Er $Q$ vanskelig, reduserer du fra $Q$ til $P$. En
+effektiv algoritme for $P$ ville da gi en effektiv algoritme for $Q$, så $P$ er minst like
+vanskelig som $Q$. Er $Q$ lett, reduserer du fra $P$ til $Q$. Da løser du $P$ ved å
+redusere og kalle algoritmen for $Q$, så $P$ er også lett.
 
-<Answer>Fra $Q$ til $P$ for å vise at $P$ er vanskelig, fra $P$ til $Q$ for å vise at $P$ er lett.</Answer>
+<Answer>Fra $Q$ til $P$ for å vise at $P$ er minst like vanskelig som $Q$, og fra $P$ til $Q$ for å vise at $P$ ikke er vanskeligere enn $Q$.</Answer>
+</Solution>
+</Example>
+
+<Example label="Eksamensoppgave" title="Reduksjoner begge veier">
+<ExamRef id="2024-aug-kont" task="18" />
+
+Din venn Lurvik studerer to beslutningsproblemer, $A$ og $B$, der han har en eksponentiell
+algoritme for $A$ og en polynomisk algoritme for $B$. Han har vist at $A$ ikke kan løses
+raskere enn eksponentielt.
+
+Lurvik har også funnet reduksjoner fra $A$ til $B$ og fra $B$ til $A$. Hva kan du si om
+kjøretiden til hver av disse reduksjonene? Forklar kort.
+
+Om vi ser på $A$ og $B$ som formelle språk, har Lurvik altså funnet to reduksjonsfunksjoner
+$f$ og $g$, der
+
+- $x \in A$ hvis og bare hvis $f(x) \in B$ og
+- $x \in B$ hvis og bare hvis $g(x) \in A$.
+
+Spørsmålet er hva du kan si om kjøretiden som kreves for å beregne reduksjonsfunksjonene $f$
+og $g$.
+
+I pensum antas en reduksjon generelt å ha polynomisk kjøretid, men her kan du se bort fra
+det.
+
+<Solution>
+Reduksjonen fra $A$ til $B$ må ta eksponentiell tid. Tok den mindre, kunne du løse $A$ ved
+å regne ut $f(x)$ og kjøre den polynomiske algoritmen for $B$ på $f(x)$. Instansen $f(x)$ er
+ikke større enn tiden det tok å skrive den, så det samlede arbeidet ville vært mindre enn
+eksponentielt, og Lurvik har vist at det er umulig.
+
+Om reduksjonen fra $B$ til $A$ kan du ikke si noe. Den kan ta polynomisk tid: løs $B$ med
+den polynomiske algoritmen, og svar med en fast instans av $A$ der svaret er ja, eller en
+der svaret er nei. Men den kan også gjøre en instans av størrelse $n$ om til en instans av
+størrelse $2^n$ eller større, og da tar den minst så lang tid.
+
+<Answer>$f$ krever eksponentiell kjøretid. Om $g$ kan du ikke si noe: den kan ta polynomisk tid, men også vilkårlig lang tid.</Answer>
 </Solution>
 </Example>
 
 ## Dekomponering
 
-Reduksjonen fra unikhet til sortering oversetter mellom to forskjellige
-problemer. Like ofte reduserer
-du et problem til mindre instanser av seg selv: du dekomponerer.
-<Term name="Insertion-Sort" /> er den enkleste bruken, det læreboka kaller den
-inkrementelle metoden. Dekomponer ved å kutte av det siste elementet, og anta
-at resten kan sorteres. Kombiner ved å sette det siste elementet inn på rett
-plass i den sorterte resten. Dekomponeringen er nesten gratis, så alt arbeidet
-ligger i kombinasjonen. Speilbildet er sortering ved utvelgelse, selection
-sort: ta ut det største elementet, sorter resten og legg det største bakerst.
-Da ligger arbeidet i dekomponeringen, og kombinasjonen er triviell. Rikere
-dekomponeringer, som å dele instansen i to halvdeler, er grunnlaget for splitt
-og hersk.
+En reduksjon kan også gå til en mindre instans av samme problem. Da er oraklet algoritmen
+selv, kalt på den mindre instansen, og algoritmen er rekursiv. Å løse en instans ved å
+bryte den ned i mindre instanser av samme problem kalles
+<Term name="Dekomponering">dekomponering</Term>.
 
-En rekursiv prosedyre dekomponerer på samme måte, for den bruker seg selv som
-orakel på mindre delinstanser. Beviset for at den gir riktige svar, er et
-induksjonsbevis over delinstansene. Grunntilfellet er instansene som løses
-direkte, uten dekomponering. For Insertion-Sort er grunntilfellet en tabell med
-ett element, som allerede er sortert. Induksjonshypotesen er antagelsen om at
-delinstansene kan løses, her at resten av tabellen kan sorteres.
-Induksjonssteget viser at kombinasjonen av riktige delsvar gir et riktig svar
-for hele instansen: settes det siste elementet inn på rett plass i en sortert
-rest, er hele tabellen sortert. Og dekomponeringen må krympe instansen, slik at
-rekursjonen ender i grunntilfellet. Hvert kutt i Insertion-Sort fjerner ett
-element.
+Insertion-Sort er en dekomponering. For å sortere ${A[1 : n]}$, sorter ${A[1 : n - 1]}$ og
+sett $A[n]$ inn på rett plass blant de sorterte elementene. Læreboka kaller det den
+inkrementelle metoden. Skrevet rekursivt:
 
-<Figure
-  src="/figures/dekomponering.svg"
-  alt="Fire bokser i en firkant: instans øverst til venstre, svar øverst til høyre, delinstans og delsvar nederst. En stiplet grå pil fra instans til svar er merket løsning. En heltrukken pil ned fra instans til delinstans er merket dekomponer, en stiplet pil fra delinstans til delsvar er merket antatt delløsning, induksjonshypotesen, og en heltrukken pil opp fra delsvar til svar er merket kombiner."
-  number={2}
-  width={560}
-  height={280}
-  caption="Én runde i dekomponeringen: dekomponer instansen, anta at delinstansen kan løses (stiplet), og kombiner delsvaret til et svar. Det samme skjer på hvert nivå nedover, helt til grunntilfellet."
+<CodeBlock
+  id="innsetting-rekursiv-kode"
+  lang="text"
+  code={`Insertion-Sort-Rec(A, n)
+1  if n > 1
+2      Insertion-Sort-Rec(A, n - 1)
+3      key = A[n]
+4      j = n - 1
+5      while j > 0 and A[j] > key
+6          A[j + 1] = A[j]
+7          j = j - 1
+8      A[j + 1] = key`}
 />
 
-Er grunntilfellet riktig, og bevarer hvert trinn riktigheten, forplanter
-riktigheten seg oppover nivåene. En <Term name="Løkkeinvariant">løkkeinvariant</Term>
-er det samme beviset sett fra en løkke: initialisering er grunntilfellet, og
-vedlikehold er induksjonssteget.
+Linje 3 til 8 er innsettingen fra Insertion-Sort, med $n$ der Insertion-Sort har $i$.
 
-<Callout title="Riktighet ved dekomponering">
-En rekursiv prosedyre er riktig når grunntilfellet er riktig, kombinasjonen av
-riktige delsvar gir et riktig svar, og hver dekomponering krymper instansen.
+<Stepper
+  src="/steppers/innsetting-rekursiv.js"
+  codeId="innsetting-rekursiv-kode"
+  title="Insertion-Sort som dekomponering"
+  height={340}
+  caption="Insertion-Sort-Rec som en stige med én rad per kall. Til venstre står instansen ${A[1 : n]}$ som kallet får, og til høyre svaret det gir tilbake. Høyden på et element følger verdien, nøkkelen (key i koden) har tykk kant, de oransje elementene flyttes én plass til høyre, og grønt er det ferdige svaret."
+/>
+
+Stepperen tegner hvert kall som et trinn i en stige. På vei ned langs venstre side kutter
+hvert kall av det siste elementet og lar kallet under sortere resten, og ingen elementer
+flyttes. Nederst står ett element, grunntilfellet, som er sitt eget svar. På vei opp langs
+høyre side får hvert kall delsvaret fra trinnet under og setter inn elementet det kuttet
+av. Det er det samme elementet, og stepperen merker det i begge kolonnene. Alle
+flyttingene skjer i høyre kolonne, og siste steg sier hvor mange det ble. Nedbrytingen er
+gratis, og alt arbeidet skjer når svarene settes sammen på vei opp.
+
+Linje 2 behandler det rekursive kallet som et orakel: den antar at ${A[1 : n - 1]}$ blir
+sortert. I Unique var oraklet en prosedyre som kanskje kommer senere. Her er oraklet
+prosedyren selv, og antagelsen kan bevises med induksjon over $n$, slik stigen viser:
+
+<Steps>
+<Step title="Grunntilfelle">
+Med $n = 1$ gjør prosedyren ingenting, og ett element er sortert.
+</Step>
+<Step title="Induksjonshypotese">
+Anta at Insertion-Sort-Rec sorterer enhver tabell med færre enn $n$ elementer. Da er
+${A[1 : n - 1]}$ sortert etter linje 2.
+</Step>
+<Step title="Induksjonssteg">
+Linje 5 til 7 flytter elementene som er større enn nøkkelen, én plass til høyre, og linje 8
+legger nøkkelen rett etter det siste elementet som ikke er større. De sorterte elementene
+til venstre for nøkkelen er ikke større enn den, og de til høyre er større, så
+${A[1 : n]}$ er sortert.
+</Step>
+<Step title="Terminering">
+Hvert kall er på en tabell med ett element færre, så etter $n - 1$ kall er instansen ett
+element, og rekursjonen stopper.
+</Step>
+</Steps>
+
+Grunntilfellet er riktig, og hvert trinn opp stigen gjør et riktig delsvar til et riktig
+svar. Da er svaret riktig på hvert trinn, helt til toppen. Hypotesen antar bare at kallet
+på de mindre instansene gir riktige svar, og det er det samme som å anta at oraklet svarer
+riktig. Induksjonen er grunnen til at du får anta det.
+
+Insertion-Sort med for-løkke er den samme algoritmen uten rekursjon. Løkka går opp stigen
+nedenfra, med $i = 2, 3, \ldots, n$, og setter inn $A[i]$ i hver iterasjon.
+Løkkeinvarianten, at ${A[1 : i - 1]}$ er sortert ved starten av hver iterasjon, er
+induksjonshypotesen for delinstansen ${A[1 : i - 1]}$. Initialiseringen er grunntilfellet,
+og vedlikeholdet er induksjonssteget.
+
+Arbeidet kan også ligge på vei ned. Den største gruppa der alle kjenner minst $k$ av de
+andre, finnes med en dekomponering der nedbrytingen er arbeidet og svaret går uendret opp
+igjen. Kall en gruppe gyldig når alle i den kjenner minst $k$ av de andre i gruppa. En
+person $p$ som kjenner færre enn $k$ av de gjenværende, kan ikke være med i noen gyldig
+gruppe, fordi $p$ ville kjenne færre enn $k$ i gruppa også. Fjern $p$, og den største
+gyldige gruppa er den samme som før, i en mindre instans.
+
+<CodeBlock
+  id="storste-gruppe-kode"
+  lang="text"
+  code={`Largest-Group(S, k)
+1  if everyone in S knows at least k others in S
+2      return S
+3  p = a person in S who knows fewer than k others in S
+4  return Largest-Group(S - {p}, k)`}
+/>
+
+Her er $S$ personene som er igjen, og ${S - \{p\}}$ er de samme personene uten $p$.
+
+<Stepper
+  src="/steppers/storste-gruppe.js"
+  codeId="storste-gruppe-kode"
+  title="Største gruppe"
+  height={340}
+  caption="Hver sirkel er en person, og en strek betyr at de to kjenner hverandre. Tallet ved en person er hvor mange av de gjenværende personen kjenner. Det er rødt når det er mindre enn $k$, og oransje, som 3→2, i steget der en fjerning senker det. Ringen markerer $p$, en stiplet person er fjernet, og grønt med bånd under strekene er gruppa Largest-Group returnerer."
+/>
+
+I den første instansen i stepperen er $k = 3$, og bare personen $j$ kjenner færre enn tre av
+de andre. Når $j$ er fjernet, kjenner $h$ bare to av de gjenværende, og når $h$ er fjernet,
+kjenner $g$ bare to. Én fjerning kan altså gjøre at en annen person må fjernes. Til slutt er
+$a$ til $f$ igjen, og hver av dem kjenner tre av de andre. De er svaret, selv om ingen av dem kjenner
+alle de andre. Stepperen fjerner den første personen i alfabetet som kjenner for få, og hvert
+kall returnerer svaret fra kallet under uendret.
+
+Beviset har de samme delene som for Insertion-Sort. Grunntilfellet er at alle i $S$ kjenner
+minst $k$ av de andre i $S$. Da er hele $S$ en gyldig gruppe, og den inneholder alle andre
+grupper, så den er den største. Induksjonshypotesen er at Largest-Group gir den største
+gyldige gruppa for hver instans med færre personer. Induksjonssteget er at $p$ ikke kan være
+med i noen gyldig gruppe, så $S$ og ${S - \{p\}}$ har de samme gyldige gruppene og den
+samme største. Steget bruker ikke hvilken $p$ som ble valgt, så svaret blir det samme
+uansett rekkefølge. Hvert kall fjerner én person, bortsett fra det siste, så det blir høyst
+$n + 1$ kall, og hvert kall finner $p$ i polynomisk tid ved å telle, for hver av de gjenværende, hvor mange
+av de andre gjenværende personen kjenner. Den
+største gruppa er altså lett å finne, mens den minste er minst like vanskelig å finne som en
+klikk.
+
+Sortering kan også dekomponeres med arbeidet på vei ned: ta ut det største elementet,
+sorter resten og legg det største bakerst. Det er sortering ved utvelgelse, selection sort.
+
+<Callout title="Dekomponering og induksjon">
+En rekursiv algoritme er riktig når grunntilfellet er riktig, kombinasjonen gjør riktige
+delsvar til et riktig svar, og hvert kall er på en mindre instans. Arbeidet kan ligge i
+nedbrytingen, i kombinasjonen eller i begge.
 </Callout>
 
-## Sjekk deg selv
-
 <Quiz
-  question="Du vil avgjøre om grafen $G$ har en klikk med $k$ noder, og har et orakel som finner en størst mulig klikk. Du kaller oraklet én gang på $G$ og svarer ja hvis klikken det gir, har minst $k$ noder. Hvilken reduksjonstype er den strammeste beskrivelsen?"
+  question={"Fem personer: $a$ kjenner $b$ og $c$, $b$ kjenner $a$ og $c$, $c$ kjenner $a$, $b$ og $d$, $d$ kjenner $c$ og $e$, og $e$ kjenner bare $d$. Hva gir Largest-Group med $k = 2$?"}
   options={[
-    "Karp, for algoritmen svarer ja eller nei etter ett kall",
-    "Levin, for oraklets klikk må oversettes til ja eller nei",
-    "Cook, for algoritmen gjør eget arbeid etter kallet",
+    "$\\{a, b, c\\}$",
+    "$\\{a, b, c, d\\}$",
+    "$\\{a, b, c, d, e\\}$",
+    "Ingen gruppe",
   ]}
-  answer={1}
-  explanation="Det er ett kall, og oraklet svarer med en klikk. Sammenligningen med $k$ oversetter klikken til et svar på beslutningsvarianten, akkurat som nabosjekken i <code>unique</code> oversetter den sorterte tabellen. Karp krever at oraklet selv svarer ja eller nei, og det gjør ikke et orakel for optimeringsvarianten. Eget arbeid etter kallet er lov i en Levin-reduksjon; det som skiller Cook fra Levin, er antall kall."
+  answer={0}
+  explanation={"$e$ kjenner bare én og fjernes først. Uten $e$ kjenner $d$ bare $c$, så $d$ fjernes også. Da kjenner $a$, $b$ og $c$ to av de gjenværende hver, og rekursjonen stopper. $\\{a, b, c, d\\}$ er svaret om du teller bekjente blant alle fem i stedet for blant de gjenværende, så $d$ ikke mister $e$. Alle fem blir igjen om du leser kravet som minst én bekjent. Krever du flere enn to, blir ingen igjen: bare $c$ kjenner tre, og når de andre er fjernet, kjenner $c$ ingen av de gjenværende."}
 />
 
 <KeyTakeaways>
-- Et generelt problem er en relasjon $R \subseteq I \times O$; en instans er én input, og noen instanser har ingen løsning.
-- Søk: finn en $y$ med $(x, y) \in R$. Beslutning: avgjør om en slik $y$ finnes. Optimering: finn en best mulig $y$. Verifisering av et sertifikat er ofte langt billigere enn søk.
-- En reduksjon løser $X$ med et orakel for $Y$. Cook tillater mange kall, Levin ett kall med oversettelse av løsningen, Karp ett kall der ja/nei går rett gjennom.
-- Reduserer du $X$ til $Y$, er $Y$ minst like vanskelig som $X$.
-- «Flest mulig»-oppgaven løses ved stryking; «færrest mulig»-varianten er minst like vanskelig som CLIQUE.
-- Dekomponering er induksjon: grunntilfelle, antatt delløsning og et riktig kombinasjonstrinn, pluss terminering.
+
+- Et problem er en relasjon mellom instanser og riktige svar. Et søkeproblem ber om et riktig svar, et beslutningsproblem om ja eller nei, og et optimeringsproblem om det beste svaret.
+- Å verifisere et sertifikat kan være mye billigere enn å finne et svar: en klikk med $k$ personer verifiseres med $k(k - 1)/2$ oppslag, mens ingen kjent algoritme finner en i polynomisk tid når $k$ er en del av instansen.
+- En reduksjon fra $X$ til $Y$ løser $X$ med et orakel for $Y$. En Turing-reduksjon kan kalle oraklet mange ganger, og en Cook-reduksjon gjør det i polynomisk tid. Levin kaller oraklet én gang og oversetter svaret tilbake, og Karp én gang til slutt med ja eller nei rett gjennom.
+- $X \le_\text{P} Y$ betyr at $Y$ er minst like vanskelig som $X$. Reduser til et lett problem for å finne en algoritme, og fra et vanskelig problem for å vise at ditt er vanskelig.
+- Dekomponering reduserer en instans til mindre instanser av samme problem. Induksjon over instansene viser at algoritmen er riktig: grunntilfelle, hypotese om delsvarene, et steg som kombinerer dem, og instanser som krymper.
+
 </KeyTakeaways>

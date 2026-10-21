@@ -328,10 +328,13 @@ symbols:
   - { tex: "w,\\ \\ell", meaning: "Antall bits i et maskinord og i en plass, når $m = 2^\\ell$", section: "Datastrukturer", term: "Hashfunksjon", note: "I multipliser-og-skift er $a = A \\cdot 2^w$, ikke startadressen $a$ til en tabell." }
   - { tex: "\\alpha", meaning: "Belastningsfaktoren, $n/m$: antall elementer per plass", section: "Datastrukturer", term: "Belastningsfaktor", formula: kjeding-sok, id: alfa, note: "Med kjeding og uavhengig uniform hashing tar et søk forventet $\\Theta(1 + \\alpha)$." }
   # ── Problemer og reduksjoner ──
-  - { tex: "R \\subseteq I \\times O", meaning: "Et problem, som relasjonen mellom mengden inputs $I$ og mengden outputs $O$", section: "Problemer og reduksjoner", term: "Problem og instans", note: "$O$ er her en mengde, ikke $O$-notasjonen, og $R$ er ikke hjelpetabellen i Merge-Sort." }
-  - { tex: "x,\\ y", meaning: "En instans og en løsning: $(x, y) \\in R$ når $y$ er et riktig svar på $x$", section: "Problemer og reduksjoner", term: "Søkeproblem", note: "Et sertifikat er en påstått løsning $y$ som verifiseres." }
-  - { tex: "X,\\ Y", meaning: "To problemer i en reduksjon: $X$ løses med et orakel for $Y$", section: "Problemer og reduksjoner", term: "Reduksjon", note: "Er reduksjonen billig, er $Y$ minst like vanskelig som $X$. Ikke sekvensene $X$ og $Y$ i LCS." }
-  - { tex: "G,\\ k", meaning: "Grafen og antall noder i klikken i CLIQUE", section: "Problemer og reduksjoner", note: "En klikk er en komplett delgraf." }
+  - { tex: "R \\subseteq I \\times O", meaning: "Et problem: relasjonen mellom mengden $I$ av instanser og mengden $O$ av mulige svar", section: "Problemer og reduksjoner", term: "Problem og instans", note: "$O$ er her en mengde, ikke $O$-notasjonen, og $R$ er ikke hjelpetabellen i Merge-Sort." }
+  - { tex: "x,\\ y", meaning: "En instans og et svar: $(x, y) \\in R$ når $y$ er et riktig svar på $x$", section: "Problemer og reduksjoner", term: "Søkeproblem", note: "Et sertifikat er et foreslått svar $y$ som verifiseres." }
+  - { tex: "\\pi[1 : n]", meaning: "Et sertifikat for sortering: hvilket element som skal stå på hver plass", section: "Problemer og reduksjoner", term: "Sertifikat" }
+  - { tex: "k", meaning: "Antall personer i klikken i CLIQUE", section: "Problemer og reduksjoner", term: "Klikk", note: "I oppgavene om den største og den minste gruppa der alle kjenner minst $k$ av de andre, er $k$ hvor mange av de andre hver person skal kjenne." }
+  - { tex: "S - \\{p\\}", meaning: "Personene $S$ som er igjen, uten personen $p$", section: "Problemer og reduksjoner", term: "Dekomponering", note: "Largest-Group kaller seg selv på $S - \\{p\\}$ når $p$ kjenner færre enn $k$ av de andre i $S$. Ikke indeksen $p$ i ${A[p : r]}$." }
+  - { tex: "X,\\ Y", meaning: "To problemer i en reduksjon: $X$ løses med et orakel for $Y$", section: "Problemer og reduksjoner", term: "Reduksjon", note: "Ikke sekvensene $X$ og $Y$ i LCS." }
+  - { tex: "X \\le_\\text{P} Y", meaning: "$X$ kan reduseres til $Y$ med en reduksjon som tar polynomisk tid", section: "Problemer og reduksjoner", term: "Reduksjon", note: "Da er $X$ ikke vanskeligere enn $Y$: en polynomisk algoritme for $Y$ gir en for $X$." }
   # ── Splitt og hersk ──
   - { tex: "a", meaning: "Antall rekursive kall i $T(n) = aT(n/b) + f(n)$", section: "Splitt og hersk", formula: masterteoremet, note: "Nivå $i$ i rekursjonstreet har $a^i$ noder av størrelse $n/b^i$." }
   - { tex: "b", meaning: "Faktoren instansen krymper med: hvert kall får $n/b$", section: "Splitt og hersk", formula: masterteoremet, note: "Masterteoremet krever konstanter $a \\ge 1$ og $b > 1$, så $T(n - 1)$ er ikke på formen." }
@@ -387,7 +390,7 @@ symbols:
   - { tex: "u.d", meaning: "I DFS: starttiden, da $u$ ble oppdaget og grå", section: "Traversering av grafer", term: "Dybde-først-søk", formula: parentes, id: starttid, note: "I BFS er $u.d$ avstanden fra startnoden." }
   - { tex: "u.f", meaning: "I DFS: sluttiden, da $u$ ble ferdig og svart", section: "Traversering av grafer", term: "Dybde-først-søk", formula: topologisk-sluttid, id: sluttid, note: "Ikke sluttiden $f_i$ til en aktivitet eller funksjonen $f(n)$." }
   - { tex: "u.d", meaning: "I BFS: avstanden fra startnoden $s$ til $u$", section: "Traversering av grafer", term: "Bredde-først-søk", formula: bfs-avstand, id: avstand, note: "$\\infty$ til $u$ er oppdaget." }
-  - { tex: "u.\\pi", meaning: "Forgjengeren til $u$: noden $u$ ble oppdaget fra", section: "Traversering av grafer", term: "Traverseringstre", id: forgjenger, note: "nil for startnoden og for røttene i en dybde-først-skog." }
+  - { tex: "u.\\pi", meaning: "Forgjengeren til $u$: noden $u$ ble oppdaget fra", section: "Traversering av grafer", term: "Traverseringstre", id: forgjenger, note: "nil for startnoden og for røttene i en dybde-først-skog. Ikke sertifikatet $\\pi[1 : n]$ for sortering." }
   - { tex: "\\delta(s, v)", meaning: "Avstanden fra $s$ til $v$: det minste antallet kanter på en sti", section: "Traversering av grafer", formula: bfs-avstand, id: delta, note: "$\\infty$ når $v$ ikke kan nås fra $s$." }
   - { tex: "G^{\\mathrm T}", meaning: "Den transponerte grafen: $G$ med alle kantene snudd", section: "Traversering av grafer", term: "Sterke komponenter", id: transponert }
 
@@ -501,32 +504,42 @@ glossary:
     }
   - {
       term: "Søkeproblem",
-      definition: "Gitt en instans $x$: finn en løsning $y$ slik at $(x, y) \\in R$. Finnes ingen, feiler søket.",
+      definition: "Gitt en instans $x$: finn et svar $y$ slik at $(x, y) \\in R$. Har $x$ ikke noe svar, skal algoritmen si fra om det, for eksempel ved å returnere nil.",
       section: "Problemer og reduksjoner",
     }
   - {
       term: "Beslutningsproblem",
-      definition: "Gitt en instans $x$: avgjør om det finnes en løsning $y$ med $(x, y) \\in R$. Svaret er ja eller nei, og problemet kan ses som mengden av ja-instanser.",
+      definition: "Gitt en instans $x$: avgjør om det finnes et svar $y$ med $(x, y) \\in R$. Svaret er ja eller nei, og problemet kan skrives som mengden av instansene der svaret er ja.",
       section: "Problemer og reduksjoner",
     }
   - {
       term: "Optimeringsproblem",
-      definition: "Blant de akseptable løsningene til en instans: finn en som er best mulig etter et gitt mål, for eksempel størst, kortest eller billigst.",
+      definition: "Hvert svar har en verdi, og oppgaven er å finne et svar med størst eller minst verdi, for eksempel en størst mulig klikk. Beslutningsproblemet i det spør om det finnes et svar som er minst så godt som en gitt terskel.",
       section: "Problemer og reduksjoner",
     }
   - {
       term: "Sertifikat",
-      definition: "En påstått løsning som verifiseres: gitt $x$ og sertifikatet $y$, sjekk om $(x, y) \\in R$. Å verifisere er ofte langt billigere enn å finne løsningen selv.",
+      definition: "Et foreslått svar $y$ på en instans $x$. Å verifisere sertifikatet er å sjekke om $(x, y) \\in R$, og det kan være mye billigere enn å finne et svar: en klikk med $k$ personer verifiseres med $k(k - 1)/2$ oppslag.",
+      section: "Problemer og reduksjoner",
+    }
+  - {
+      term: "Klikk",
+      definition: "En gruppe personer der alle kjenner alle. Beslutningsproblemet CLIQUE spør om det blant $n$ personer finnes en klikk med $k$ personer, når det er gitt hvem som kjenner hvem. Ingen kjent algoritme avgjør det i polynomisk tid når $k$ er en del av instansen.",
       section: "Problemer og reduksjoner",
     }
   - {
       term: "Orakel",
-      definition: "En hypotetisk subrutine som antas å løse et gitt problem. Reduksjoner beskrives med orakler: det som gjenstår etter omformingen av instansen, overlates til oraklet.",
+      definition: "En prosedyre som antas å løse et problem $Y$, og som en reduksjon kaller i stedet for å løse $Y$ selv. Kjøretiden til reduksjonen regnes med hvert kall som ett steg.",
       section: "Problemer og reduksjoner",
     }
   - {
       term: "Reduksjon",
-      definition: "Å løse problem $X$ ved å omforme instansen og bruke et orakel for problem $Y$. Cook-reduksjoner tillater mange orakelkall, Levin-reduksjoner ett kall med oversettelse av løsningen tilbake, og Karp-reduksjoner ett kall der ja/nei-svaret går uendret gjennom. En billig reduksjon fra $X$ til $Y$ viser at $Y$ er minst like vanskelig som $X$.",
+      definition: "En prosedyre som løser problem $X$ med et orakel for problem $Y$. En Turing-reduksjon kan kalle oraklet mange ganger, og en Cook-reduksjon er en Turing-reduksjon i polynomisk tid. En Levin-reduksjon kaller oraklet én gang og oversetter svaret tilbake, og en Karp-reduksjon kaller det én gang til slutt og lar ja eller nei gå rett gjennom. En reduksjon i polynomisk tid fra $X$ til $Y$ viser at $Y$ er minst like vanskelig som $X$.",
+      section: "Problemer og reduksjoner",
+    }
+  - {
+      term: "Dekomponering",
+      definition: "Å løse en instans ved å bryte den ned i mindre instanser av samme problem, løse dem rekursivt og kombinere delsvarene. Algoritmen vises riktig med induksjon over instansene: grunntilfellet er riktig, kombinasjonen gjør riktige delsvar til et riktig svar, og hvert kall er på en mindre instans.",
       section: "Problemer og reduksjoner",
     }
 
