@@ -124,7 +124,7 @@ formulas:
     }
   - {
       tex: "T(n) = T(n-1) + n = \\dfrac{n(n+1)}{2} = \\Theta(n^2)",
-      label: "Quicksort i verste tilfelle: pivoten står alene på hvert nivå, og nivåkostnadene $n, n-1, \\ldots, 1$ summerer til trekanttallet.",
+      label: "Quicksort i verste tilfelle: pivoten havner ytterst i hvert segment, og nivåkostnadene $n, n-1, \\ldots, 1$ summerer til trekanttallet.",
       section: "Splitt og hersk",
       id: quicksort-verste,
     }
@@ -336,16 +336,16 @@ symbols:
   - { tex: "X,\\ Y", meaning: "To problemer i en reduksjon: $X$ løses med et orakel for $Y$", section: "Problemer og reduksjoner", term: "Reduksjon", note: "Ikke sekvensene $X$ og $Y$ i LCS." }
   - { tex: "X \\le_\\text{P} Y", meaning: "$X$ kan reduseres til $Y$ med en reduksjon som tar polynomisk tid", section: "Problemer og reduksjoner", term: "Reduksjon", note: "Da er $X$ ikke vanskeligere enn $Y$: en polynomisk algoritme for $Y$ gir en for $X$." }
   # ── Splitt og hersk ──
-  - { tex: "a", meaning: "Antall rekursive kall i $T(n) = aT(n/b) + f(n)$", section: "Splitt og hersk", formula: masterteoremet, note: "Nivå $i$ i rekursjonstreet har $a^i$ noder av størrelse $n/b^i$." }
-  - { tex: "b", meaning: "Faktoren instansen krymper med: hvert kall får $n/b$", section: "Splitt og hersk", formula: masterteoremet, note: "Masterteoremet krever konstanter $a \\ge 1$ og $b > 1$, så $T(n - 1)$ er ikke på formen." }
+  - { tex: "a", meaning: "Antall rekursive kall i $T(n) = aT(n/b) + f(n)$", section: "Splitt og hersk", formula: masterteoremet, note: "Nivå $i$ i rekursjonstreet har $a^i$ kall på instanser med $n/b^i$ elementer." }
+  - { tex: "b", meaning: "Faktoren instansen krymper med: hvert kall får $n/b$", section: "Splitt og hersk", formula: masterteoremet, note: "Masterteoremet krever konstanter $a > 0$ og $b > 1$, så $T(n - 1)$ er ikke på formen." }
   - { tex: "f(n)", meaning: "Den drivende funksjonen, arbeidet med å dele og kombinere", section: "Splitt og hersk", formula: masterteoremet }
   - { tex: "n^{\\log_b a}", meaning: "Vannskillefunksjonen, antall løvnoder i rekursjonstreet", section: "Splitt og hersk", term: "Masterteoremet", formula: log-bytte, id: vannskille, note: "Kjøretiden avgjøres av om $f(n)$ er polynomisk større, lik opp til en faktor $\\lg^k n$ med $k \\ge 0$ eller polynomisk mindre. Andre $f(n)$ dekkes ikke av masterteoremet." }
   - { tex: "k", meaning: "Eksponenten til $\\lg n$ i tilfelle 2 av masterteoremet, en konstant $k \\ge 0$", section: "Splitt og hersk", formula: masterteoremet, note: "Gir $\\Theta(n^{\\log_b a} \\lg^{k+1} n)$. I simuleringen av rekursjonstreet er eksponenten i $f(n) = n^d$ en annen størrelse, $d$." }
   - { tex: "\\epsilon", meaning: "Avstanden i tilfelle 1 og 3: $f(n)$ skiller seg fra $n^{\\log_b a}$ med en faktor $n^\\epsilon$", section: "Splitt og hersk", formula: masterteoremet, id: epsilon, note: "En konstant $\\epsilon > 0$. Tilfelle 3 krever i tillegg $a f(n/b) \\le c f(n)$ for en konstant $c < 1$." }
   - { tex: "x", meaning: "Pivoten, elementet segmentet deles rundt", section: "Splitt og hersk", term: "Quicksort", note: "Partition bruker det siste elementet, $x = A[r]$. I Select er $x$ medianen av gruppemedianene." }
   - { tex: "q", meaning: "Plassen segmentet deles ved: midten, eller pivotens endelige plass etter Partition", section: "Splitt og hersk" }
-  - { tex: "L,\\ R", meaning: "Venstre og høyre halvdel, kopiert ut før flettingen i Merge-Sort", section: "Splitt og hersk", term: "Merge-Sort", note: "Ikke relasjonen $R$ i et problem." }
-  - { tex: "\\infty", meaning: "Vaktposten bakerst i $L$ og $R$, så ingen av halvdelene går tom", section: "Splitt og hersk", note: "$-\\infty$ markerer en delinstans som ikke er løst i memo-tabellen $r$, og er nøkkelen et nytt element får i Max-Heap-Insert før den økes." }
+  - { tex: "L,\\ R", meaning: "Venstre og høyre halvdel, kopiert ut før flettingen i Merge-Sort", section: "Splitt og hersk", term: "Merge-Sort", note: "I den generelle Divide-and-Conquer er $L$ og $R$ de to delinstansene. Ikke relasjonen $R$ i et problem." }
+  - { tex: "\\infty", meaning: "Vaktposten bakerst i $L$ og $R$ i flettingen, som taper hver sammenligning når køen den står i, er brukt opp", section: "Splitt og hersk", note: "$-\\infty$ markerer en delinstans som ikke er løst i memo-tabellen $r$, og er nøkkelen et nytt element får i Max-Heap-Insert før den økes." }
   # ── Rangering i lineær tid ──
   - { tex: "n!", meaning: "Antall rekkefølger av $n$ elementer, og dermed det minste antallet løvnoder i beslutningstreet", section: "Rangering i lineær tid", term: "Beslutningstre", formula: sorteringsgrensen, note: "Høyden, antall sammenligninger i verste tilfelle, er minst $\\lg n! = \\Omega(n \\lg n)$." }
   - { tex: "i", meaning: "Rangen som søkes: det $i$-ende minste elementet", section: "Rangering i lineær tid", term: "Rang", note: "Rang 1 er minimum og rang $n$ maksimum. Medianen har rang $\\lfloor (n+1)/2 \\rfloor$." }
@@ -545,7 +545,7 @@ glossary:
 
   - {
       term: "Splitt og hersk",
-      definition: "Designmetode: løs grunntilfellet direkte, ellers del instansen i uavhengige delinstanser, løs dem rekursivt og kombiner delsvarene. Arbeidet ligger som regel i enten delingen eller kombinasjonen. Korrektheten vises ved sterk induksjon over problemstørrelsen.",
+      definition: "Designmetode: løs grunntilfellet direkte, ellers del instansen i uavhengige delinstanser, løs dem rekursivt og kombiner delsvarene. Arbeidet ligger som regel i enten delingen eller kombinasjonen. Korrektheten vises med induksjon over delinstansene.",
       section: "Splitt og hersk",
     }
   - {
@@ -560,7 +560,7 @@ glossary:
     }
   - {
       term: "Rekursjonstre",
-      definition: "Iterasjonsmetoden tegnet som et tre: rota er $f(n)$, nivå $i$ har $a^i$ noder av størrelse $n/b^i$, og kjøretiden er summen av nivåkostnadene. Antall løvnoder er $a^{\\log_b n} = n^{\\log_b a}$.",
+      definition: "Et tre med ett kall per node, der hver node har arbeidet kallet gjør utenom de rekursive kallene. Kjøretiden er summen over nodene, regnet nivå for nivå. For $T(n) = aT(n/b) + f(n)$ har nivå $i$ $a^i$ kall på instanser med $n/b^i$ elementer, og det er $a^{\\log_b n} = n^{\\log_b a}$ løvnoder. Iterasjonsmetoden regner ut den samme summen uten å tegne.",
       section: "Splitt og hersk",
     }
   - {
@@ -585,12 +585,12 @@ glossary:
     }
   - {
       term: "Quicksort",
-      definition: "Partition velger siste element som pivot og ordner resten med små elementer til venstre og store til høyre, i $\\Theta(n)$ tid; pivoten havner på sin endelige plass. Delene sorteres rekursivt. $\\Theta(n \\lg n)$ ved jevn deling og i snitt over alle rekkefølger, $\\Theta(n^2)$ når pivoten står alene, som på sortert input. Randomized-Quicksort bytter et tilfeldig element inn som pivot. Da er hvert element med i $O(\\lg n)$ delinger i forventning, så forventet kjøretid er $\\Theta(n \\lg n)$ for enhver input.",
+      definition: "Partition velger siste element som pivot og ordner resten med små elementer til venstre og store til høyre, i $\\Theta(n)$ tid; pivoten havner på sin endelige plass. Delene sorteres rekursivt. $\\Theta(n \\lg n)$ ved jevn deling og i snitt over alle rekkefølger, $\\Theta(n^2)$ når pivoten havner ytterst i hvert segment, som på sortert input. Randomized-Quicksort bytter et tilfeldig element inn som pivot. Da er hvert element med i $O(\\lg n)$ delinger i forventning, så forventet kjøretid er $\\Theta(n \\lg n)$ for enhver input med forskjellige elementer.",
       section: "Splitt og hersk",
     }
   - {
       term: "Forventet kjøretid",
-      definition: "Snitt over algoritmens egne tilfeldige valg, for én fast instans. Skiller seg fra gjennomsnittstilfellet, som er et snitt over instanser, og fra amortisert kjøretid, som er et snitt over operasjonene i en følge.",
+      definition: "Snitt over algoritmens egne tilfeldige valg, for én fast instans. Skiller seg fra gjennomsnittlige tilfelle, som er et snitt over instanser, og fra amortisert kjøretid, som er et snitt over operasjonene i en følge.",
       section: "Splitt og hersk",
     }
 
