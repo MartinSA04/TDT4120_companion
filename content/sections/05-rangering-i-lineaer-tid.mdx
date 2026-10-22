@@ -2,90 +2,186 @@
 order: 5
 num: "04"
 title: Rangering i lineær tid
-summary: "Hvorfor sammenligningsbasert sortering må bruke Ω(n lg n) i verste tilfelle, og hvordan Randomized-Select, Select, Counting-Sort, Radix-Sort og Bucket-Sort går under grensen ved å kreve mindre av svaret eller mer av inputen."
+summary: "Hvorfor ingen sortering som bare sammenligner elementene, kan klare seg med færre enn lg n! sammenligninger i verste tilfelle, og hvordan Randomized-Select, Select, Counting-Sort, Radix-Sort og Bucket-Sort kommer under grensen ved å kreve mindre av svaret eller mer av inputen."
 importance: core
 tag: "Uke 37"
 part: "Del 2: Sortering og datastrukturer"
-updated: 2026-09-27
+updated: 2026-10-22
 ---
 
-Merge-Sort bruker $\Theta(n \lg n)$ tid, og ingen algoritme som bare
-sammenligner elementer parvis, kan gjøre det bedre i verste tilfelle. Grensen
-gjelder så lenge algoritmen bare sammenligner, og svaret skal være hele den
-sorterte tabellen. Ber du om mindre enn en sortert tabell, for eksempel bare
-det $i$-ende minste elementet, eller antar du mer om inputen, for eksempel at
-verdiene er små heltall, går det i lineær tid.
-
 <LearningGoals>
+
 - Forklar med et <Term name="Beslutningstre">beslutningstre</Term> hvorfor <Term name="Sammenligningsbasert sortering">sammenligningsbasert sortering</Term> bruker $\Omega(n \lg n)$ sammenligninger i verste tilfelle.
+- Utfør <Term name="Randomized-Select" /> steg for steg, og forklar hvorfor forventet kjøretid er $\Theta(n)$.
+- Kjenn til <Term name="Select" />: hvordan den garanterer lineær tid, og at den finner de $k$ minste elementene i $O(n)$ tid.
 - Forklar hva en <Term name="Stabil sortering">stabil</Term> sorteringsalgoritme er.
-- Gjør rede for <Term name="Counting-Sort" />, og hvorfor den er stabil.
-- Gjør rede for <Term name="Radix-Sort" />, og hvorfor den trenger en stabil subrutine.
-- Gjør rede for <Term name="Bucket-Sort" />, og hva den forventede kjøretiden forutsetter.
-- Gjør rede for <Term name="Randomized-Select" />, og hvorfor forventet kjøretid er $\Theta(n)$.
-- Beskriv hvordan <Term name="Select" /> garanterer lineær tid, og hvordan den finner de $k$ minste elementene i $O(n)$.
+- Utfør <Term name="Counting-Sort" /> steg for steg, og forklar hvorfor den er stabil.
+- Forklar <Term name="Radix-Sort" />, og hvorfor den trenger en stabil sortering for hvert siffer.
+- Forklar <Term name="Bucket-Sort" />, og hva gjennomsnittlig kjøretid $\Theta(n)$ forutsetter om inputen.
+
 </LearningGoals>
+
+Merge-Sort sorterer en milliard tall med omtrent $3 \cdot 10^{10}$ sammenligninger, og med en milliard
+sammenligninger i sekundet tar det et halvt minutt. Ingen algoritme som bare sammenligner tallene,
+kan love å klare seg med færre enn $2{,}85 \cdot 10^{10}$, så Merge-Sort er nesten så rask som det går
+an å være. Det går likevel mye raskere når du ber om mindre enn en sortert tabell, eller når du vet
+mer om tallene:
+
+<Table
+  columns={["En milliard tall", "Arbeid"]}
+  caption="Medianen er tallet i midten når tallene står sortert."
+  rows={[
+    ["Sorter ved å sammenligne", "minst $2{,}85 \\cdot 10^{10}$ sammenligninger"],
+    ["Finn medianen ved å sammenligne", "omtrent $3{,}4 \\cdot 10^{9}$ sammenligninger"],
+    ["Sorter heltall fra 0 til 120", "to runder gjennom tallene"],
+  ]}
+  rowHeader={false}
+/>
+
+Medianen er ett tall, og for å finne det trenger du ikke rekkefølgen på de andre. Heltall fra 0 til
+120 kan være alderen til en milliard mennesker, og dem kan du telle i stedet for å sammenligne.
 
 ## Sorteringsgrensen
 
-Insertion-Sort, Merge-Sort og Quicksort får bare vite noe om elementene
-gjennom tester som $a_i \le a_j$. De er sammenligningsbaserte. Hver test har to
-utfall, så alt en slik algoritme kan gjøre på $n$ elementer, kan tegnes som et
-binært tre. Hver indre node er en sammenligning, hver løvnode er en ferdig
-rekkefølge, og én kjøring er stien fra rota til en løvnode.
+Noen har tenkt på et tall fra 1 til 1000, og du skal finne det med spørsmål som besvares med ja eller
+nei. Et spørsmål som «er tallet større enn 500?» deler de mulige tallene i to, og svaret lar den ene
+delen stå igjen. Med ti slike spørsmål kommer du ned til ett tall, fordi ${2^{10} = 1024}$. Med færre
+klarer du det ikke alltid. Den som svarer, kan vente med å bestemme seg for tallet og hver gang gi
+svaret som lar flest tall stå igjen. Da står minst halvparten igjen etter hvert spørsmål, og etter ni
+spørsmål er det fortsatt minst to tall du ikke kan skille.
+
+En sorteringsalgoritme er <Term name="Sammenligningsbasert sortering">sammenligningsbasert</Term> når
+den bare får vite noe om elementene ved å sammenligne dem to og to, slik Insertion-Sort, Merge-Sort og
+Quicksort gjør. En slik algoritme spiller det samme spillet. Hver sammenligning ${A[i] \le A[j]}$ er et
+ja/nei-spørsmål, og elementene kan stå i $n!$ rekkefølger. Algoritmen må finne ut hvilken rekkefølge
+tabellen har, fordi to tabeller med forskjellig rekkefølge som gir de samme svarene på alle spørsmålene, blir
+flyttet på nøyaktig samme måte, og da står minst én av dem usortert etterpå.
+
+<Simulation
+  src="/sims/kjipingen.js"
+  host="dom"
+  title="Kjipingen"
+  height={420}
+  caption="Kortene er tabellen ${A[1 : n]}$ med verdiene skjult. Under dem står alle de $n!$ rekkefølgene kortene kan ha, hver tegnet som $n$ søyler med høyder lik rangene til $A[1], \dots, A[n]$. En rekkefølge som strider mot et svar, er blek, og tallene nederst er hvor mange rekkefølger som var igjen etter hvert spørsmål. Når én rekkefølge er igjen, er den grønn, og kortene snus."
+/>
+
+I simuleringen er du algoritmen. Kortene ligger med baksiden opp, og du sammenligner to av dem ved å
+velge dem etter hverandre. Under kortene står alle rekkefølgene de kan ha, 24 for fire kort, hver tegnet som
+fire søyler med høyder lik rangene til kortene. Motspilleren er en kjiping som kjenner strategien din og bestemmer
+rekkefølgen underveis, slik som i tallspillet: hvert svar er det som lar flest rekkefølger stå igjen.
+Rekkefølgene som strider mot svaret, blekner, og tallene nederst viser hvor mange som var igjen
+etter hvert spørsmål.
+
+Det første spørsmålet deler alltid de 24 rekkefølgene i to like store deler, fordi ${A[i] \le A[j]}$ i
+nøyaktig halvparten av dem. Etter det kan et spørsmål dele skjevt, og da velger kjipingen den største
+delen. Et spørsmål du allerede vet svaret på, fjerner ingenting. Fire spørsmål kan i beste fall
+halvere fire ganger, 24, 12, 6, 3, og tre rekkefølger deles i 1 og 2, der kjipingen velger 2. Med
+fire kort trenger du derfor minst fem spørsmål. Trykk
+«Merge-Sort»: hvert spørsmål halverer, og den er ferdig etter fem. Insertion-Sort bruker seks, fordi
+noen av spørsmålene den stiller, deler skjevt, og kjipingen velger den største delen.
+
+Bytt motspiller til «tilfeldig». Nå er rekkefølgen trukket før du begynner, og svarene er sanne. Da
+kan du være heldig: spør du om ${A[1] \le A[2]}$, ${A[2] \le A[3]}$ og ${A[3] \le A[4]}$, og alle svarene er
+ja, er du ferdig etter tre spørsmål. Kjipingen er verste tilfelle, og den sørger for at du aldri er
+heldig.
+
+Spørsmålene en algoritme stiller, avhenger bare av svarene den har fått så langt. Tegner du alle
+kjøringene til algoritmen på $n$ elementer i ett tre, får du et
+<Term name="Beslutningstre">beslutningstre</Term>. Rota er det første spørsmålet, de to grenene under
+et spørsmål er svarene, og hver løvnode er en rekkefølge algoritmen har funnet. En kjøring er en sti
+fra rota ned til en løvnode, og antall sammenligninger er antall spørsmål på stien. Den lengste stien
+er verste tilfelle, og lengden av den er høyden $h$ til treet.
 
 <Figure
   src="/figures/beslutningstre.svg"
-  alt="Et binært tre med tre nivåer av sammenligninger. Rota sammenligner element 1 og 2. Venstre gren (mindre enn eller lik) sammenligner 2 og 3, høyre gren sammenligner 1 og 3. Seks løvnoder nederst er de seks rekkefølgene av tre elementer. En rød sti for inputen 6, 8, 3 går fra rota via 2:3 og 1:3 til løvnoden 3, 1, 2."
+  alt="Et binært tre med spørsmålet 1 : 2 i rota. Under det står 2 : 3 til venstre og 1 : 3 til høyre, og under dem enten en løvnode eller et nytt spørsmål. De seks løvnodene er små søylediagrammer med tre søyler, ett for hver rekkefølge av tre elementer: to ligger to spørsmål ned, fire ligger tre spørsmål ned. Den røde stien går fra 1 : 2 til venstre, fra 2 : 3 til høyre og fra 1 : 3 til høyre, til løvnoden med søylene 2, 3, 1, merket 6, 8, 5."
   number={1}
-  width={560}
-  height={250}
-  caption="Beslutningstreet for Insertion-Sort på tre elementer. Noden $i\!:\!j$ tester $a_i \le a_j$, og løvnoden $\langle 3, 1, 2 \rangle$ betyr $a_3 \le a_1 \le a_2$. Den røde stien er kjøringen på $\langle 6, 8, 3 \rangle$."
+  width={340}
+  height={255}
+  caption="Beslutningstreet til Insertion-Sort på tre elementer. Spørsmålet $i : j$ er ${A[i] \le A[j]}$, med ja til venstre ($\le$) og nei til høyre ($>$), og hver løvnode er rekkefølgen kjøringen ender i, tegnet som i simuleringen «Kjipingen». Tallene til venstre er hvor mange spørsmål som er stilt, og den røde stien er kjøringen på ${A = 6, 8, 5}$."
 />
 
-Tre elementer kan stå i $3! = 6$ rekkefølger, og hver av dem må være en
-løvnode. Et binært tre med høyde 2 har plass til bare fire løvnoder, så minst
-én input krever tre sammenligninger.
+Følg den røde stien i figur 1. ${A[1] \le A[2]}$ er ja, ${A[2] \le A[3]}$ er nei, og ${A[1] \le A[3]}$ er
+nei, så løvnoden sier at ${A[3] \le A[1] \le A[2]}$, altså 5, 6, 8. To av løvnodene ligger bare to
+spørsmål ned, men treet har høyde 3, og lavere kan det ikke bli: et tre med høyde 2 har plass til
+${2^2 = 4}$ løvnoder, og tre elementer kan stå i ${3! = 6}$ rekkefølger.
 
-Generelt må treet ha en løvnode for hver av de $n!$ permutasjonene av
-inputen, for hver av dem er riktig svar for en eller annen input. Et binært tre med høyde $h$ har
-høyst $2^h$ løvnoder, så $2^h \ge n!$ og $h \ge \lg n!$. Høyden er antall
-sammenligninger langs den lengste stien, altså i verste tilfelle. Stirlings
-formel gir $n! > (n/e)^n$, og dermed
+Det samme gjelder for alle $n$. Alle de $n!$ rekkefølgene må være løvnoder. Et binært tre med høyde
+$h$ har høyst $2^h$ løvnoder, fordi hvert spørsmål høyst dobler antall kjøringer som kan skilles fra
+hverandre. Derfor er ${2^h \ge n!}$, og ${h \ge \lg n!}$. Som i tallspillet er $\lg n!$ antall ganger
+$n!$ må halveres for å komme ned til 1.
+
+For å se hvor stort $\lg n!$ er, se på faktorene i ${n! = 1 \cdot 2 \cdots n}$. Den største halvparten
+av dem er minst $n/2$ hver, så ${n! \ge (n/2)^{n/2}}$, og ${\lg n! \ge \tfrac{n}{2} \lg \tfrac{n}{2}}$,
+som er $\Omega(n \lg n)$. Stirlings formel gir en skarpere grense, ${n! > (n/e)^n}$. Den følger av
+rekken for $e^n$, der alle leddene er positive og leddet $n^n/n!$ er med, så ${e^n > n^n/n!}$. Dermed er
 
 $$
-\lg n! > n \lg n - n \lg e = \Omega(n \lg n)
+h \ge \lg n! > n \lg n - n \lg e \allowbreak = \Omega(n \lg n)
 $$
+
+For en milliard elementer er ${\lg n! \approx 2{,}85 \cdot 10^{10}}$, tallet fra åpningen. Merge-Sort
+bruker $3 \cdot 10^{10}$, mindre enn 6 prosent mer enn det ingen kan unngå.
 
 <Statement kind="theorem" name="Sorteringsgrensen" id="sorteringsgrensen-teorem">
-Enhver sammenligningsbasert sorteringsalgoritme bruker $\Omega(n \lg n)$
-sammenligninger i verste tilfelle. Merge-Sort bruker $\Theta(n \lg n)$ og er
-derfor asymptotisk optimal blant dem.
+Enhver sammenligningsbasert sorteringsalgoritme bruker $\Omega(n \lg n)$ sammenligninger i verste
+tilfelle.
 </Statement>
 
-Grensen er en nedre grense for verste tilfelle. Den sier at den dyreste
-instansen krever minst $\lg n!$ sammenligninger, og $\lg n! = \Omega(n \lg n)$.
-Mer sier den ikke. En algoritme kan gjerne
-være verre, og i beste tilfelle kan den være bedre: Insertion-Sort bruker
-$\Theta(n)$ på sortert input. Beste tilfelle er $\Omega(n)$ uansett, for hvert
-element må leses. Gjennomsnittet er $\Omega(n \lg n)$ som det verste, for en
-tilfeldig permutasjon krever i snitt $\lg n!$ ja/nei-svar å skille fra de
-andre.
+Merge-Sort bruker $\Theta(n \lg n)$ sammenligninger og er derfor asymptotisk optimal: ingen
+sammenligningsbasert algoritme slår den med mer enn en konstant faktor i verste tilfelle.
 
-<Callout type="warning" title="Snubletråd">
-Grensen gjelder sortering. Skal den smitte over på et annet problem, må du
-redusere fra sortering til det problemet, med en reduksjon som koster
-$o(n \lg n)$. Kunne problemet da løses raskere enn $n \lg n$, kunne du sortert
-raskere. En reduksjon den andre veien, fra problemet til sortering, sier
-ingenting om hvor vanskelig problemet er.
+### Hva grensen sier
+
+Grensen er en nedre grense for verste tilfelle, slik kjipingen er verste tilfelle. Den sier ingenting
+om hvor dårlig en algoritme kan være, og de to andre tilfellene har sine egne grenser:
+
+<Table
+  columns={["Tilfelle", "Nedre grense"]}
+  rows={[
+    ["Verste", "$\\Omega(n \\lg n)$"],
+    ["Gjennomsnittlig", "$\\Omega(n \\lg n)$"],
+    ["Beste", "$\\Omega(n)$"],
+  ]}
+  rowHeader={false}
+  caption="Nedre grenser for sammenligningsbasert sortering av $n$ elementer."
+/>
+
+Gjennomsnittet tas over alle de $n!$ rekkefølgene, like sannsynlige. Av samme grunn ligger høyst
+$2^d$ løvnoder $d$ spørsmål ned eller mindre, så høyst ${2^{\lg n! - 1} = n!/2}$ av rekkefølgene blir funnet med
+${\lg n! - 1}$ spørsmål eller færre. Minst halvparten trenger flere, og da er snittet minst
+${(\lg n! - 1)/2}$, som også er $\Omega(n \lg n)$. I beste tilfelle kan en algoritme være mye raskere:
+Insertion-Sort bruker ${n - 1}$ sammenligninger på en sortert tabell, og mot en tilfeldig rekkefølge i
+simuleringen kan du være heldig. Men med færre enn $n/2$ sammenligninger er minst ett element aldri
+sammenlignet med noe, og da vet algoritmen ikke hvor det skal stå. Beste tilfelle er derfor
+$\Omega(n)$.
+
+Grensen gjelder sortering. Vil du vise at et annet problem $P$ også krever $\Omega(n \lg n)$ tid, må du
+redusere fra sortering til $P$: løs sortering med et orakel for $P$, med oversettelser til og fra $P$
+som bare sammenligner og koster $o(n \lg n)$. Kunne en sammenligningsbasert algoritme løse $P$ på
+$o(n \lg n)$ tid, ville reduksjonen sortert på $o(n \lg n)$ tid, og det går ikke. Å finne rangen
+til hvert element krever derfor $\Omega(n \lg n)$: med rangene legger du hvert element rett på sin
+plass i en ny tabell i lineær tid. Rangen til ett element er derimot mye lettere å finne. Reduserer
+du motsatt vei, fra $P$ til sortering, har du bare vist at $P$ ikke er vanskeligere enn sortering.
+
+<Callout title="Sorteringsgrensen">
+Et beslutningstre for sortering av $n$ elementer har minst $n!$ løvnoder og dermed høyde minst
+${\lg n! = \Omega(n \lg n)}$. Grensen gjelder verste og gjennomsnittlige tilfelle for algoritmer som bare
+sammenligner, og den gjelder et annet problem bare gjennom en reduksjon fra sortering.
 </Callout>
+
+<Quiz
+  question="Hvor mange sammenligninger må enhver sammenligningsbasert algoritme gjøre i verste tilfelle for å sortere seks elementer?"
+  options={["Minst 6", "Minst 9", "Minst 10", "Minst 15"]}
+  answer={2}
+  explanation="Seks elementer kan stå i ${6! = 720}$ rekkefølger, og et tre med høyde $h$ har høyst $2^h$ løvnoder. ${2^9 = 512}$ er for få, og ${2^{10} = 1024}$ er nok, så høyden er minst 10. Seks er bare antall elementer, og ni får du ved å runde $\lg 720 \approx 9{,}5$ ned, men ni spørsmål skiller bare 512 rekkefølger. Femten er ${6 \cdot 5/2}$, verste tilfelle for Insertion-Sort, som bruker flere enn den må."
+/>
 
 <Example label="Eksamensoppgave" title="Kjøretiden til Init">
 <ExamRef id="2024-des" task="10" />
 
-De følgende to trinnene utgjør tilsammen en sammenligningsbasert
-sorteringsalgoritme (comparison sort), som sorterer en tabell $A$ med $n$
-elementer:
+De følgende to trinnene utgjør tilsammen en sammenligningsbasert sorteringsalgoritme (comparison
+sort), som sorterer en tabell $A$ med $n$ elementer:
 
 <CodeBlock
   lang="text"
@@ -95,14 +191,13 @@ elementer:
 
 Kjøretiden til Main er $O(n)$. Hva er kjøretiden til Init i verste tilfelle?
 
-Om du har en usortert tabell $A$ av lengde $n$ og først kjører Init($A$, $n$)
-og deretter Main($A$, $n$), vil altså $A$ ende opp sortert, og både Init og
-Main baserer seg kun på å sammenligne elementene i $A$.
+Om du har en usortert tabell $A$ av lengde $n$ og først kjører Init($A$, $n$) og deretter Main($A$,
+$n$), vil altså $A$ ende opp sortert, og både Init og Main baserer seg kun på å sammenligne
+elementene i $A$.
 
 <Solution>
-Init og Main til sammen er en sammenligningsbasert sortering, så summen av
-kjøretidene deres er $\Omega(n \lg n)$ i verste tilfelle. Main bidrar bare
-med $O(n)$, som er mindre enn det. Resten må Init stå for.
+Init og Main er til sammen en sammenligningsbasert sortering, så i verste tilfelle bruker de til
+sammen $\Omega(n \lg n)$ tid. Main bruker $O(n)$, som er mindre, så resten må Init stå for.
 
 <Answer>$\Omega(n \lg n)$</Answer>
 </Solution>
@@ -110,107 +205,130 @@ med $O(n)$, som er mindre enn det. Resten må Init stå for.
 
 ## Randomized-Select
 
-Det $i$-ende minste elementet i en tabell har <Term name="Rang">rang</Term>
-$i$. Rang 1 er minimum, rang $n$ maksimum, og medianen har rang
-$\lfloor (n+1)/2 \rfloor$, den nederste av de to midterste når $n$ er partall.
-Sortering og oppslag finner elementet i $\Theta(n \lg n)$, men du ber om mindre
-enn en sortert tabell, så sorteringsgrensen gjelder ikke. Verdiene antas å være
-forskjellige.
+Elementet med <Term name="Rang">rang</Term> $i$ i en tabell er det $i$-ende minste, det som står på
+plass $i$ når tabellen er sortert. Rang 1 er minimum, rang $n$ er maksimum, og medianen har rang
+${\lfloor (n + 1)/2 \rfloor}$, den nederste av de to midterste når $n$ er partall. Elementene er
+forskjellige her, så hver rang hører til nøyaktig ett element.
 
-Randomized-Select er Quicksort med ett rekursivt kall. Randomized-Partition
-velger en tilfeldig pivot og setter den på plass $q$, og da er pivoten det
-$k = q - p + 1$-ende minste i segmentet. Er $i = k$, er pivoten svaret. Er
-$i < k$, ligger svaret blant de små, og du søker etter rang $i$ der. Ellers
-ligger det blant de store, og der har det rang $i - k$, for $k$ elementer er
-allerede mindre. Som i binærsøk stopper du straks du treffer, og søker bare
-videre i én av delene.
+Ta tabellen 4, 6, 8, 3, 2, 5, 7, 1 og rang 4. Du kan sortere tabellen og lese av plass 4, men da
+ordner du også alle de andre elementene, og det koster $\Theta(n \lg n)$. Partition fra Quicksort gjør
+mindre. Den setter pivoten på sin endelige plass $q$, med de små elementene til venstre og de store
+til høyre, og da vet du rangen til pivoten uten å vite rekkefølgen på noe annet. I segmentet
+${A[p : r]}$ står det ${q - p}$ elementer til venstre for pivoten, så pivoten har rang
+${k = q - p + 1}$ i segmentet. Er ${k = i}$, er pivoten svaret. Er ${i < k}$, ligger svaret blant de
+små, og der har det fortsatt rang $i$. Er ${i > k}$, ligger det blant de store, og der har det rang
+${i - k}$, fordi pivoten og de små, $k$ elementer i alt, er mindre enn det. Du leter videre i bare den
+ene delen, slik binærsøk gjør:
 
 <CodeBlock
-  id="randomized-select"
-  title="randomized_select.py"
-  lang="python"
-  code={`from random import randint
-
-def randomized_partition(A, p, r):
-    j = randint(p, r)
-    A[j], A[r] = A[r], A[j]
-    return partition(A, p, r)
-
-def randomized_select(A, p, r, i):
-    if p == r:
-        return A[p]
-    q = randomized_partition(A, p, r)
-    k = q - p + 1
-    if i == k:
-        return A[q]
-    elif i < k:
-        return randomized_select(A, p, q - 1, i)
-    else:
-        return randomized_select(A, q + 1, r, i - k)`}
+  id="randomized-select-kode"
+  lang="text"
+  code={`Randomized-Select(A, p, r, i)
+1  if p == r
+2      return A[p]
+3  q = Randomized-Partition(A, p, r)
+4  k = q - p + 1
+5  if i == k
+6      return A[q]
+7  elseif i < k
+8      return Randomized-Select(A, p, q - 1, i)
+9  else return Randomized-Select(A, q + 1, r, i - k)`}
 />
+
+Linje 3 er Randomized-Partition fra Quicksort, som bytter et tilfeldig element inn bakerst og deler
+rundt det. Rang $i$ finnes alltid i delen det letes videre i, så den delen er aldri tom, og et
+segment med ett element må være svaret. Det returnerer linje 2.
 
 <Stepper
   src="/steppers/randomized-select.js"
-  codeId="randomized-select"
+  codeId="randomized-select-kode"
   title="Randomized-Select"
-  caption="Søylene er tabellen, og målet er medianen, rang $\lfloor (n+1)/2 \rfloor$. Markøren $i$ står på plassen medianen har i sortert rekkefølge, og $q$ på pivotens plass. Det skyggelagte feltet er segmentet som er igjen, gule søyler er mindre enn pivoten og oransje større, og grønt er svaret."
-  height={250}
+  height={320}
+  caption="Høyden på hvert kort følger verdien, og et stiplet kort ligger utenfor segmentet ${A[p : r]}$ det letes i. Den fiolette linja merket $i$ står på plass ${p + i - 1}$, der elementet med rang $i$ i segmentet står når segmentet er sortert. Rød kant er pivoten $x$, den røde stiplede linja går i høyden til den, og klammene dekker de små (${\le x}$) og de store ($> x$). Oransje fyll er elementet som byttet plass med pivoten, grønt er pivoten på sin endelige plass, og grønt med rød kant er svaret."
 />
 
-Deler pivoten på midten hver gang, er $T(n) = T(n/2) + n$: ett kall på halve
-instansen pluss lineært arbeid til delingen.
+I den første instansen i stepperen leter du etter rang 4 i 4, 6, 8, 3, 2, 5, 7, 1. Den fiolette
+linja merket $i$ står på plass 4, der elementet med rang 4 står når tabellen er sortert. Den første pivoten er
+1, som er det minste elementet, så den havner på plass 1, og ${k = 1}$. Svaret ligger da blant de
+store, i ${A[2 : 8]}$, med rang ${4 - 1 = 3}$ der. Plass 4 er plass nummer 3 i det nye segmentet, så
+linja blir stående. Den neste pivoten er 4. Den havner på plass 4 med 3 og 2 til venstre for seg, så
+${k = 4 - 2 + 1 = 3 = i}$, og svaret er 4 etter to delinger. Stokk om for å se andre tabeller og
+ranger. Linja flytter seg aldri: leter du videre blant de små, er $p$ og $i$ de samme, og leter du
+blant de store, vokser $p$ med $k$ mens $i$ minker med $k$.
 
-<Example title="Løs $T(n) = T(n/2) + n$">
-Finn løsningen med iterasjon, og verifiser med substitusjon. $T(1) = 1$.
-
-<Solution>
-Iterasjon halverer leddet for hver ekspansjon:
-
-$$
-\begin{aligned}
-T(n) &= n + T(n/2) = n + n/2 + T(n/4) = \cdots \\
-     &= n + n/2 + n/4 + \cdots + 1 = 2n - 1
-\end{aligned}
-$$
-
-Substitusjon: anta $T(k) = 2k - 1$ for alle $k < n$. Da er
-$T(n) = 2(n/2) - 1 + n = 2n - 1$, og $T(1) = 2 - 1 = 1$ stemmer.
-
-<Answer>$T(n) = 2n - 1 = \Theta(n)$. Summen er geometrisk, så alle de mindre kallene koster til sammen mindre enn det første.</Answer>
-</Solution>
-</Example>
-
-Pivoten deler ikke på midten hver gang. Kall en pivot god når den har rang
-mellom $n/4$ og $3n/4$ i segmentet på $n$ elementer. Da har begge sidene høyst
-$3n/4$ elementer, så segmentet du søker videre i, har krympet til høyst $3/4$
-av størrelsen. Halvparten av elementene er gode pivoter, så en tilfeldig pivot
-er god med sannsynlighet minst $1/2$. Som når du kaster mynt til første kron,
-trengs da i forventning høyst to forsøk, altså to delinger, før segmentet
-krymper slik. Hver deling koster høyst lineær tid i segmentet, så forventet
-arbeid er høyst
+Kjøretiden avhenger av hvor pivotene havner, som for Quicksort. Treffer den første pivoten rang $i$,
+er Randomized-Select ferdig etter én deling. Havner hver pivot ytterst i segmentet, på feil side av
+svaret, krymper segmentet med ett element om gangen, og ${T(n) = T(n - 1) + n = \Theta(n^2)}$, den
+samme trappen som Quicksort i verste tilfelle. Deler pivoten på midten hver gang, gir iterasjon
 
 $$
-2\left(n + \tfrac34 n + \left(\tfrac34\right)^2 n + \cdots\right) = 8n
+T(n) = T(n/2) + n = n + \frac{n}{2} + \frac{n}{4} + \cdots + 1 = 2n - 1
 $$
 
-Dette betyr at <Term name="Forventet kjøretid">forventet</Term> kjøretid er
-$\Theta(n)$ for enhver input, ettersom regningen bare bruker de tilfeldige
-valgene og ikke rekkefølgen i inputen. Verste tilfelle er som for Quicksort. Havner pivoten ytterst
-hver gang, er $T(n) = T(n-1) + n = \Theta(n^2)$, men det krever uflaks med de
-tilfeldige valgene, og ingen input er mer utsatt enn andre.
+Summen er geometrisk, så alle de mindre kallene koster til sammen mindre enn det
+første. Quicksort deler begge delene på hvert nivå, og hvert nivå koster omtrent $n$. Randomized-Select
+deler bare den ene, og hvert nivå koster omtrent halvparten av nivået over.
+
+<Simulation
+  src="/sims/select-sti.js"
+  host="dom"
+  title="Select-stien"
+  height={380}
+  caption="Rekursjonstreet til Quicksort, med tabellen ${A[1 : n]}$ øverst, ett nivå per rad og hvert kall rett under segmentet det får. Kallene Randomized-Select gjør, er fylt: en grå celle er én sammenligning i Partition, og en grønn celle er et element på sin endelige plass. Kallene bare Quicksort gjør, er tegnet svakt og uten celler. Den fiolette stiplede linja er plass $i$, og den stiplede trappen er verste tilfelle, ${n(n - 1)/2}$ sammenligninger."
+/>
+
+Simuleringen «Select-stien» tegner hele rekursjonstreet til Quicksort på en tabell. Kallene
+Randomized-Select gjør, er fylt, og resten er tegnet svakt. Den starter med en tilfeldig tabell og
+pivot «siste», og på en tilfeldig tabell er det siste elementet i et segment en like tilfeldig pivot
+som den Randomized-Partition trekker. Med «median» går stien ned langs den fiolette linja, og hvert
+segment er en del av segmentet over. På den første tabellen bruker Randomized-Select 80
+sammenligninger der Quicksort bruker 140. Trykk «Trekk på nytt» noen ganger: for ${n = 32}$ ligger
+antallet som regel mellom 50 og 135, og i snitt er det under $3n$. Velg så «sortert» og «minste»
+med pivot «siste». Det er det uflaks med de tilfeldige valgene kan gi: hver pivot er det største
+elementet i segmentet, svaret står lengst til venstre, og stien blir hele trappen, 496
+sammenligninger.
+
+Pivoten deler ikke alltid på midten, men den deler godt ofte nok. Kall en pivot god, som for
+Quicksort, når den havner i den midterste halvdelen av segmentet. Da har begge delene høyst tre
+firedeler av elementene, så segmentet du leter videre i, krymper til høyst $3/4$ av størrelsen.
+Omtrent halvparten av elementene er gode pivoter, så i forventning trengs omtrent to delinger før
+segmentet har krympet så mye. En deling av et segment med $m$ elementer koster under $m$
+sammenligninger, og forventet antall sammenligninger blir høyst omtrent
+
+$$
+2\left(n + \tfrac34 n + \left(\tfrac34\right)^2 n + \cdots\right) = 2 \cdot 4n = 8n
+$$
+
+Forventet kjøretid er derfor $\Theta(n)$ for enhver input med forskjellige elementer. Grensen $8n$
+er grov. I simuleringen er snittet for medianen under $3n$, og for store $n$ vokser det mot omtrent
+$3{,}4n$, tallet i åpningen. Regningen bruker bare de tilfeldige
+valgene og ikke rekkefølgen i tabellen, så ingen tabell er dårligere enn andre, og verste tilfelle,
+$\Theta(n^2)$, krever uflaks med valgene.
 
 <Callout title="Randomized-Select">
-Randomized-Select bruker forventet $\Theta(n)$ for enhver input, fordi
-segmentet krymper til høyst $3/4$ med i snitt høyst to delinger. Verste
-tilfelle er $\Theta(n^2)$.
+Randomized-Select deler som Quicksort, men leter videre i bare den delen som har rang $i$, med rang
+${i - k}$ blant de store. Forventet kjøretid er $\Theta(n)$ for enhver input med forskjellige elementer,
+og verste tilfelle er $\Theta(n^2)$.
 </Callout>
+
+<Quiz
+  question="Randomized-Select leter etter rang 5 i ${A[3 : 12]}$, og pivoten havner på plass 6. Hvilket kall kommer neste?"
+  options={[
+    "Rang 1 i ${A[7 : 12]}$",
+    "Rang 2 i ${A[7 : 12]}$",
+    "Rang 5 i ${A[7 : 12]}$",
+    "Rang 5 i ${A[3 : 5]}$",
+  ]}
+  answer={0}
+  explanation="Pivoten har rang ${k = q - p + 1 = 6 - 3 + 1 = 4}$ i segmentet, og ${i = 5 > 4}$, så svaret ligger blant de store, i ${A[7 : 12]}$. Der er fire elementer mindre enn det, pivoten og de tre små, så det har rang ${5 - 4 = 1}$. Rang 2 får du med ${k = q - p}$, som glemmer pivoten selv. Rang 5 glemmer å trekke fra de mindre elementene, og ${A[3 : 5]}$ er de små, der rang 5 ikke finnes."
+/>
 
 <Example label="Eksamensoppgave" title="Lurviks Randomized-Select">
 <ExamRef id="2022-des" task="15" />
 
-Din venn Lurvik har prøvd å skrive ned pseudokode for randomized select etter
-hukommelsen. Resultatet (algoritme 1) er ikke helt rett. Beskriv hva som må
-fikses for at algoritmen skal bli korrekt.
+Din venn Lurvik har prøvd å skrive ned pseudokode for randomized select etter hukommelsen.
+Resultatet (algoritme 1) er ikke helt rett. Beskriv hva som må fikses for at algoritmen skal bli
+korrekt.
 
 <CodeBlock
   title="Algoritme 1 Lurviks versjon av randomized select"
@@ -228,11 +346,10 @@ fikses for at algoritmen skal bli korrekt.
 />
 
 <Solution>
-De rekursive kallene på linje 8 og 9 kaster bort svaret sitt: verdien som
-kommer tilbake, må returneres, så begge linjene trenger `return` foran.
-Dessuten mangler linje 9 `else`. Uten `else` står begge kallene under
-`elseif`: når $i < k$, kjøres begge etter hverandre, og når $i > k$, kjøres
-ingen av dem.
+De rekursive kallene på linje 8 og 9 finner svaret, men kaster det: verdien som kommer tilbake, må
+returneres, så begge linjene trenger `return` foran. Linje 9 mangler også `else`. Uten den står begge
+kallene under `elseif`, så når ${i < k}$, kjøres begge etter hverandre, og når ${i > k}$, kjøres ingen av
+dem.
 
 <CodeBlock
   lang="text"
@@ -240,8 +357,9 @@ ingen av dem.
 9 else return Randomized-Select(A, q + 1, r, i − k)`}
 />
 
-Betingelsen på linje 1 kan også strammes til `if p == r`, men den er ikke
-feil slik den står.
+Betingelsen på linje 1 kan strammes til `if p == r`, som i læreboka, men slik den står, gjør den
+ingen skade: den rettede algoritmen leter alltid videre i en del som har rang $i$, så den kaller seg
+aldri med ${r < p}$.
 
 <Answer>`return` foran begge de rekursive kallene, og `else` først på linje 9.</Answer>
 </Solution>
@@ -249,290 +367,425 @@ feil slik den står.
 
 ## Select
 
-Select fjerner tilfeldigheten og garanterer $\Theta(n)$ i verste tilfelle. Den
-bruker medianen av medianene til små grupper som pivot, og den pivoten ligger
-alltid nær midten.
+Randomized-Select kan være uheldig med pivotene, og da bruker den $\Theta(n^2)$ tid.
+<Term name="Select" /> velger pivoten slik at den alltid havner nær midten, og bruker $\Theta(n)$ tid
+også i verste tilfelle. Pivoten er medianen av medianer:
 
 <Steps>
 <Step title="Del i grupper på fem">
-Del de $n$ elementene i $n/5$ grupper med fem i hver, og sorter hver gruppe.
-Fem elementer sorteres i konstant tid, så det koster $\Theta(n)$ til sammen.
-Er $n$ ikke delelig med fem, flyttes det minste elementet fremst og telles
-bort først, opptil fire ganger.
+Del de $n$ elementene i $n/5$ grupper med fem i hver, og sorter hver gruppe. Fem elementer sorteres
+med et fast antall sammenligninger, så alle gruppene koster $\Theta(n)$ til sammen. Går ikke $n$ opp
+i fem, legger Select først det minste elementet til side, opptil fire ganger, og det er svaret hvis
+${i = 1}$.
 </Step>
 <Step title="Finn medianen av medianene">
-Hver gruppe har en median, det midterste av de fem. Kall Select rekursivt på
-de $n/5$ medianene og finn medianen av dem, $x$.
+Midt i hver sorterte gruppe står gruppens median. Select kaller seg selv på de $n/5$ medianene og
+finner medianen av dem, $x$.
 </Step>
 <Step title="Del rundt $x$">
-Bytt $x$ inn bakerst og kjør Partition. Nå står $x$ på plass $q$, og resten er
-som i Randomized-Select: svar, eller ett rekursivt kall på riktig side.
+Bytt $x$ inn bakerst i segmentet og del med Partition. Er $x$ svaret, er Select ferdig, og ellers kaller den seg selv
+på de små eller de store, som Randomized-Select.
 </Step>
 </Steps>
 
-Garantien ligger i steg 2. Halvparten av gruppemedianene, $n/10$ av
-dem, er større enn eller lik $x$. Hver av dem og de to elementene over den i
-gruppen er større enn eller lik $x$, så minst $3 \cdot n/10$ elementer er
-større enn eller lik $x$. På samme måte er minst $3n/10$ elementer mindre enn
-eller lik $x$. Det rekursive kallet i steg 3 får derfor høyst $7n/10$ elementer.
-
 <Figure
   src="/figures/median-av-medianer.svg"
-  alt="Sju kolonner med fem sirkler i hver, sortert med størst øverst. Den midterste raden er gruppemedianene, tegnet med rød kant, og gruppene er ordnet slik at medianene vokser mot høyre. Sirkelen i midten, x, er rød. Et grønt felt dekker de tre øverste radene i de fire kolonnene til høyre og er merket større enn eller lik x, minst 3n/10. Et rødt felt dekker de tre nederste radene i de fire kolonnene til venstre og er merket mindre enn eller lik x, minst 3n/10."
+  alt="Sju kolonner med fem tall i hver, største verdi øverst. Midterste rad er gruppemedianene 7, 12, 13, 18, 19, 26 og 31, og 18 har rød kant og er merket x. Et felt merket større enn eller lik x dekker 18 og elementene over det og de tre kolonnene til høyre fra medianraden og opp: 18, 25, 27, 19, 23, 30, 26, 28, 35, 31, 32 og 34. Et felt merket mindre enn eller lik x dekker 18 og elementene under det og de tre kolonnene til venstre fra medianraden og ned: 7, 5, 2, 12, 10, 3, 13, 8, 4, 18, 9 og 6."
   number={2}
-  width={560}
-  height={260}
-  caption="Gruppene som kolonner, hver sortert med størst øverst, og ordnet etter median. Medianen av medianene $x$ har minst tre elementer over seg i hver av de høyre kolonnene og tre under seg i hver av de venstre."
+  width={340}
+  height={238}
+  caption="Sju grupper på fem elementer, hver som en kolonne med den største verdien øverst og medianen i midterste rad, med tykk kant. Kolonnene står i rekkefølge etter medianen, noe Select selv ikke gjør. $x$ med rød kant er medianen av medianene. Feltet ${\ge x}$ dekker kolonnen til $x$ og kolonnene til høyre, fra medianraden og opp, og feltet ${\le x}$ dekker kolonnen til $x$ og kolonnene til venstre, fra medianraden og ned."
 />
 
-Steg 2 er et rekursivt kall på $n/5$ elementer, steg 3 et kall på høyst
-$7n/10$, og gruppesorteringen og Partition koster $\Theta(n)$:
+Figur 2 viser hvorfor $x$ havner nær midten. Den har 35 elementer i sju grupper, og medianen av de
+sju gruppemedianene er ${x = 18}$. I kolonnen til $x$ og i de tre kolonnene til høyre er medianen
+minst 18, og de to elementene over medianen er større enn den, så det øvre feltet har tolv elementer
+som alle er ${\ge 18}$. På samme måte har det nedre feltet tolv som alle er ${\le 18}$. Det kan være
+flere, for eksempel 22, 33, 21 og 24 øverst til venstre, men feltene er de du kan være sikker på
+uten å se på resten. Generelt har minst halvparten
+av de $n/5$ gruppene en median som er minst like stor som $x$, og i hver av dem er medianen og de to
+elementene over den ${\ge x}$. Det er minst ${3 \cdot n/10}$ elementer som er ${\ge x}$, og på samme måte
+minst $3n/10$ som er ${\le x}$. Kallet etter delingen får derfor høyst $7n/10$ elementer.
+
+Steg 2 kaller Select på $n/5$ elementer, steg 3 på høyst $7n/10$, og gruppene og delingen koster
+$\Theta(n)$:
 
 $$
 T(n) \le T(n/5) + T(7n/10) + \Theta(n)
 $$
 
-De to kallene får til sammen $9n/10$ elementer, mindre enn $n$, så arbeidet
-krymper geometrisk nedover i rekursjonstreet, og rota dominerer.
+De to kallene får til sammen høyst ${n/5 + 7n/10 = 9n/10}$ elementer, færre enn $n$. I
+rekursjonstreet koster hvert nivå derfor høyst $9/10$ av nivået over, og alle nivåene koster til
+sammen høyst ti ganger rota, $\Theta(n)$. Det er det samme som når rota dominerer i masterteoremet,
+selv om de to kallene her ikke er like store.
 
-<Callout title="Garantien i Select">
-Medianen av gruppemedianene har minst $3n/10$ elementer på hver side, så de to
-rekursive kallene får til sammen høyst $9n/10$ elementer, og Select bruker
-$\Theta(n)$ i verste tilfelle.
-</Callout>
-
-<Derivation title="Verifiser med substitusjon">
-Anta $T(k) \le ck$ for alle $k < n$, og la det lineære arbeidet være høyst
-$an$. Da er
+<Derivation title="Vis ${T(n) = O(n)}$ med substitusjon">
+Anta at ${T(m) \le cm}$ for alle ${m < n}$, og at gruppene og delingen koster høyst $an$. Da er
 
 $$
 T(n) \le \frac{cn}{5} + \frac{7cn}{10} + an = \frac{9cn}{10} + an \le cn
 $$
 
-så snart $c \ge 10a$. Grunntilfellet ordnes ved å velge $c$ stor nok for de
-små verdiene av $n$.
+når ${c \ge 10a}$. Grunntilfellene, små $n$, ordnes ved å velge $c$ stor nok.
 </Derivation>
 
-Select gir også de $k$ minste elementene i lineær tid: finn elementet med rang
-$k$ og del rundt det. Da står elementet på plass $k$ med de $k - 1$ mindre til
-venstre for seg, og de $k$ første plassene holder de $k$ minste. Konstanten i
-Select er stor, så i praksis brukes Randomized-Select. Select viser likevel at
-rangering kan gjøres i lineær tid også i verste tilfelle.
+Select finner også de $k$ minste elementene i $O(n)$ tid. Finn elementet med rang $k$, og del
+tabellen rundt det. Da står det på plass $k$ med de ${k - 1}$ mindre elementene til venstre for seg, så
+${A[1 : k]}$ holder de $k$ minste, i ukjent rekkefølge. Skal de også stå sortert, koster det
+$\Theta(k \lg k)$ i tillegg. Konstanten i Select er stor, så i praksis er Randomized-Select raskest,
+men Select viser at rangering kan gjøres i lineær tid også i verste tilfelle.
 
-## Stabilitet og Counting-Sort
+<Callout title="Select">
+Select bruker medianen av gruppemedianene som pivot. Minst $3n/10$ elementer havner på hver side av
+den, så $T(n) \le T(n/5) + T(7n/10) + \Theta(n) = \Theta(n)$ i verste tilfelle. Rang $k$ og en deling
+rundt den gir de $k$ minste elementene i $O(n)$ tid.
+</Callout>
 
-Select og Randomized-Select går under sorteringsgrensen ved å be om mindre enn
-en sortert tabell. Den andre veien er å anta mer om inputen: verdiene er
-heltall i et lite område, fra 0 til $k$. Da trenger du ikke sammenligne dem. Du kan bruke dem
-som indekser.
+<Example label="Eksamensoppgave" title="Quicksort med garantert god pivot">
+<ExamRef id="2024-aug-kont" task="16" />
 
-Elementer bærer ofte mer enn nøkkelen de sorteres på. Sorterer du en
-alfabetisk studentliste på karakter, kan studentene med samme karakter komme ut
-i en annen rekkefølge enn de sto i. En sorteringsalgoritme er stabil når like
-nøkler står i samme innbyrdes rekkefølge i output som i input, og da står
-studentene med samme karakter fortsatt alfabetisk. Når nøkkelen er hele
-elementet, spiller stabiliteten ingen rolle. Insertion-Sort og Merge-Sort er
-stabile når de skrives slik at et element flyttes bare forbi strengt større, og
-flettingen tar fra venstre ved likhet. Quicksort er det ikke, for Partition bytter elementer forbi hverandre.
+Et problem med Quicksort er at kjøretiden blir dårlig om pivotelementet er dårlig. Kan man velge pivot
+slik at kjøretiden garantert blir $\Theta(n \lg n)$? Forklar.
 
-Counting-Sort teller først hvor mange ganger hver verdi forekommer, $C[v]$. Så
-gjøres tellingen kumulativ, slik at $C[v]$ er antall elementer som er mindre
-enn eller lik $v$. I den sorterte tabellen $B$ står de $C[v-1]$ elementene som
-er mindre enn $v$, først, og $v$-ene fyller plassene etter dem, til og med plass
-nummer $C[v]$. Til slutt går du baklengs gjennom $A$: legg $A[j]$ på plass
-nummer $C[A[j]]$ i $B$, og trekk én fra $C[A[j]]$. Neste like verdi havner ett
-hakk til venstre.
+Her er det snakk om å kun modifisere hvordan man velger pivot; resten av Quicksort skal utføres som
+normalt. Hvert rekursive kall skal også utføres på samme måte, så man kan ikke f.eks. bruke
+Merge-Sort til å begynne med for å «jukse seg til» riktig kjøretid.
+
+<Solution>
+Ja. Finn medianen av segmentet med Select og bruk den som pivot. Select og delingen koster
+$\Theta(n)$ til sammen, og medianen deler segmentet i to like store deler, så
+${T(n) = 2T(n/2) + \Theta(n)}$, som er $\Theta(n \lg n)$ for enhver input. Konstanten i Select gjør
+denne Quicksort mye tregere i praksis enn den med tilfeldig pivot.
+
+<Answer>Ja: bruk medianen, funnet med Select i lineær tid, som pivot.</Answer>
+</Solution>
+</Example>
+
+<Example label="Eksamensoppgave" title="Untitled">
+<ExamRef id="2023-des" task="8a–b" />
+
+Betrakt algoritmen Untitled (algoritme 1), der ${A[1 : n]}$ er en heltallstabell og algoritmen startes
+med kallet Untitled($A$, 1, $n$, $k$).
 
 <CodeBlock
-  id="counting-sort"
-  title="counting_sort.py"
-  lang="python"
-  code={`def counting_sort(A, n, k):
-    B = [None] * n
-    C = [0] * (k + 1)
-    for j in range(n):
-        C[A[j]] = C[A[j]] + 1
-    for i in range(1, k + 1):
-        C[i] = C[i] + C[i - 1]
-    for j in range(n - 1, -1, -1):
-        C[A[j]] = C[A[j]] - 1  # plass nummer c har indeks c - 1
-        B[C[A[j]]] = A[j]
-    return B`}
+  title="Algoritme 1"
+  lang="text"
+  code={`Untitled(A, p, r, k)
+1 if p < r
+2     q = Randomized-Partition(A, p, r)
+3     Untitled(A, p, q − 1, k)
+4     if q < k
+5         Untitled(A, q + 1, r, k)`}
+/>
+
+a) Hva gjør algoritmen?
+
+Her er vi ute etter resultatet av å kjøre algoritmen, eller hvilket problem den løser, ikke hvordan
+den oppfører seg, trinn for trinn.
+
+b) Hva er den forventede kjøretiden, som funksjon av $n$ og $k$? Oppgi svaret i $\Theta$-notasjon.
+
+Som en forenkling, kan du anta at $q$ alltid havner midt mellom $p$ og $r$.
+
+<Solution>
+a) Untitled er Quicksort som hopper over de store når pivoten står på plass $k$ eller lenger til
+høyre. De store hører da hjemme etter plass $k$, så ${A[1 : k]}$ blir sortert som av Quicksort,
+mens resten bare blir delt. Algoritmen sorterer de $k$ minste elementene og legger dem i
+${A[1 : k]}$. Den kan også sortere noen elementer etter plass $k$, men bare ${A[1 : k]}$ er sikkert
+sortert.
+
+b) Så lenge ${q \ge k}$, går Untitled bare til venstre, som Randomized-Select, og segmentene halveres:
+${n + n/2 + n/4 + \cdots}$, som er $\Theta(n)$. Når segmentet har færre enn $2k$ elementer, havner $q$
+under $k$, og fra da av oppfører Untitled seg som Quicksort på et segment med færre enn $2k$
+elementer, $\Theta(k \lg k)$.
+
+<Answer>a) Sorterer de $k$ minste elementene i ${A[1 : k]}$. b) ${\Theta(n + k \lg k)}$</Answer>
+</Solution>
+</Example>
+
+## Counting-Sort
+
+Sorteringsgrensen gjelder bare algoritmer som sammenligner. Er verdiene heltall i et lite område, fra
+0 til $k$, kan du bruke dem som indekser i stedet, og da trenger du ikke sammenligne noe.
+
+Ta tabellen 2, 5, 3, 0, 2, 3, 0, 3, med verdier fra 0 til 5. Den har to 0-er, ingen 1-ere, to 2-ere,
+tre 3-ere, ingen 4-ere og én 5-er, og bare fra disse tellingene vet du hvor hver verdi skal stå når
+tabellen er sortert: 0-ene på plass 1 og 2, 2-ene på plass 3 og 4, 3-ene på plass 5 til 7 og 5-eren på
+plass 8. Den siste $v$-en skal stå på plassen som er lik antall elementer som er mindre enn eller lik
+$v$. Fire elementer er ${\le 2}$, så den siste 2-eren står på plass 4.
+
+Er elementene bare tall, kan du skrive den sorterte tabellen rett ut fra tellingene. Men et element er
+ofte mer enn verdien det sorteres etter, for eksempel en student med en karakter eller en ordre med en
+dato, og da må selve elementene flyttes, og rekkefølgen mellom like verdier betyr noe. En
+sorteringsalgoritme er <Term name="Stabil sortering">stabil</Term> når like verdier står i samme
+rekkefølge etter sorteringen som før. Sorterer du en alfabetisk klasseliste etter karakter med en stabil
+algoritme, står studentene med samme karakter fortsatt alfabetisk.
+
+Counting-Sort teller verdiene i en tabell $C$ og legger hvert element på plassen tellingene gir, i en
+ny tabell $B$:
+
+<CodeBlock
+  id="counting-sort-kode"
+  lang="text"
+  code={`Counting-Sort(A, n, k)
+1  new: B[1 : n], C[0 : k]
+2  for i = 0 to k
+3      C[i] = 0
+4  for j = 1 to n
+5      C[A[j]] = C[A[j]] + 1
+6  for i = 1 to k
+7      C[i] = C[i] + C[i - 1]
+8  for j = n downto 1
+9      B[C[A[j]]] = A[j]
+10     C[A[j]] = C[A[j]] - 1
+11 return B`}
 />
 
 <Stepper
   src="/steppers/counting-sort.js"
-  codeId="counting-sort"
+  codeId="counting-sort-kode"
   title="Counting-Sort"
-  caption="Radene er inputen $A$ med heltall fra 0 til 5, tellingene $C$ og outputen $B$. Like verdier har merker (2, 2′, 2″) så rekkefølgen kan følges, og de uthevede cellene er dem steget leser eller skriver."
-  height={260}
+  height={360}
+  caption="Høyden på et kort følger verdien, og like verdier er merket ′ og ″ i den rekkefølgen de står i $A$. Rødt er det steget skriver, oransje kant det steget leser, og et stiplet kort i $A$ er flyttet til $B$. Klammene under $B$ dekker blokken til hver verdi, og grønt er den ferdige tabellen $B$."
 />
 
-Den baklengse løkka gjør algoritmen stabil. Den siste $v$-en i $A$ behandles
-først og får den siste plassen i sin blokk, og hver tidligere $v$ legges til
-venstre for den. Rekkefølgen fra $A$ er bevart. Kjøretiden er $\Theta(n + k)$,
-to løkker over $A$ og én over $C$. Er $k = O(n)$, er kjøretiden lineær. Sorteringsgrensen
-brytes ikke, for ingen elementer sammenlignes. Verdiene brukes som indekser, og
-indekseringen krever at de er små heltall.
+I den første instansen, tabellen over, merker stepperen like verdier etter rekkefølgen i $A$: 2 og 2′, 0 og 0′, og 3, 3′ og 3″. Løkka i
+linje 4–5 teller, og etterpå er ${C = 2, 0, 2, 3, 0, 1}$. Løkka i linje 6–7 legger sammen fra venstre,
+så $C[v]$ blir antall elementer som er ${\le v}$: ${C = 2, 2, 4, 7, 7, 8}$. Nå peker $C[v]$ på den
+siste plassen i blokken til $v$ i $B$, og klammene under $B$ viser blokkene før noe er lagt dit. Den siste løkka går baklengs gjennom $A$.
+Den legger 3″ på plass ${C[3] = 7}$ og trekker én fra $C[3]$, så den neste 3-eren den møter, 3′,
+havner på plass 6, til venstre for 3″. Til slutt er ${B = 0, 0′, 2, 2′, 3, 3′, 3″, 5}$.
+
+Løkka går baklengs, så den siste $v$-en i $A$ legges først og får den siste plassen i blokken, og hver
+$v$ som står før den i $A$, havner ett hakk lenger til venstre. Rekkefølgen fra $A$ blir bevart, og
+Counting-Sort er stabil.
+
+Løkkene i linje 2–3 og 6–7 går gjennom $C$, og løkkene i linje 4–5 og 8–10 går gjennom $A$, så
+Counting-Sort bruker ${\Theta(n + k)}$ tid. Er ${k = O(n)}$, er det lineært. For en milliard aldre fra
+0 til 120 er det to runder gjennom tallene og to korte runder gjennom $C$, som i åpningen.
+
+Counting-Sort bryter ikke sorteringsgrensen, fordi grensen gjelder bare algoritmer som sammenligner.
+Linje 9 bruker verdien $A[j]$ som indeks, og et beslutningstre beskriver bare algoritmer som får vite
+noe ved å sammenligne. Counting-Sort krever til gjengjeld små heltall: med verdier opp til
+${k = n^2}$ koster $C$ alene $\Theta(n^2)$.
 
 <Callout title="Counting-Sort">
-Counting-Sort bruker $\Theta(n + k)$ uten å sammenligne, og den er stabil fordi
-den siste løkka går baklengs gjennom $A$.
+Counting-Sort sorterer heltall fra 0 til $k$ i ${\Theta(n + k)}$ tid uten å sammenligne. Etter
+tellingen er $C[v]$ plassen til den siste $v$-en, og den siste løkka går baklengs, så like verdier
+beholder rekkefølgen sin: sorteringen er stabil.
 </Callout>
 
 <Example label="Eksamensoppgave" title="Snu løkka i Counting-Sort">
 <ExamRef id="2024-aug-kont" task="3" />
 
-En av løkkene i Counting-Sort går fra $n$ ned til 1 (for $j = n$ downto 1).
-Hva er konsekvensen av å skifte retning på løkka (for $j = 1$ to $n$)?
+En av løkkene i Counting-Sort går fra $n$ ned til 1 (for ${j = n}$ downto 1). Hva er konsekvensen av å
+skifte retning på løkka (for ${j = 1}$ to $n$)?
 
 Merk: Her kreves ingen forklaring.
 
 <Solution>
-Den siste løkka plasserer elementene bakfra, og det er det som gjør at like
-nøkler beholder rekkefølgen sin fra $A$. Snur du løkka, plasseres like nøkler
-i motsatt rekkefølge av den de kom i.
+Med løkka forlengs får den første $v$-en i $A$ den siste plassen i blokken, og hver senere $v$ havner
+til venstre for den. Like verdier kommer da ut i motsatt rekkefølge av den de hadde i $A$. Tabellen
+blir fortsatt sortert, men ikke stabilt.
 
 <Answer>Sorteringen blir ustabil.</Answer>
 </Solution>
 </Example>
 
+<Quiz
+  question="Hvilke av disse er stabile, slik de står skrevet i pseudokoden?"
+  options={["Insertion-Sort", "Merge-Sort", "Quicksort", "Counting-Sort"]}
+  answer={[0, 1, 3]}
+  explanation="Insertion-Sort flytter et element forbi elementer som er strengt større (løkka stopper ved $A[j] \le$ nøkkelen), så det havner aldri foran en lik verdi. Merge tar fra $L$ når ${L[i] \le R[j]}$, så ved like verdier kommer den fra venstre halvdel først. Counting-Sort er stabil fordi den siste løkka går baklengs. Partition bytter $A[i]$ og $A[j]$ over lange avstander: i 1, 1′, 0 bytter 0 plass med 1, og resultatet er 0, 1′, 1."
+/>
+
 ## Radix-Sort
 
-Er verdiområdet stort, blir $C$ for stor. Men et tall med $d$ siffer har $d$
-små nøkler. Radix-Sort sorterer stabilt på ett siffer om gangen, det minst
-signifikante først, med Counting-Sort med $k = 9$ som subrutine for desimale
-siffer.
+Counting-Sort trenger en plass i $C$ for hver mulig verdi. Firesifrede tall gir en $C$ med ti tusen
+plasser, og 32-biters heltall gir over fire milliarder. Radix-Sort sorterer i stedet på ett siffer om
+gangen, og et siffer har bare ti verdier.
+
+Har du sortert en liste med `sorted` i Python flere ganger etter hverandre, har du brukt det Radix-Sort
+bygger på. `sorted` er stabil. Sorterer du en klasseliste først etter fornavn og så etter etternavn,
+står listen etter etternavn, og studenter med samme etternavn står etter fornavn. Den siste sorteringen
+bestemmer rekkefølgen, og den første avgjør bare mellom dem som er like i den siste.
+
+Radix-Sort gjør det samme med sifrene i tall med $d$ siffer. Siffer 1 er det bakerste, og Radix-Sort
+sorterer stabilt etter siffer 1, så etter siffer 2 og til slutt etter siffer $d$, det fremste:
 
 <CodeBlock
-  id="radix-sort"
-  title="radix_sort.py"
-  lang="python"
-  code={`def radix_sort(A, n, d):
-    for i in range(d):
-        A = stable_sort_on_digit(A, n, i)  # Counting-Sort med k = 9
-    return A`}
+  id="radix-sort-kode"
+  lang="text"
+  code={`Radix-Sort(A, n, d)
+1  for i = 1 to d
+2      sort A[1 : n] on digit i`}
 />
 
-<Stepper
-  src="/steppers/radix-sort.js"
-  codeId="radix-sort"
+Linje 2 er typisk Counting-Sort med ${k = 9}$ for desimale siffer, der tellingene og plassene regnes ut
+fra siffer $i$ i $A[j]$, mens det er hele $A[j]$ som flyttes.
+
+<Simulation
+  src="/sims/radix-sort.js"
+  host="dom"
   title="Radix-Sort"
-  caption="Venstre kolonne er tallene før passet, høyre kolonne outputen fra passet. Sifrene telles fra 0 bakfra som i koden, sifferet passet sorterer på er uthevet, og grønne siffer er ferdig behandlet."
-  height={300}
+  height={380}
+  caption="Hvert tall er et kort med de fire sifrene, og bredden følger verdien. Tabellen før passet står til venstre og tabellen etter til høyre, med en strek fra hvert talls plass før passet til plassen etter. Tall med samme siffer i passet har tykke streker i samme farge, sifferet passet sorterer på, har rød ramme, sifrene fra tidligere pass er grå, og grønt er en sortert tabell."
 />
 
-Etter $i$ pass er tallene sortert på de $i$ siste sifrene. Denne invarianten
-holder ved induksjon, og induksjonssteget er stabiliteten. Pass nummer $i$
-ordner tallene etter det $i$-ende sifferet bakfra. To tall med ulikt siffer der
-havner dermed i riktig rekkefølge, og to tall med likt siffer beholder
-rekkefølgen fra før, som var sortert på de $i - 1$ siste sifrene. Til sammen gir
-passet nøyaktig den rekkefølgen de $i$ siste sifrene gir.
+Simuleringen har sju firesifrede tall, og bredden på kortet følger verdien, så en sortert tabell er
+en trapp. Trykk «Neste pass». Etter pass 1 står tallene etter det bakerste sifferet: 0531, 1223,
+1736, 2016, 2007, 1938, 0529. 1736 og 2016 har begge 6 bakerst og står i samme rekkefølge som før, så
+strekene deres krysser ikke. Trykk tre ganger til. Pass 3 flytter ingenting her, og etter pass 4 er
+tabellen sortert.
 
-Radix-Sort trenger begge deler: det minst signifikante sifferet først og en
-stabil subrutine. Starter du med det mest signifikante sifferet, ødelegger neste
-pass ordningen fra det forrige, for passet sorterer på et mindre viktig siffer
-uten å ta hensyn til det viktigere. Sorterer du 13 og 21 først på det fremste
-sifferet og så stabilt på det bakerste, ender du med 21, 13. Og er subrutinen
-ustabil, mister to tall med likt siffer ordningen fra de lavere sifrene.
+Etter pass $i$ er tallene sortert på de $i$ bakerste sifrene. Pass $i$ ordner tallene etter siffer
+$i$, så to tall med ulikt siffer $i$ havner i riktig rekkefølge. To tall med likt siffer $i$ står i
+samme rekkefølge som før passet, fordi sorteringen er stabil, og før passet var de sortert på de
+${i - 1}$ bakerste sifrene. Etter $d$ pass er tallene sortert på alle sifrene. Beviset trenger begge
+delene: at sifrene tas bakfra og at sorteringen er stabil.
 
-Kjøretiden er $d$ pass med $\Theta(n + k)$ hver, altså $\Theta(d(n + k))$. Er
-$d$ og $k$ konstanter, som for sekssifrede desimaltall, er kjøretiden lineær. Et
-siffer trenger ikke være et desimalsiffer. Datoer sorteres stabilt på dag, så
-måned, så år. Etter hvert pass er datoene sortert på feltene som er behandlet,
-med samme induksjonssteg som for sifrene.
+Begge delene kan du se gå galt i simuleringen. Velg «fremste siffer først». Nå tar det siste passet
+det bakerste sifferet, og etter pass 4 står tallene etter det: 0531, 1223, 2016, 1736, 2007, 1938,
+0529. Det siste passet bestemmer rekkefølgen, så det fremste sifferet må tas sist. Velg så «bakerste
+siffer først» og «ustabil». Den ustabile sorteringen er Counting-Sort med den siste løkka forlengs,
+som snur rekkefølgen mellom tall med likt siffer. Etter pass 3 står 1223, 1736 og 1938 i riktig rekkefølge innbyrdes, men
+alle har 1 fremst, så pass 4 snur dem, og tabellen ender med 1938, 1736, 1223 midt i.
+
+Hvert pass er Counting-Sort med ${\Theta(n + k)}$ tid, så Radix-Sort bruker ${\Theta(d(n + k))}$ tid. Er
+$d$ og $k$ konstanter, er det lineært. Et siffer trenger ikke være et desimalsiffer. Det kan ha ${k + 1}$
+mulige verdier for en hvilken som helst $k$, og datoer kan sorteres stabilt etter dag, så etter måned
+og til slutt etter år.
 
 <Callout title="Radix-Sort">
-Radix-Sort sorterer stabilt på ett siffer om gangen, det minst signifikante
-først, og bruker $\Theta(d(n + k))$. Både rekkefølgen og stabiliteten trengs for
-at tallene etter $i$ pass er sortert på de $i$ siste sifrene.
+Radix-Sort sorterer stabilt på ett siffer om gangen, det bakerste først, i ${\Theta(d(n + k))}$ tid.
+Etter pass $i$ er tallene sortert på de $i$ bakerste sifrene, og det krever både rekkefølgen og
+stabiliteten.
 </Callout>
+
+<Quiz
+  question="Du skal sortere $n$ heltall fra 0 til ${n^3 - 1}$. Hvilken algoritme gjør det i $O(n)$ tid i verste tilfelle?"
+  options={[
+    "Counting-Sort på tallene",
+    "Radix-Sort med tre siffer i base $n$",
+    "Radix-Sort med desimale siffer",
+    "Ingen, sorteringsgrensen gjelder",
+  ]}
+  answer={1}
+  explanation="Et tall under $n^3$ har tre siffer i base $n$, hvert fra 0 til ${n - 1}$. Radix-Sort med Counting-Sort på hvert siffer har da ${d = 3}$ og ${k = n - 1}$ og bruker ${\Theta(3(2n - 1)) = \Theta(n)}$ tid. Counting-Sort direkte har ${k = n^3 - 1}$ og bruker $\Theta(n^3)$. Med desimale siffer har tallene ${\log_{10} n^3 = 3 \log_{10} n}$ siffer, så $d$ vokser med $n$, og Radix-Sort bruker $\Theta(n \lg n)$. Sorteringsgrensen gjelder bare algoritmer som sammenligner, og Radix-Sort bruker sifrene som indekser."
+/>
 
 ## Bucket-Sort
 
-Bucket-Sort antar at inputen er tilfeldige tall, uniformt fordelt i $[0, 1)$.
-Del intervallet i $n$ like bøtter, og legg $A[j]$ i bøtte nummer
-$\lfloor n \cdot A[j] \rfloor$. Det er hashing med kjeding, men hashfunksjonen
-bevarer ordningen: alt i bøtte $i$ er mindre enn alt i bøtte $i + 1$. Sorter
-hver bøtte med Insertion-Sort, og sett bøttene etter hverandre.
+Skal du sortere 200 eksamensbesvarelser etter etternavn, legger du dem gjerne først i bunker etter
+forbokstav, sorterer hver lille bunke og legger bunkene etter hverandre. Det går fort fordi navnene
+fordeler seg på mange bokstaver, så hver bunke er liten. Heter alle Hansen, havner alt i én bunke, og
+du har ikke spart noe.
+
+Tall i intervallet $[0, 1)$ er ikke heltall og kan ikke brukes som indekser i $C$.
+<Term name="Bucket-Sort" /> sorterer dem slik du sorterer besvarelsene. Den deler intervallet i
+$n$ like lange biter, én bøtte for hver, og legger $A[i]$ i bøtte ${\lfloor n \cdot A[i] \rfloor}$.
+Så sorterer den hver bøtte med Insertion-Sort og setter bøttene etter hverandre:
 
 <CodeBlock
-  id="bucket-sort"
-  title="bucket_sort.py"
-  lang="python"
-  code={`def bucket_sort(A, n):
-    B = [[] for _ in range(n)]
-    for j in range(n):
-        B[int(n * A[j])].append(A[j])
-    for i in range(n):
-        insertion_sort(B[i], len(B[i]))
-    return [x for bucket in B for x in bucket]`}
+  id="bucket-sort-kode"
+  lang="text"
+  code={`Bucket-Sort(A, n)
+1  new: B[0 : n - 1]
+2  for i = 0 to n - 1
+3      make B[i] an empty list
+4  for i = 1 to n
+5      add A[i] to B[⌊n · A[i]⌋]
+6  for i = 0 to n - 1
+7      sort list B[i]
+8  concatenate B[0], …, B[n - 1]
+9  return the resulting list`}
 />
 
-Insertion-Sort på en bøtte med $n_i$ elementer koster $O(n_i^2)$, så det er
-forventningen av $n_i^2$ som avgjør, ikke at bøtta i snitt får ett element. Med
-uniform fordeling havner hvert element i bøtte $i$ med sannsynlighet $1/n$,
-uavhengig av de andre, og da er $E[n_i^2] = 2 - 1/n$. Summert over de $n$
-bøttene er forventet arbeid i Insertion-Sort $O(n)$, så hele sorteringen tar
-forventet $\Theta(n)$.
+Å legge tallene i bøtter er hashing med kjeding, men hashfunksjonen ${\lfloor n \cdot x \rfloor}$ bevarer rekkefølgen: alt
+i bøtte $j$ er mindre enn alt i bøtte ${j + 1}$, så bøttene kan settes etter hverandre uten å flettes.
 
-<Derivation title="Forventningen til $n_i^2$">
-Skriv $n_i = \sum_j X_j$, der $X_j = 1$ når element $j$ havner i bøtte $i$, og
-ellers $0$. Da er $X_j^2 = X_j$, og $X_j$ og $X_k$ er uavhengige for $j \ne k$,
-så
+<Simulation
+  src="/sims/bottesortering.js"
+  host="dom"
+  title="Bøttene"
+  height={340}
+  caption="Tallene er prikker på intervallet $[0, 1)$, og hver av de $n$ bøttene står rett under sitt intervall med elementene som kort, sortert nedenfra. Under en bøtte med $m$ elementer står arbeidet til Insertion-Sort i verste tilfelle, ${m - 1}$ rader med ${1, 2, \dots, m - 1}$ grå ruter, én per sammenligning. Når en bøtte blir svært full, er kort og ruter tegnet mindre."
+/>
+
+Simuleringen starter med de ti tallene 0,78, 0,17, 0,39, 0,26, 0,72, 0,94, 0,21, 0,12, 0,23 og 0,68,
+og bøttene står rett under intervallene sine. Den største bøtta er bøtte 2, med 0,21, 0,23 og 0,26,
+og Insertion-Sort i alle bøttene bruker høyst 5 sammenligninger. Trykk «Trekk på nytt» noen ganger:
+de fleste bøttene får 0, 1 eller 2 elementer, og antallet under tegningen holder seg rundt $n/2$. Velg «skjev». Nå
+samler tallene seg nær 0, én bøtte får mange av dem, og trekanten under den står for det meste av
+arbeidet. Med «samlet» havner alle tallene i bøtte 0, og Bucket-Sort er Insertion-Sort på hele
+tabellen, høyst ${n(n - 1)/2}$ sammenligninger, 45 for ${n = 10}$.
+
+Insertion-Sort på en bøtte med $m$ elementer bruker høyst ${m(m - 1)/2}$ sammenligninger, kvadratisk
+i $m$. Er tallene uavhengige og jevnt fordelt i $[0, 1)$, havner hvert av dem i en bestemt bøtte med
+sannsynlighet $1/n$. En bøtte får da ett element i snitt, men det er kvadratet som teller, og en stor
+bøtte koster mye mer enn mange små. Forventningen til kvadratet er likevel liten. Kall antallet i bøtte $j$ for $n_j$.
+Da teller $n_j^2$ parene $(a, b)$ av tall i bøtta, også med ${a = b}$. De $n$ parene med ${a = b}$ ligger
+der hvert med sannsynlighet $1/n$, til sammen 1 i snitt, og de ${n(n - 1)}$ parene med ${a \ne b}$ ligger
+der med sannsynlighet $1/n^2$, til sammen ${1 - 1/n}$. Altså er ${E[n_j^2] = 2 - 1/n}$. Summert over de $n$ bøttene er det under $2n$,
+så Insertion-Sort i bøttene koster $O(n)$ i snitt, og Bucket-Sort bruker $\Theta(n)$ tid.
+
+<Derivation title="Forventningen til $n_j^2$">
+$n_j$ er antall av de $n$ tallene som havner i bøtte $j$, der hvert havner der med sannsynlighet
+$1/n$, uavhengig av de andre. Da er $n_j$ binomisk fordelt med forventning ${n \cdot 1/n = 1}$ og
+varians ${n \cdot \tfrac1n (1 - \tfrac1n) = 1 - 1/n}$, og
 
 $$
-E[n_i^2] = \sum_j E[X_j^2] + \sum_{j \ne k} E[X_j X_k]
-= n \cdot \tfrac1n + n(n-1) \cdot \tfrac1{n^2} = 2 - \tfrac1n
+E[n_j^2] = \mathrm{Var}[n_j] + E[n_j]^2 = 1 - \frac1n + 1 = 2 - \frac1n
 $$
 </Derivation>
 
-Forventningen her er et snitt over tilfeldige inputer, altså
-gjennomsnittstilfellet. Bucket-Sort gjør ingen tilfeldige valg selv, så en
-input der alt havner i én bøtte, gir alltid Insertion-Sort på hele inputen,
-$\Theta(n^2)$.
-Randomized-Select og Randomized-Quicksort har forventet kjøretid over sine egne
-tilfeldige valg, for enhver input, og den garantien er sterkere.
+Snittet er over inputene. Bucket-Sort gjør ingen tilfeldige valg selv, så en tabell der alle tallene
+havner i én bøtte i synkende rekkefølge, gir Insertion-Sort i verste tilfelle på hele tabellen,
+$\Theta(n^2)$, hver gang den sorteres. $\Theta(n)$ er altså gjennomsnittlige tilfelle, over jevnt
+fordelte tall, og ikke forventet kjøretid som for Randomized-Select, der snittet er over algoritmens
+egne valg for en fast tabell.
 
 <Callout title="Bucket-Sort">
-Bucket-Sort bruker forventet $\Theta(n)$ når inputen er uniformt fordelt i
-$[0, 1)$. Forventningen er et snitt over inputer, og verste tilfelle er
-$\Theta(n^2)$.
+Bucket-Sort legger tallene i $n$ bøtter etter verdi og sorterer hver bøtte med Insertion-Sort. Med
+uavhengige, jevnt fordelte tall i $[0, 1)$ er gjennomsnittlig kjøretid $\Theta(n)$, fordi kvadratet av
+bøttestørrelsen i snitt er under 2. I verste tilfelle havner alt i én bøtte i synkende rekkefølge,
+og det koster $\Theta(n^2)$.
 </Callout>
 
-<Table
-  columns={["Algoritme", "Forutsetning", "Kjøretid"]}
-  rows={[
-    ["Randomized-Select", "bare rang $i$", "forventet $\\Theta(n)$, verste $\\Theta(n^2)$"],
-    ["Select", "bare rang $i$", "$\\Theta(n)$"],
-    ["Counting-Sort", "heltall fra 0 til $k$", "$\\Theta(n + k)$"],
-    ["Radix-Sort", "$d$ siffer fra 0 til $k$", "$\\Theta(d(n + k))$"],
-    ["Bucket-Sort", "uniformt fordelt i $[0, 1)$", "forventet $\\Theta(n)$, verste $\\Theta(n^2)$"],
+<Quiz
+  question="Bucket-Sort med $n$ bøtter får $n$ uavhengige tall som er jevnt fordelt i $[0, \tfrac12)$, ikke i $[0, 1)$. Hva blir gjennomsnittlig kjøretid?"
+  options={[
+    "$\\Theta(n)$",
+    "$\\Theta(n \\lg n)$",
+    "$\\Theta(n^2)$",
+    "Ingen grense, fordi forutsetningen er brutt",
   ]}
-  align={["left", "left", "left"]}
-  rowHeader={false}
-  caption="Fem veier under sorteringsgrensen. De to første svekker kravet til output, de tre siste styrker kravet til input."
+  answer={0}
+  explanation="Tallene havner bare i den nederste halvdelen av bøttene, så hver av dem får to elementer i snitt i stedet for ett. Bøttene er fortsatt små: kvadratet av antallet er omtrent 6 i snitt, og summert over $n/2$ bøtter er det omtrent $3n$. $\Theta(n^2)$ krever at et voksende antall elementer havner i samme bøtte, og det skjer ikke her. Forutsetningen om $[0, 1)$ gir det enkleste regnestykket, men det er bøttestørrelsene som avgjør."
 />
 
-## Sjekk deg selv
+## Under grensen
 
-<Quiz
-  question="Du skal sortere $n$ heltall i området fra 0 til $n^3 - 1$. Hvilken algoritme gjør det i $O(n)$ tid i verste tilfelle?"
-  options={[
-    "Counting-Sort direkte på tallene",
-    "Radix-Sort med tre siffer i base $n$",
-    "Bucket-Sort med $n$ bøtter",
-    "Ingen, sorteringsgrensen gjelder her",
+<Table
+  columns={["Algoritme", "Krever", "Kjøretid"]}
+  rows={[
+    ["Randomized-Select", "bare rang $i$", "forventet $\\Theta(n)$"],
+    ["Select", "bare rang $i$", "$\\Theta(n)$"],
+    ["Counting-Sort", "heltall 0 til $k$", "${\\Theta(n + k)}$"],
+    ["Radix-Sort", "$d$ siffer, 0 til $k$", "${\\Theta(d(n + k))}$"],
+    ["Bucket-Sort", "jevnt i $[0, 1)$", "snitt $\\Theta(n)$"],
   ]}
-  answer={1}
-  explanation="Et tall under $n^3$ har tre siffer i base $n$, hvert fra 0 til $n - 1$. Radix-Sort med Counting-Sort på hvert siffer har da $d = 3$ og $k = n - 1$ og bruker $\Theta(3(2n - 1)) = \Theta(n)$. Counting-Sort direkte har $k = n^3 - 1$ og bruker $\Theta(n^3)$. Bucket-Sort er lineær bare i forventning for uniformt fordelt input, og havner alt i én bøtte, bruker den $\Theta(n^2)$. Sorteringsgrensen gjelder bare algoritmer som sammenligner, og Radix-Sort bruker sifrene som indekser."
+  rowHeader={false}
+  caption="Fem måter å komme under sorteringsgrensen på. De to første ber om mindre enn en sortert tabell, de tre siste vet mer om tallene."
 />
 
 <KeyTakeaways>
-- Et beslutningstre for sammenligningsbasert sortering har minst $n!$ løvnoder og dermed høyde minst $\lg n! = \Omega(n \lg n)$. Grensen gjelder verste tilfelle, og Merge-Sort når den.
-- Randomized-Select er Quicksort med ett rekursivt kall: pivoten har rang $k = q - p + 1$, og søket fortsetter bare på siden med rang $i$. Deler pivoten på midten, er $T(n) = T(n/2) + n = \Theta(n)$. Forventet kjøretid er også $\Theta(n)$ for enhver input, og verste tilfelle $\Theta(n^2)$.
-- Select velger medianen av gruppemedianene som pivot. Minst $3n/10$ elementer havner på hver side, $T(n) \le T(n/5) + T(7n/10) + \Theta(n) = \Theta(n)$ garantert, og de $k$ minste finnes i lineær tid.
-- En stabil sortering bevarer rekkefølgen på like nøkler. Counting-Sort er stabil fordi den går baklengs gjennom $A$ med kumulative tellinger, og bruker $\Theta(n + k)$.
-- Radix-Sort sorterer stabilt på ett siffer om gangen, det minst signifikante først. Invarianten er at tallene er sortert på sifrene som er behandlet, og den krever både rekkefølgen og stabiliteten. $\Theta(d(n + k))$.
-- Bucket-Sort er ordnet hashing med Insertion-Sort i hver bøtte: forventet $\Theta(n)$ for uniformt fordelt input, $\Theta(n^2)$ i verste tilfelle. Forventningen er et snitt over inputer, ikke over algoritmens valg.
+
+- En sammenligning er et ja/nei-spørsmål, og et beslutningstre for sortering må ha en løvnode for hver av de $n!$ rekkefølgene. Høyden, antall sammenligninger i verste tilfelle, er derfor minst ${\lg n! = \Omega(n \lg n)}$, og Merge-Sort når grensen.
+- Randomized-Select deler som Quicksort og leter videre i bare den delen som har rang $i$, med rang ${i - k}$ blant de store. Segmentene krymper geometrisk, og forventet kjøretid er $\Theta(n)$ for enhver input med forskjellige elementer.
+- Select bruker medianen av gruppemedianene som pivot og garanterer $\Theta(n)$. Med rang $k$ og en deling gir den de $k$ minste elementene i $O(n)$ tid.
+- En stabil sortering lar like verdier stå i samme rekkefølge som før. Counting-Sort teller, gjør tellingene om til plasser og går baklengs, og bruker ${\Theta(n + k)}$ tid uten å sammenligne.
+- Radix-Sort sorterer stabilt ett siffer om gangen, det bakerste først, i ${\Theta(d(n + k))}$ tid.
+- Bucket-Sort er hashing med en hashfunksjon som bevarer rekkefølgen, og bruker $\Theta(n)$ tid i gjennomsnitt over jevnt fordelte tall, men $\Theta(n^2)$ i verste tilfelle, når alt havner i én bøtte i synkende rekkefølge.
+
 </KeyTakeaways>
