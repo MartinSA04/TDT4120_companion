@@ -175,7 +175,7 @@ formulas:
 
   - {
       tex: "\\begin{aligned} \\text{Left}(i) &= 2i \\\\ \\text{Right}(i) &= 2i + 1 \\\\ \\text{Parent}(i) &= \\lfloor i/2 \\rfloor \\end{aligned}",
-      label: "Haugen som tabell, nummerert nivå for nivå med rota som 1. Med indekser fra 0 blir barna $2i + 1$ og $2i + 2$ og forelderen $\\lfloor (i - 1)/2 \\rfloor$.",
+      label: "Haugen som tabell, nummerert nivå for nivå med rota som 1. Nivå $d$ begynner på indeks $2^d$, så barna til $i$ står i $2i$ og ${2i + 1}$.",
       section: "Rotfaste trestrukturer",
       id: haug-indekser,
     }
@@ -186,8 +186,8 @@ formulas:
       id: haug-hoyde,
     }
   - {
-      tex: "\\sum_{k=0}^{\\lfloor \\lg n \\rfloor} \\left\\lceil \\dfrac{n}{2^{k+1}} \\right\\rceil O(k) = O(n)",
-      label: "Build-Max-Heap. Høyst $\\lceil n/2^{k+1} \\rceil$ noder har høyde $k$, og hver av dem synker høyst $k$ steg. Summen er $O(n \\sum_{k \\ge 0} k/2^k) = O(2n)$, for $\\sum_{k \\ge 0} k x^k = x/(1-x)^2$. Ikke det samme som $n$ innsettinger, som koster $\\Theta(n \\lg n)$.",
+      tex: "\\sum_{k=0}^{h} 2^{h-k} \\cdot k \\allowbreak = 2^h \\sum_{k=0}^{h} \\frac{k}{2^k} \\allowbreak < 2^h \\cdot 2 = n + 1",
+      label: "Build-Max-Heap i et komplett binærtre med høyde $h$ og $n = 2^{h+1} - 1$ noder: $2^{h-k}$ noder har høyde $k$, og hver av dem synker høyst $k$ steg. Altså $O(n)$, og løkka går $\\lfloor n/2 \\rfloor$ runder, så $\\Theta(n)$. Ikke det samme som $n$ kall til Max-Heap-Insert, som bruker $\\Theta(n \\lg n)$ i verste tilfelle.",
       section: "Rotfaste trestrukturer",
       id: build-max-heap-kjoretid,
     }
@@ -363,9 +363,10 @@ symbols:
   # ── Rotfaste trestrukturer ──
   - { tex: "h", meaning: "Høyden til et tre, den største dybden", section: "Rotfaste trestrukturer", term: "Rotfast tre", formula: haug-hoyde, id: h, note: "Operasjonene i et binært søketre koster $O(h)$, og en haug har $h = \\lfloor \\lg n \\rfloor$. Ikke hashfunksjonen $h(k)$." }
   - { tex: "x,\\ y,\\ z", meaning: "Noder i et binært søketre", section: "Rotfaste trestrukturer", term: "Binært søketre", note: "Tree-Insert setter inn $z$ og lar $y$ gå ett steg bak $x$, så $y$ blir forelderen." }
-  - { tex: "\\text{Left}(i)", meaning: "Venstre barn til node $i$ i en haug, $2i$", section: "Rotfaste trestrukturer", term: "Haug", formula: haug-indekser, id: haugindekser, note: "Rota er $A[1]$. Med indekser fra 0, som i Python, er rota $A[0]$ og venstre barn $2i + 1$." }
-  - { tex: "\\text{Right}(i)", meaning: "Høyre barn til node $i$ i en haug, $2i + 1$", section: "Rotfaste trestrukturer", formula: haug-indekser, note: "Med indekser fra 0 er høyre barn $2i + 2$." }
-  - { tex: "\\text{Parent}(i)", meaning: "Forelderen til node $i$ i en haug, $\\lfloor i/2 \\rfloor$", section: "Rotfaste trestrukturer", formula: haug-indekser, note: "Med indekser fra 0 er forelderen $\\lfloor (i - 1)/2 \\rfloor$. Haugegenskapen er $A[\\text{Parent}(i)] \\ge A[i]$." }
+  - { tex: "\\text{Left}(i)", meaning: "Venstre barn til node $i$ i en haug, $2i$", section: "Rotfaste trestrukturer", term: "Haug", formula: haug-indekser, id: haugindekser, note: "Rota er $A[1]$." }
+  - { tex: "\\text{Right}(i)", meaning: "Høyre barn til node $i$ i en haug, ${2i + 1}$", section: "Rotfaste trestrukturer", formula: haug-indekser }
+  - { tex: "\\text{Parent}(i)", meaning: "Forelderen til node $i$ i en haug, $\\lfloor i/2 \\rfloor$", section: "Rotfaste trestrukturer", formula: haug-indekser, note: "Haugegenskapen for en maks-haug er $A[\\text{Parent}(i)] \\ge A[i]$." }
+  - { tex: "A.size", meaning: "Antall elementer i haugen, som står i ${A[1 : A.size]}$", section: "Rotfaste trestrukturer", term: "Haug", note: "Boka skriver $A.heap\\text{-}size$. Tabellen kan være lengre enn haugen." }
   # ── Dynamisk programmering ──
   - { tex: "u \\to v", meaning: "En kant i delinstansgrafen: svaret for $v$ bygger på svaret for $u$", section: "Dynamisk programmering", term: "Delinstansgraf", note: "Læreboka tegner kantene motsatt vei." }
   - { tex: "p_i", meaning: "Prisen for en bit med lengde $i$", section: "Dynamisk programmering", formula: stavkapping-rekurrens, note: "$p_1, \\ldots, p_8 = 1, 5, 8, 9, 10, 17, 17, 20$ i eksemplene. I Python er <code>p[0]</code> en ubrukt plassholder." }
@@ -654,57 +655,57 @@ glossary:
 
   - {
       term: "Rotfast tre",
-      definition: "Et fritt tre, en sammenhengende graf uten sykler, med én node valgt som rot. Rota har ingen forelder, hver annen node har én, og nodene rett under en node er barna dens. En løvnode har ingen barn; de andre er indre noder. Dybden er antall kanter opp til rota, og høyden $h$ er den største dybden. Representeres med pekere til barna, eller med én peker til første barn og én til neste søsken.",
+      definition: "Et tre der én node, rota, ikke har noen forelder, og hver annen node har nøyaktig én. Nodene rett under en node er barna dens. En node uten barn er en løvnode, og de andre er indre noder. Dybden til en node er antall steg ned fra rota, og høyden $h$ er den største dybden. Hver node er rota i sitt eget deltre. Lagres med pekere til barna, eller med én peker til første barn og én til neste søsken.",
       section: "Rotfaste trestrukturer",
     }
   - {
       term: "Komplett binærtre",
-      definition: "Et binærtre der alle indre noder har to barn og alle løvnodene har samme dybde. Med høyde $h$ har det $2^h$ løvnoder og $2^h - 1$ indre noder, så $n = 2^{h+1} - 1$ noder i alt og $h = \\lfloor \\lg n \\rfloor$.",
+      definition: "Et binærtre der alle indre noder har to barn og alle løvnodene har samme dybde. Med $2^h$ løvnoder har det $2^h - 1$ indre noder, like mange som kampene i en utslagsturnering med $2^h$ spillere, og høyden er $h$.",
       section: "Rotfaste trestrukturer",
     }
   - {
       term: "Binært søketre",
-      definition: "Et binærtre med nøkler der alt i venstre deltre til en node er mindre enn eller lik noden og alt i høyre deltre større enn eller lik, for hver node. Søk, innsetting, minimum, maksimum, etterfølger og sletting følger én sti og koster $O(h)$. Høyden er forventet $\\Theta(\\lg n)$ for tilfeldig innsettingsrekkefølge og $n - 1$ i verste tilfelle; balanserte søketrær garanterer $\\Theta(\\lg n)$.",
+      definition: "Et binærtre med nøkler der hver node i venstre deltre til en node $x$ har nøkkel høyst $x.key$ og hver node i høyre deltre minst $x.key$, for hver $x$. Søk, innsetting, minimum, etterfølger og sletting følger én sti og bruker $O(h)$ tid. Høyden er $n - 1$ når nøklene settes inn sortert og forventet $\\Theta(\\lg n)$ når de settes inn i tilfeldig rekkefølge, og balanserte søketrær garanterer $\\Theta(\\lg n)$.",
       section: "Rotfaste trestrukturer",
     }
   - {
       term: "Inorder-Tree-Walk",
-      definition: "Besøker venstre deltre, så noden, så høyre deltre, rekursivt fra rota. I et binært søketre kommer nøklene ut i sortert rekkefølge. $\\Theta(n)$. Preorder og postorder behandler noden før eller etter de to rekursive kallene.",
+      definition: "Skriver ut venstre deltre, så noden, så høyre deltre, rekursivt fra rota. I et binært søketre kommer nøklene ut sortert. $\\Theta(n)$. Preorder og postorder skriver ut noden før eller etter de to rekursive kallene.",
       section: "Rotfaste trestrukturer",
     }
   - {
       term: "Tree-Insert",
-      definition: "Søker etter den nye nøkkelen til søket treffer nil, med en peker $y$ ett steg bak $x$, og henger den nye noden på $y$ som venstre eller høyre barn. En ny node blir alltid en løvnode. $O(h)$.",
+      definition: "Søker etter den nye nøkkelen helt til søket kommer til nil, med en peker $y$ ett steg bak $x$, og henger den nye noden på $y$, som venstre barn hvis nøkkelen er mindre enn $y.key$ og ellers som høyre barn. Den nye noden blir alltid en løvnode. $O(h)$.",
       section: "Rotfaste trestrukturer",
     }
   - {
       term: "Etterfølger",
-      definition: "Noden med den minste nøkkelen som er større enn nøkkelen til $x$, den neste i Inorder-Tree-Walk. Har $x$ et høyre deltre, er etterfølgeren minimum der; ellers er den den nærmeste noden over $x$ som har $x$ i sitt venstre deltre. Tree-Successor følger én sti, $O(h)$. Forgjengeren finnes symmetrisk.",
+      definition: "Etterfølgeren til en node $x$ er noden med den neste nøkkelen i sortert rekkefølge, den Inorder-Tree-Walk skriver ut rett etter $x$. Har $x$ et høyre deltre, er etterfølgeren minimum der. Ellers er den den første noden over $x$ som har $x$ i venstre deltre. Tree-Successor følger én sti, $O(h)$. Forgjengeren finnes på samme måte med venstre og høyre byttet om.",
       section: "Rotfaste trestrukturer",
     }
   - {
       term: "Haug",
-      definition: "Et binærtre som er komplett ned til nest nederste nivå, med det nederste fylt fra venstre, lagret i en tabell nummerert nivå for nivå: barna til $i$ er $2i$ og $2i + 1$, forelderen $\\lfloor i/2 \\rfloor$. Haugegenskapen for en maks-haug er $A[\\text{Parent}(i)] \\ge A[i]$ for alle $i$ unntatt rota, så det største elementet står i rota. En min-haug har $\\le$. Høyden er $\\lfloor \\lg n \\rfloor$.",
+      definition: "Et nesten komplett binærtre, med alle nivåer fulle unntatt kanskje det nederste, som fylles fra venstre, lagret i en tabell nummerert nivå for nivå: barna til $i$ er $2i$ og ${2i + 1}$, og forelderen er $\\lfloor i/2 \\rfloor$. I en maks-haug er hver forelder minst like stor som barna, $A[\\text{Parent}(i)] \\ge A[i]$, så det største elementet står i $A[1]$. En min-haug har $\\le$. Høyden er $\\lfloor \\lg n \\rfloor$.",
       section: "Rotfaste trestrukturer",
     }
   - {
       term: "Max-Heapify",
-      definition: "Reparerer en maks-haug der bare $A[i]$ kan bryte haugegenskapen: bytt $A[i]$ med det største barnet hvis det er større, og fortsett rekursivt der det mindre elementet havnet. Elementet synker høyst $h$ steg, $O(\\lg n)$.",
+      definition: "Lar $A[i]$ synke når deltrærne under $i$ allerede er hauger: er det største barnet større enn $A[i]$, bytter de plass, og kallet fortsetter fra barnets plass. Elementet bytter med det største barnet fordi det barnet blir forelder til det andre. Høyst $\\lfloor \\lg n \\rfloor$ nivåer, $O(\\lg n)$.",
       section: "Rotfaste trestrukturer",
     }
   - {
       term: "Build-Max-Heap",
-      definition: "Kaller Max-Heapify på de indre nodene fra $\\lfloor n/2 \\rfloor$ ned til 1, nedenfra og opp, så begge deltrærne alltid er hauger når turen kommer til en node. $\\Theta(n)$, for de fleste nodene står langt nede og synker lite. Ikke det samme som $n$ kall til Max-Heap-Insert, som koster $\\Theta(n \\lg n)$ i verste tilfelle.",
+      definition: "Kaller Max-Heapify fra $\\lfloor n/2 \\rfloor$ ned til 1, så begge deltrærne under en node er hauger når turen kommer til den. $\\Theta(n)$, fordi de fleste nodene står nederst og synker lite. Ikke det samme som $n$ kall til Max-Heap-Insert, som bruker $\\Theta(n \\lg n)$ i verste tilfelle.",
       section: "Rotfaste trestrukturer",
     }
   - {
       term: "Prioritetskø",
-      definition: "Dynamisk mengde med nøkler som prioriteter, gjerne med duplikater, som støtter Insert, Maximum, Extract-Max og Increase-Key, eller min-variantene. En maks-haug gir Maximum i $\\Theta(1)$ og de tre andre i $O(\\lg n)$: Extract-Max flytter det siste elementet opp i rota og lar det synke, Increase-Key lar elementet stige, og Insert er Increase-Key fra $-\\infty$ på en ny siste plass.",
+      definition: "En mengde der hvert element har en nøkkel, prioriteten, og som støtter Insert, Maximum, Extract-Max og Increase-Key, eller min-variantene. En maks-haug gir Maximum i $\\Theta(1)$ og de tre andre i $O(\\lg n)$: Extract-Max flytter det siste elementet opp i rota og lar det synke, Increase-Key lar elementet stige, og Insert legger elementet sist med nøkkel $-\\infty$ og øker nøkkelen.",
       section: "Rotfaste trestrukturer",
     }
   - {
       term: "Heapsort",
-      definition: "Sortering ved utvelgelse med en maks-haug: bygg haugen av hele $A$, og bytt så $n - 1$ ganger rota med det siste elementet i haugen, minsk haugen og reparer rota med Max-Heapify. Sorterer på plass, $\\Theta(n \\lg n)$ i verste tilfelle og $\\Theta(n)$ i beste, når alle elementene er like.",
+      definition: "Sortering ved utvelgelse med en maks-haug: bygg haugen av hele $A$, og bytt så $n - 1$ ganger rota med det siste elementet i haugen, krymp haugen og la den nye rota synke med Max-Heapify. Sorterer på plassen, $\\Theta(n \\lg n)$ i verste tilfelle og $\\Theta(n)$ når alle elementene er like.",
       section: "Rotfaste trestrukturer",
     }
 

@@ -25,7 +25,7 @@ maintainer), **rewritten** (approved and committed).
 | 03 Problemer og reduksjoner | **rewritten** | Rewritten from scratch with a CLIQUE sim, a reduction figure and two steppers (the recursive Insertion-Sort as a ladder, Largest-Group); approved after round 2 and committed 2026-10-21. Round 2 tells the clique example as people who know each other, since graphs come later. |
 | 04 Splitt og hersk | **rewritten** | Rewritten from scratch with steppers for Merge, Merge-Sort (the calls as a tree) and Partition, a Quicksort-tree sim and a recursion-tree sim for the master theorem; approved after round 1 and committed 2026-10-22. |
 | 05 Rangering i lineær tid | **rewritten** | Rewritten from scratch with a sim of the sorting bound as a game against the «kjiping», a decision-tree figure, a Randomized-Select stepper and a sim of it as one path down the Quicksort tree, a median-of-medians figure, a Counting-Sort stepper, a Radix-Sort sim with both failure modes and a Bucket-Sort sim; approved after round 1 and committed 2026-10-22. |
-| 06 Rotfaste trestrukturer | to rewrite |  |
+| 06 Rotfaste trestrukturer | **rewritten** | Rewritten from scratch with steppers for Tree-Insert, Inorder-Tree-Walk, Max-Heap-Extract-Max, Max-Heap-Insert and Heapsort, a sim of insertion order and height, a sim of the two ways to build a heap, and three figures; approved after round 2 and committed 2026-10-23. Round 2 puts the subject first where round 1 used inverted word order. |
 | 07 Dynamisk programmering | to rewrite |  |
 | 08 Grådighet | to rewrite |  |
 | 09 Traversering av grafer | to rewrite | An incremental rewrite from round 3 (not committed) is superseded; rewrite from scratch. |

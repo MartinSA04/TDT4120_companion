@@ -2,578 +2,810 @@
 order: 6
 num: "05"
 title: Rotfaste trestrukturer
-summary: "Binære søketrær og hauger er rotfaste trær med hver sin egenskap: søketre-egenskapen gir søk, innsetting og etterfølger i O(h), haugegenskapen gir en prioritetskø med uttak og innsetting i O(lg n), bygging i Θ(n) og Heapsort i Θ(n lg n)."
+summary: "Hvordan et binært søketre gjør binærsøk til en datastruktur der både søk og innsetting koster like mye som høyden, og hvordan en haug lagret i en tabell gir en prioritetskø med uttak og innsetting i O(lg n), bygging i lineær tid og Heapsort."
 importance: core
 tag: "Uke 38"
 part: "Del 2: Sortering og datastrukturer"
-updated: 2026-09-27
+updated: 2026-10-22
 ---
 
-Et rotfast tre er en rekursiv dekomponering: hver node er rota i sitt eget
-deltre. Da kan du kreve noe av alle deltrærne på én gang. I et binært
-søketre er alt i venstre deltre mindre enn rota og alt i høyre deltre større.
-Egenskapen gir søk, innsetting og etterfølger i tid proporsjonal med høyden.
-I en haug kreves bare at rota er størst, og kravet gjelder rekursivt for hvert
-deltre. Haugegenskapen gir mindre funksjonalitet, men haugen er billigere å bygge og
-holder seg balansert av seg selv, så den brukes som prioritetskø og til å
-sortere.
-
 <LearningGoals>
-- Forklar hva et <Term name="Rotfast tre">rotfast tre</Term> er, og hvordan det representeres med pekere til barna, eller med pekere til første barn og neste søsken.
-- Forklar binær-søketre-egenskapen, og gjør rede for <Term name="Inorder-Tree-Walk" />, Tree-Search, <Term name="Tree-Insert" />, Tree-Minimum og Tree-Successor i et <Term name="Binært søketre">binært søketre</Term>.
-- Forklar hvorfor operasjonene koster $O(h)$, at forventet høyde for et tilfeldig binært søketre er $\Theta(\lg n)$ og at det finnes søketrær med garantert høyde $\Theta(\lg n)$.
+
+- Forklar hva et <Term name="Rotfast tre">rotfast tre</Term> er, og hvordan det lagres med pekere til barna eller med pekere til første barn og neste søsken.
+- Forklar binær-søketre-egenskapen, og utfør Tree-Search, <Term name="Tree-Insert" />, <Term name="Inorder-Tree-Walk" />, Tree-Minimum og Tree-Successor i et <Term name="Binært søketre">binært søketre</Term>.
+- Forklar hvorfor operasjonene i et binært søketre koster $O(h)$, og vit at forventet høyde er $\Theta(\lg n)$ når nøklene settes inn i tilfeldig rekkefølge, og at det finnes søketrær med garantert høyde $\Theta(\lg n)$.
 - Forklar haugegenskapen, og hvordan en <Term name="Haug">haug</Term> lagres i en tabell uten pekere.
-- Gjør rede for <Term name="Max-Heapify" /> og <Term name="Build-Max-Heap" />, og hvorfor Build-Max-Heap bruker $\Theta(n)$.
-- Gjør rede for haugen som <Term name="Prioritetskø">prioritetskø</Term>: Max-Heap-Maximum, Max-Heap-Extract-Max, Max-Heap-Increase-Key og Max-Heap-Insert.
-- Gjør rede for <Term name="Heapsort" />, og kjøretiden i verste og beste tilfelle.
+- Utfør Max-Heap-Extract-Max med <Term name="Max-Heapify" /> og Max-Heap-Insert med Max-Heap-Increase-Key, og bruk haugen som <Term name="Prioritetskø">prioritetskø</Term>.
+- Forklar hvorfor <Term name="Build-Max-Heap" /> bruker $\Theta(n)$ tid, mens $n$ kall til Max-Heap-Insert kan bruke $\Theta(n \lg n)$.
+- Utfør <Term name="Heapsort" />, og gjør rede for kjøretiden.
+
 </LearningGoals>
+
+En sortert tabell med en million nøkler finner hvilken som helst av dem med binærsøk på høyst 20
+sammenligninger. Skal en ny nøkkel inn, må derimot alle de større nøklene flytte seg ett hakk for å
+gi plass, i snitt en halv million av dem. En lenket liste er motsatt. Den nye nøkkelen settes inn
+foran ved å endre noen få pekere, men et søk går i snitt gjennom en halv million noder.
+
+Et binært søketre gjør begge deler ved å følge én sti nedover fra rota. Med en million nøkler kan
+treet være så lavt at ingen sti er lengre enn 20 noder, og når nøklene er satt inn i tilfeldig
+rekkefølge, er stien til en nøkkel i snitt rundt 26 noder lang.
+
+Hvis du bare trenger det største elementet, er en haug nok. Haugen har det største elementet først,
+og å ta det ut eller sette inn et nytt koster høyst 19 ombyttinger.
 
 ## Rotfaste trær
 
-Et fritt tre er en sammenhengende graf uten sykler. Det har nøyaktig én sti
-mellom hvert par av noder, og $|E| = |V| - 1$. Velger du ut én node som rot,
-får du et rotfast tre, og da har kantene retning: rota har ingen forelder,
-hver annen node har nøyaktig én, og nodene rett under en node er barna dens.
-
-Treet i figur 1 har rota 7. Barna til 7 er 5 og 6, og barna til 5 er 1, 2, 3
-og 4. En node uten barn er en løvnode, som 1 og 6, og de andre er indre
-noder, her 5 og 7. Dybden til en node er antall kanter opp til rota, så 1 har
-dybde 2. Høyden $h$ til treet er den største dybden, her 2. Deltreet med rot
-$x$ er $x$ og alt under den, så deltreet med rot 5 har fem noder.
-
-Et binærtre har to barneposisjoner per node, venstre og høyre, og en av dem
-kan stå tom. Du vet altså hvilket barn som mangler. Et <Term name="Komplett binærtre">komplett binærtre</Term>
-er fullt, alle indre noder har to barn, og alle løvnodene har samme dybde.
-Har treet høyde $h$, har nivåene $1, 2, 4, \ldots, 2^h$ noder. Løvnodene på
-nederste nivå er $2^h$, og nivåene over har $2^h - 1$ noder til sammen, så
-treet har $n = 2^{h+1} - 1$ noder i alt. Da er $2^h \le n < 2^{h+1}$, og
-$h = \lfloor \lg n \rfloor$. Balansert binærtre defineres på flere
-måter, men alle gir logaritmisk høyde.
-
-En node i et binærtre har pekere `left` og `right`, og gjerne `p` til
-forelderen. Kan en node ha vilkårlig mange barn, holder det likevel med to
-pekere: én til første barn og én til neste søsken. Barna til en node er da en
-lenket liste som starter i første barn.
+Figur 1 viser et rotfast tre. Øverst står rota, som ikke har noen forelder. Hver av de andre nodene
+har nøyaktig én forelder, og nodene rett under en node er barna dens. En node uten barn er en
+løvnode, og de andre er indre noder. Dybden til en node er antall steg ned fra rota, og høyden $h$
+til treet er den største dybden. Treet i figur 1 har høyde 2.
 
 <Figure
-  src="/figures/forste-barn-neste-sosken.svg"
-  alt="Det samme treet tegnet to ganger. Node 7 har barna 5 og 6, og 5 har barna 1, 2, 3 og 4. Til venstre går en grå pil fra hver forelder til hvert barn. Til høyre går en grønnblå pil fra 7 til første barn 5 og fra 5 til første barn 1, og røde piler fra 5 til søsken 6 og fra 1 til 2, 2 til 3 og 3 til 4."
+  src="/figures/rotfast-tre.svg"
+  alt="Øverst et tre med rot 7. 7 har barna 5 og 6, og 5 har barna 1, 2, 3 og 4. Nederst det samme treet med pekere: 7 peker ned til 5, 5 peker til høyre til 6 og ned til 1, og 1, 2, 3 og 4 peker til høyre til neste."
+  caption="Det samme rotfaste treet tegnet som vanlig (øverst) og lagret med to pekere per node (nederst), til første barn og til neste søsken."
   number={1}
-  width={560}
-  height={244}
-  caption="Samme tre med to representasjoner. Til venstre har hver node én peker per barn, og 5 trenger fire. Til høyre har hver node to: første barn nedover og neste søsken bortover, så 5 finner alle barna sine ved å følge søskenpekerne fra 1."
+  width={340}
+  height={377}
 />
+
+Hver node er rota i sitt eget deltre: noden og alt som henger under den. Et rotfast tre er altså en
+rot med null eller flere deltrær under seg, og hvert av dem er igjen et rotfast tre. Derfor kan et
+krav stilles til hver node og gjelde for hvert deltre på én gang, og derfor er algoritmene på trær
+rekursive. Binære søketrær og hauger er rotfaste trær med hvert sitt slikt krav.
+
+I et binærtre har hver node to plasser for barn, en venstre og en høyre, og hver av dem kan stå tom.
+En node $x$ lagres da som et objekt med nøkkelen $x.key$ og tre pekere: $x.left$ og $x.right$ til
+barna og $x.p$ til forelderen. En tom plass er nil, og rota har $x.p = \text{nil}$.
+
+Har nodene mange barn, eller et antall som varierer, holder det likevel med to pekere per node. Den
+ene går til første barn, og den andre til neste søsken, nodens nabo til høyre under samme forelder.
+Barna til en node er da en lenket liste. I figur 1 har 7 to barn, 5 har fire og 6 ingen, og alle
+nodene har de samme to pekerne.
+
+Et binærtre er <Term name="Komplett binærtre">komplett</Term> når alle de indre nodene har to barn og alle løvnodene har samme dybde.
+I dette avsnittet er $n$ antall løvnoder, ikke antall noder i alt. Antallet indre noder kan du
+telle med en utslagsturnering. Spillerne er løvnodene, hver indre node
+er en kamp mellom vinnerne fra de to deltrærne, og rota er finalen. Med $n$ spillere er det én
+finale, to semifinaler, fire kvartfinaler og så videre, og hver kamp slår ut én spiller. Alle
+unntatt vinneren skal ut, så det er
+
+$$
+1 + 2 + 4 + \cdots + \frac{n}{2} = n - 1
+$$
+
+kamper. Et komplett binærtre med $n$ løvnoder har altså $n - 1$ indre noder og $2n - 1$ noder i
+alt. Antallet noder dobles for hvert nivå ned, så nederste nivå har $2^h$ noder. Det er de $n$
+løvnodene, så ${n = 2^h}$, og høyden er $\lg n$.
+Treet har nesten dobbelt så mange noder som løvnoder, så høyden er logaritmisk også målt i antall
+noder. Et binærtre med like mange noder kan ikke bli lavere, fordi hvert nivå har plass til høyst
+dobbelt så mange noder som nivået over.
+
+<Callout title="Rotfaste trær">
+Hver node er rota i sitt eget deltre, så et krav til hver node gjelder for hvert deltre. Et komplett
+binærtre med $n$ løvnoder har $n - 1$ indre noder og høyde $\lg n$.
+</Callout>
 
 ## Binære søketrær
 
-Hver node har en nøkkel `key`. Du kan anta at nøklene er forskjellige.
+Binærsøk i en sortert tabell sammenligner med elementet i midten og leter videre i den ene
+halvdelen. I tabellen $1, 2, \ldots, 7$ sammenligner det først med 4, så med 2 eller 6, og så med 1,
+3, 5 eller 7. Figur 2 tegner disse sammenligningene som et tre. 4 står øverst og 2 og 6 under, og
+nederst står 1, 3, 5 og 7. Hvert søk går én vei ned i treet, og søket etter 5 går 4, 6, 5.
 
-<Statement kind="definition" name="Binær-søketre-egenskapen">
-For hver node $x$ i treet: er $y$ en node i venstre deltre til $x$, er
-nøkkelen til $y$ mindre enn eller lik nøkkelen til $x$, og er $y$ i høyre
-deltre, er nøkkelen til $y$ større enn eller lik nøkkelen til $x$.
-</Statement>
+<Figure
+  src="/figures/binaersok-tre.svg"
+  alt="Den sorterte tabellen 1 til 7 nederst. Over den et tre med 4 øverst og 2 og 6 under 4. Under dem står 1, 3, 5 og 7. Hver nøkkel står rett over sin egen celle. Stien 4, 6, 5 er rød."
+  caption="Binærsøk i den sorterte tabellen $1, \ldots, 7$ tegnet som et tre. Hver nøkkel står rett over sin plass i tabellen. Søket etter 5 er rødt."
+  number={2}
+  width={340}
+  height={259}
+/>
 
-Egenskapen gjelder for hver node, ikke bare rota, så hvert deltre er selv et
-binært søketre. Den er binærsøk lagret som datastruktur: fra hver node vet
-du hvilken side en nøkkel må ligge på.
+Lagres treet med noder og pekere i stedet for i en tabell, er søket det samme, og en ny nøkkel kan
+henges under en node uten at noe annet flytter seg. Det er et binært søketre. Søket finner fram
+fordi hver nøkkel står over sin plass i sortert rekkefølge: alt i venstre deltre til 4 står til
+venstre for 4 i tabellen, og alt i høyre deltre står til høyre. Det samme gjelder for 2 og for 6.
+Kravet heter binær-søketre-egenskapen: for hver node $x$ er hver nøkkel i venstre deltre høyst
+$x.key$, og hver nøkkel i høyre deltre minst $x.key$. Kravet gjelder hele deltrærne, ikke bare
+barna. Et tre med 4 i rota, 2 som venstre barn av 4 og 5 som høyre barn av 2 har hvert barn på
+riktig side av forelderen sin. Likevel står 5 i venstre deltre til 4, og et søk etter 5 går til
+høyre ved 4 og finner den aldri.
 
-<Term name="Inorder-Tree-Walk" /> skriver ut venstre deltre, så noden, så
-høyre deltre, rekursivt fra rota. Egenskapen gir at utskriften er sortert:
-alt til venstre kommer før noden og er mindre, alt til høyre kommer etter og
-er større. Hver node besøkes én gang, så det tar $\Theta(n)$. Preorder og
-postorder skriver ut noden før eller etter de to rekursive kallene i stedet
-for mellom dem.
+### Søk og innsetting
 
-<Callout title="Inorder-Tree-Walk">
-Inorder-Tree-Walk skriver ut nøklene i et binært søketre i sortert
-rekkefølge, på $\Theta(n)$.
-</Callout>
-
-Tree-Search sammenligner nøkkelen $k$ med nøkkelen i $x$. Er de like, er $x$
-svaret. Er $k$ mindre, kan den bare ligge i venstre deltre, så du søker videre
-der, ellers i høyre. Treffer du nil, finnes ikke $k$. Ingenting skjer etter det
-rekursive kallet, så søket skrives like gjerne som en løkke. Stien går nedover
-fra rota og er høyst $h$ lang, så søket koster $O(h)$.
-
-<Term name="Tree-Insert" /> søker etter nøkkelen til den nye noden $z$ til
-søket treffer nil, og henger $z$ på der. Under søket følger $y$ ett steg bak
-$x$, så når $x$ blir nil, er $y$ noden som skal bli forelder. Er $y$ nil, var
-treet tomt, og $z$ blir rot. Ellers blir $z$ venstre eller høyre barn av $y$
-etter samme test som i søket. En ny node blir alltid en løvnode.
+Tree-Search leter etter nøkkelen $k$ i deltreet med rot $x$. Står $k$ i $x$, er den funnet. Er $k$
+mindre enn $x.key$, kan den bare stå i venstre deltre, og ellers bare i høyre. Kommer søket til en
+tom plass, nil, finnes ikke $k$ i treet.
 
 <CodeBlock
-  id="binaert-soketre"
-  title="binaert_soketre.py"
-  lang="python"
-  code={`def tree_insert(T, z):
-    x, y = T.root, None
-    while x is not None:
-        y = x
-        if z.key < x.key:
-            x = x.left
-        else:
-            x = x.right
-    z.p = y
-    if y is None:
-        T.root = z
-    elif z.key < y.key:
-        y.left = z
-    else:
-        y.right = z
+  lang="text"
+  code={`Tree-Search(x, k)
+1  if x == nil or x.key == k
+2      return x
+3  if k < x.key
+4      return Tree-Search(x.left, k)
+5  else return Tree-Search(x.right, k)`}
+/>
 
-def inorder_tree_walk(x):
-    if x is not None:
-        inorder_tree_walk(x.left)
-        print(x.key)
-        inorder_tree_walk(x.right)`}
+Det rekursive kallet er det siste Tree-Search gjør, som i Bisect, så kallet kan byttes ut med en
+løkke som flytter $x$ ett steg ned:
+
+<CodeBlock
+  lang="text"
+  code={`Iterative-Tree-Search(x, k)
+1  while x ≠ nil and k ≠ x.key
+2      if k < x.key
+3          x = x.left
+4      else x = x.right
+5  return x`}
+/>
+
+Tree-Insert setter inn en ny node $z$. Den søker etter $z.key$ på samme måte, til søket faller av
+treet ved en nil. Der ville $z$ stått om den fantes, så der henges den inn. Når $x$ er blitt nil,
+finnes det ingen node å gå tilbake fra, så pekeren $y$ går hele tiden ett steg bak $x$ og husker
+den siste noden på veien. Linje 9 til 13 henger $z$ på $y$, som venstre barn hvis
+${z.key < y.key}$ og ellers som høyre barn. En nøkkel som er lik $y.key$, havner altså til høyre.
+
+<CodeBlock
+  id="tree-insert-kode"
+  lang="text"
+  code={`Tree-Insert(T, z)
+1  x = T.root
+2  y = nil
+3  while x ≠ nil
+4      y = x
+5      if z.key < x.key
+6          x = x.left
+7      else x = x.right
+8  z.p = y
+9  if y == nil
+10     T.root = z
+11 elseif z.key < y.key
+12     y.left = z
+13 else y.right = z`}
 />
 
 <Stepper
-  src="/steppers/binaert-soketre.js"
-  codeId="binaert-soketre"
-  title="Tree-Insert og Inorder-Tree-Walk"
-  caption="Et binært søketre bygd med Tree-Insert av nøklene i raden under, i den rekkefølgen de står. Vannrett posisjon er nøkkelens plass i sortert rekkefølge. Rødt er $x$ eller den nye noden, oransje er $y$, og grønt er skrevet ut av Inorder-Tree-Walk."
-  height={320}
+  src="/steppers/tree-insert.js"
+  codeId="tree-insert-kode"
+  title="Tree-Insert"
+  height={300}
+  caption="Nøklene står i sortert rekkefølge fra venstre mot høyre, og den stiplede sirkelen er den tomme plassen der $z$ hører hjemme. $z$ venter i hjørnet. Rød er veien fra rota ned til $x$, blå ring er noden steget sammenligner med, og grønn er $z$ når den henger i treet."
 />
 
-Tree-Minimum følger `left` til det ikke går lenger, for alt i et høyre deltre
-er større enn noden over. Tree-Maximum følger `right`. <Term name="Etterfølger">Etterfølgeren</Term>
-til $x$ er noden med den minste nøkkelen som er større enn nøkkelen til $x$,
-altså den neste i Inorder-Tree-Walk. Har $x$ et høyre deltre, er etterfølgeren
-minimum der. Har $x$ ikke noe høyre deltre, er $x$ maksimum i et deltre, og
-etterfølgeren er den nærmeste noden over $x$ som har $x$ i sitt venstre
-deltre. Gå oppover så lenge du kommer fra et høyre barn. Forgjengeren finnes symmetrisk. Alle
-fire følger én sti opp eller ned, $O(h)$.
+I den første instansen skal 13 inn i treet med rot 12. Den stiplede sirkelen under 15 er den tomme
+plassen mellom 12 og 15 i sortert rekkefølge, og der havner 13. $x$ går 12, 18, 15, den samme veien
+som Tree-Search($T.root$, 13) ville gått, og blir nil når den skal til venstre for 15. $y$ står da på
+15, og linje 12 henger 13 som venstre barn av 15.
+
+En ny node blir alltid en løvnode, og ingen annen node flytter seg. Både Tree-Search og Tree-Insert
+følger én sti nedover fra rota og gjør konstant arbeid per node på stien, så de bruker $O(h)$ tid.
+
+### Sortert rekkefølge
+
+I figur 2 står hver node rett over sin plass i sortert rekkefølge, så å lese nodene fra venstre mot
+høyre gir nøklene sortert. Inorder-Tree-Walk gjør det med rekursjon. Den skriver ut venstre deltre,
+så noden selv, og så høyre deltre:
 
 <CodeBlock
-  id="soketre-operasjoner"
-  title="soketre_operasjoner.py"
-  lang="python"
-  code={`def tree_search(x, k):
-    while x is not None and k != x.key:
-        x = x.left if k < x.key else x.right
-    return x
-
-def tree_minimum(x):
-    while x.left is not None:
-        x = x.left
-    return x
-
-def tree_successor(x):
-    if x.right is not None:
-        return tree_minimum(x.right)
-    y = x.p
-    while y is not None and x is y.right:
-        x, y = y, y.p
-    return y`}
+  id="inorder-kode"
+  lang="text"
+  code={`Inorder-Tree-Walk(x)
+1  if x ≠ nil
+2      Inorder-Tree-Walk(x.left)
+3      print x.key
+4      Inorder-Tree-Walk(x.right)`}
 />
 
-Tree-Delete skiller på hvor mange barn $z$ har. Har $z$ høyst ett barn, kobles
-barnet inn der $z$ sto, med hjelpeprosedyren Transplant. Har $z$ to barn, er
-etterfølgeren $y$ minimum i høyre deltre og har ikke noe venstre barn, så $y$
-kan kobles ut på samme måte og settes inn der $z$ sto. Tree-Delete følger også
-én sti, $O(h)$.
-
-<Table
-  columns={["Operasjon", "Kjøretid"]}
-  rows={[
-    ["Inorder-Tree-Walk", "$\\Theta(n)$"],
-    ["Tree-Search, Tree-Minimum, Tree-Maximum", "$O(h)$"],
-    ["Tree-Successor, Tree-Predecessor", "$O(h)$"],
-    ["Tree-Insert, Tree-Delete", "$O(h)$"],
-  ]}
-  align={["left", "left"]}
-  rowHeader={false}
-  caption="Alt unntatt traverseringen følger én sti i treet, og koster derfor $O(h)$."
+<Stepper
+  src="/steppers/inorder-tree-walk.js"
+  codeId="inorder-kode"
+  title="Inorder-Tree-Walk"
+  height={320}
+  caption="Hver node står rett over sin plass i raden under treet, og raden er utskriften. Den røde stien er kallene som pågår, fra rota ned til noden $x$ der det siste kallet står, og en kort stiplet strek er et kall på nil. Grønt er skrevet ut."
 />
 
-Alle operasjonene unntatt traverseringen koster altså $O(h)$, og høyden
-avhenger av innsettingsrekkefølgen. Settes
-$1, 2, \ldots, 7$ inn i stigende rekkefølge, blir hver ny nøkkel høyre barn
-av den forrige, og treet er en kjede med høyde $n - 1$. Da koster søk
-$\Theta(n)$, som i en lenket liste. Settes de samme nøklene inn i rekkefølgen
-$4, 2, 6, 1, 3, 5, 7$, er treet komplett med høyde $\lfloor \lg n \rfloor$.
+I den første instansen er treet det samme som i figur 2. Kallene går fra 4 ned til 2 og 1, og
+videre til nil til venstre for 1, før 1 skrives ut. Hver nøkkel som skrives ut, faller rett ned i
+raden under treet, så raden fylles fra venstre.
 
-<Figure
-  src="/figures/soketre-balanse.svg"
-  alt="To binære søketrær med nøklene 1 til 7. Til venstre er nøklene satt inn i stigende rekkefølge, og treet er en kjede der hver node er høyre barn av den forrige, med høyde 6. Til høyre er de satt inn i rekkefølgen 4, 2, 6, 1, 3, 5, 7, og treet er komplett med 4 i rota, 2 og 6 under, og 1, 3, 5, 7 nederst, med høyde 2."
-  number={2}
-  width={560}
-  height={290}
-  caption="De samme sju nøklene i to innsettingsrekkefølger. Sortert input gir høyde $n - 1$, og søk koster $\Theta(n)$. Rekkefølgen til høyre fyller treet nivå for nivå og gir høyde $\lfloor \lg n \rfloor$."
-/>
-
-Med en tilfeldig innsettingsrekkefølge finner du den forventede dybden ved å
-telle sammenligninger. Når $z$ settes inn, sammenlignes den med hver node på stien fra rota ned til
-forelderen, og den stien har like mange noder som dybden $z$ får. Summen av
-dybdene er altså antall sammenligninger i hele byggingen. Rota deler de senere
-nøklene i mindre og større, og hvert deltre deler sine videre på samme måte.
-Det er de samme sammenligningene som Quicksort gjør når pivoten i hvert segment
-er den nøkkelen som ble satt inn først. I en tilfeldig permutasjon er den
-pivoten tilfeldig, og da gjør Quicksort forventet $\Theta(n \lg n)$
-sammenligninger. Snittet av dybdene er derfor forventet $\Theta(\lg n)$, og
-det er kostnaden til et søk etter en tilfeldig nøkkel. Høyden er den største
-dybden, og en finere regning viser at også forventet høyde er
-$\Theta(\lg n)$. Verste tilfelle er fortsatt lineært. Det finnes søketrær som balanserer seg selv etter hver innsetting og
-sletting i logaritmisk tid, for eksempel rød-svarte trær, og de garanterer
-$h = \Theta(\lg n)$.
-
-<Callout title="Høyden til et søketre">
-Søk, innsetting, etterfølger og sletting koster $O(h)$. Sortert
-innsettingsrekkefølge gir $h = n - 1$, en tilfeldig rekkefølge gir forventet
-$h = \Theta(\lg n)$, og balanserte søketrær garanterer $h = \Theta(\lg n)$.
-</Callout>
+Induksjon over størrelsen på deltreet viser at utskriften blir sortert. Et tomt deltre skriver
+ingenting. For et deltre med rot $x$ skriver det første kallet ut venstre deltre sortert, og alle
+de nøklene er høyst $x.key$. Så kommer $x.key$, og til slutt høyre deltre sortert, der alle nøklene
+er minst $x.key$. Hver node gir ett kall som gjør konstant arbeid utenom de to rekursive kallene, og
+hver tom plass gir ett kall til. Et tre med $n$ noder har $2n$ plasser for barn, og $n - 1$ av dem
+er i bruk, så det er $n + 1$ tomme plasser, og Inorder-Tree-Walk bruker $\Theta(n)$ tid. Preorder og postorder er de samme gjennomgangene med utskriften før og etter de to kallene.
 
 <Example label="Eksamensoppgave" title="Tree-Insert og Inorder-Tree-Walk">
 <ExamRef id="2022-des" task="8" />
 
-Start med et tomt binært søketre, og sett så inn følgende verdier, i
-rekkefølge, med Tree-Insert:
+Start med et tomt binært søketre, og sett så inn følgende verdier, i rekkefølge, med Tree-Insert:
 
 $$
 \langle 7, 1, 0, 5, 4, 8, 3, 2, 9, 6 \rangle
 $$
 
-Utfør deretter Inorder-Tree-Walk på rotnoden i det resulterende treet. Hva
-skriver algoritmen ut?
+Utfør deretter Inorder-Tree-Walk på rotnoden i det resulterende treet. Hva skriver algoritmen ut?
 
 Du skal her kun svare med output fra algoritmen.
 
 <Solution>
-Du kan bygge treet: 7 blir rot, 1 går til venstre, 0 til venstre for 1, 5 til
-høyre for 1, og så videre. Men det trengs ikke. Inorder-traversering av et
-binært søketre besøker alltid nodene i sortert rekkefølge, uansett hvilken
-rekkefølge de ble satt inn i.
+Uansett i hvilken rekkefølge nøklene ble satt inn, er resultatet et binært søketre, og
+Inorder-Tree-Walk skriver ut nøklene i et binært søketre i sortert rekkefølge. Du trenger altså
+ikke tegne treet.
 
-<Answer>0 1 2 3 4 5 6 7 8 9</Answer>
+<Answer>0123456789</Answer>
 </Solution>
 </Example>
+
+### Minimum og etterfølger
+
+Den minste nøkkelen står lengst til venstre i sortert rekkefølge. I deltreet med rot $x$ ligger alt som
+er mindre enn $x.key$, i venstre deltre, så Tree-Minimum går til venstre så lenge det går. Tree-Maximum går til
+høyre på samme måte.
+
+<CodeBlock
+  lang="text"
+  code={`Tree-Minimum(x)
+1  while x.left ≠ nil
+2      x = x.left
+3  return x`}
+/>
+
+<Term name="Etterfølger">Etterfølgeren</Term> til $x$ er noden med den neste nøkkelen i sortert rekkefølge, den som
+Inorder-Tree-Walk skriver ut rett etter $x$. Stepperen «Inorder-Tree-Walk» viser hva gjennomgangen gjør mellom to
+utskrifter, og det er to tilfeller. Har $x$ et høyre deltre, går gjennomgangen ned i det og skriver
+først ut minimum der. Har $x$ ikke noe høyre deltre, er $x$ den største i et deltre, og kallene
+returnerer oppover. Så lenge de kommer tilbake fra et høyre barn, er forelderen allerede skrevet ut.
+Den første forelderen de kommer til fra et venstre barn, skrives ut neste gang. I den første
+instansen har 3 ikke noe høyre barn. Etter at 3 er skrevet ut, går kallene tilbake til 2, som 3 er
+høyre barn av, og videre til 4, som 2 er venstre barn av, og 4 skrives ut. 4 har et høyre deltre, så
+etter 4 går kallene ned til 6 og videre til venstre til 5, som skrives ut.
+
+Tree-Successor gjør det samme med foreldrepekeren:
+
+<CodeBlock
+  lang="text"
+  code={`Tree-Successor(x)
+1  if x.right ≠ nil
+2      return Tree-Minimum(x.right)
+3  else
+4      y = x.p
+5      while y ≠ nil and x == y.right
+6          x = y
+7          y = y.p
+8      return y`}
+/>
+
+Er $x$ den største nøkkelen, går løkken helt til rota og returnerer nil. Tree-Predecessor finner
+forgjengeren på samme måte med venstre og høyre byttet om. Tree-Minimum og Tree-Successor følger én
+sti nedover eller oppover, så de bruker $O(h)$ tid.
+
+### Sletting
+
+Tree-Delete fjerner en node $z$ og har tre tilfeller. Uten barn tas $z$ bare bort. Med ett barn tar
+barnet plassen til $z$. Med to barn tar etterfølgeren plassen til $z$. Den er den neste nøkkelen i
+sortert rekkefølge, så alt i venstre deltre er fortsatt mindre og alt i høyre deltre fortsatt
+større. Hver flytting gjøres av hjelpeprosedyren Transplant, som setter et deltre inn der et annet
+sto ved å endre pekerne hos forelderen. Tree-Delete finner etterfølgeren med Tree-Minimum og bruker
+$O(h)$ tid.
+
+### Høyden avgjør
+
+Søk, innsetting, minimum, etterfølger og sletting følger én sti og koster $O(h)$. Høyden avhenger av
+rekkefølgen nøklene ble satt inn i, og simuleringen setter inn nøklene $1, 2, \ldots, n$ i den
+rekkefølgen du velger.
+
+<Simulation
+  src="/sims/soketre-hoyde.js"
+  host="dom"
+  title="Rekkefølgen avgjør høyden"
+  height={360}
+  caption="Nøklene $1, \ldots, n$ satt inn med Tree-Insert i rekkefølgen du velger, med hver nøkkel over sin plass i sortert rekkefølge. Rød er den lengste stien fra rota, klammen til venstre er høyden $h$, og den stiplede linja står på dybde $\lfloor \lg n \rfloor$. Over 15 noder er nodene prikker uten nøkler."
+/>
+
+Simuleringen starter med «stigende» og ${n = 15}$. Hver ny nøkkel er større enn alle som står i
+treet, så søket etter plassen går til høyre hele veien, og nøkkelen henges til høyre for den
+forrige. Treet blir en kjede med høyde ${n - 1 = 14}$, og et søk etter den største nøkkelen går
+gjennom alle nodene, som i en lenket liste. Velg «midten først». Den midterste nøkkelen, 8, går inn
+først og blir rota, og de midterste i hver halvdel blir barna, som i figur 2. Treet blir så lavt som
+et binærtre med 15 noder kan bli, med høyde ${\lfloor \lg 15 \rfloor = 3}$.
+
+Velg «tilfeldig» og trykk «Trekk på nytt» noen ganger. Høyden varierer, men ligger som regel mellom
+4 og 8 for ${n = 15}$, og mellom 9 og 13 for ${n = 63}$, der kjeden har høyde 62. En tilfeldig
+rekkefølge gjør den første nøkkelen til en tilfeldig rot, og den deler resten i de mindre og de
+større, slik en tilfeldig pivot gjør i Randomized-Quicksort. Det samme skjer i hvert deltre, så
+treet vokser på samme måte som Quicksort-treet med tilfeldig pivot i splitt og hersk. Dybden til en
+nøkkel er antall noder over den, og det er antall pivoter den sammenlignes med i Quicksort.
+Argumentet om den gode pivoten gir at dybden i forventning er $O(\lg n)$. Også høyden, den største
+dybden, er forventet $\Theta(\lg n)$. Med en million nøkler i tilfeldig rekkefølge ligger en nøkkel
+i snitt på dybde 25, så søket går gjennom rundt 26 noder, og høyden er rundt 50.
+
+Sortert input er altså verste tilfelle, og nøkler kommer ofte sortert, for eksempel løpenumre som
+deles ut i stigende rekkefølge. Det finnes søketrær som holder seg lave uansett rekkefølge. De retter opp formen etter hver innsetting og sletting, i $O(\lg n)$
+tid, og har alltid høyde $\Theta(\lg n)$. Rød-svarte trær er et eksempel.
 
 <Example label="Eksamensoppgave" title="Søk i et tre du har bygd selv">
 <ExamRef id="2025-aug-kont" task="4" />
 
-Om du bygger et binært søketre av $n$ elementer, hva blir kjøretiden til søk
-i treet etterpå, i beste og verste tilfelle, og i gjennomsnitt? Forklar.
+Om du bygger et binært søketre av $n$ elementer, hva blir kjøretiden til søk i treet etterpå, i
+beste og verste tilfelle, og i gjennomsnitt? Forklar.
 
-Du bruker altså Tree-Insert for å sette inn ett og ett element, der treet til
-å begynne med er tomt, og vi er ute etter kjøretiden til Tree-Search på det
-ferdige treet (best-case, worst-case og average-case). Du kan anta at
-elementene er tallene $1 \ldots n$ i en (uniformt) tilfeldig rekkefølge.
+Du bruker altså Tree-Insert for å sette inn ett og ett element, der treet til å begynne med er
+tomt, og vi er ute etter kjøretiden til Tree-Search på det ferdige treet (best-case, worst-case og
+average-case). Du kan anta at elementene er tallene $1 \ldots n$ i en (uniformt) tilfeldig
+rekkefølge.
 
 <Solution>
-Søk følger én sti nedover fra rota og koster $O(h)$, der $h$ er høyden.
+Tree-Search følger én sti fra rota og stopper når den finner nøkkelen.
 
-Beste tilfelle er $\Theta(1)$ uansett form på treet: nøkkelen du søker etter
-kan sitte i rota.
+I beste tilfelle står nøkkelen du søker etter, i rota, og søket bruker $\Theta(1)$ tid uansett
+hvordan treet ser ut.
 
-Verste tilfelle er et helt ubalansert tre, som når elementene kom i sortert
-rekkefølge, og da er høyden $n - 1$. Et søk etter en av de nederste nodene
-koster $\Theta(n)$.
+I verste tilfelle kom tallene i sortert rekkefølge, så treet er en kjede med høyde $n - 1$, og du
+søker etter den nederste nøkkelen. Det gir $\Theta(n)$.
 
-I gjennomsnitt, med tilfeldig innsettingsrekkefølge, er høyden
-$\Theta(\lg n)$, så et søk koster $O(\lg n)$. Et søk koster også
-$\Omega(\lg n)$: et binærtre har høyst $2^d - 1$ noder over dybde $d$, så mer
-enn halvparten av nodene ligger på dybde $\lfloor \lg n \rfloor - 1$ eller
-dypere.
+I gjennomsnitt over de tilfeldige rekkefølgene har treet høyde $\Theta(\lg n)$, så et søk bruker
+$O(\lg n)$. Søket kan ikke bli raskere i snitt, uansett hvordan treet ser ut. Et binærtre har høyst $2^d$ noder på dybde $d$, så færre
+enn halvparten av nodene ligger over dybde ${\lfloor \lg n \rfloor - 1}$. Et søk etter en tilfeldig
+nøkkel i treet bruker derfor $\Theta(\lg n)$ i gjennomsnitt.
 
-<Answer>Beste $\Theta(1)$, verste $\Theta(n)$, gjennomsnitt $\Theta(\lg n)$.</Answer>
+<Answer>$\Theta(1)$ i beste tilfelle, $\Theta(n)$ i verste og $\Theta(\lg n)$ i gjennomsnitt.</Answer>
 </Solution>
 </Example>
 
+<Callout title="Binære søketrær">
+For hver node står alt i venstre deltre til venstre for noden i sortert rekkefølge og alt i høyre
+deltre til høyre. Inorder-Tree-Walk skriver ut nøklene sortert i $\Theta(n)$ tid, og søk,
+innsetting, minimum, etterfølger og sletting bruker $O(h)$ tid, der $h$ ligger mellom
+$\lfloor \lg n \rfloor$ og $n - 1$.
+</Callout>
+
 ## Hauger
 
-En <Term name="Haug">haug</Term> er et binærtre som er komplett ned til nest
-nederste nivå, og der det nederste nivået er fylt fra venstre. Nummererer du
-nodene nivå for nivå med rota som 1, har nivå $d$ numrene $2^d$ til
-$2^{d+1} - 1$. Node $i$ på nivå $d$ har $i - 2^d$ noder foran seg på nivået, og
-barna til dem, to per node, står først på nivået under. Det første barnet til
-$i$ får da nummeret $2^{d+1} + 2(i - 2^d) = 2i$, og det andre $2i + 1$. Barna
-$2i$ og $2i + 1$ har begge forelderen $i$, så forelderen til en node $j$ er
-$\lfloor j/2 \rfloor$. Numrene er indekser
-i en tabell, så haugen trenger ingen pekere. ${A[1 : n]}$ er treet, `Left`,
-`Right` og `Parent` er regnestykker, og haugstørrelsen `size` sier hvor mye av
-tabellen som er haug.
+På legevakten skal den som er sykest, inn først. Nye pasienter kommer hele tiden, og en pasient som
+blir verre, skal rykke fram. Venterommet er en prioritetskø: en mengde der hvert element har en
+nøkkel, prioriteten, og der du kan sette inn et element, finne det med størst nøkkel, ta det ut og
+øke nøkkelen til et element. Prosedyrene heter Max-Heap-Insert, Max-Heap-Maximum,
+Max-Heap-Extract-Max og Max-Heap-Increase-Key.
 
-$$
-\begin{aligned}
-\text{Left}(i) &= 2i \\
-\text{Right}(i) &= 2i + 1 \\
-\text{Parent}(i) &= \lfloor i/2 \rfloor
-\end{aligned}
-$$
+En sortert liste har det største elementet først, men en ny pasient må settes inn på rett plass, og
+det tar lineær tid. En usortert liste setter inn i konstant tid, men må gås gjennom hver gang det
+største skal finnes. Et binært søketre klarer begge i $O(h)$, men bare så lenge det holder seg lavt.
 
-<Statement kind="definition" name="Haugegenskapen">
-I en maks-haug er $A[\text{Parent}(i)] \ge A[i]$ for hver node $i$ unntatt
-rota. Det største elementet står i rota, og hvert deltre er selv en maks-haug.
-En min-haug har $\le$, og det minste elementet i rota.
-</Statement>
+En haug krever mindre enn et søketre. Kravet er haugegenskapen: hver forelder er minst like stor som
+barna sine. Følger du en sti oppover, blir nøklene aldri mindre, så det største elementet står i
+rota. Kravet sier ingenting om søsken eller om noder i ulike deltrær. Det er som i en bedrift der hver
+leder tjener minst like mye som hver av sine nærmeste ansatte. Toppsjefen tjener mest, men en
+avdelingsleder kan tjene mindre enn en ansatt i en annen avdeling. Likheten stopper ved formen: en
+bedrift kan se ut som den vil, mens en haug har en fast form.
 
-Haugegenskapen sier ingenting om rekkefølgen mellom søsken, så en haug er langt
-fra sortert. Sorteringsgrensen gjelder når svaret er én bestemt av $n!$
-rekkefølger, og den gjelder derfor ikke for å bygge en haug.
+### Haugen som tabell
 
-Har haugen høyde $h$, er nivåene $0, \ldots, h - 1$ fulle og har
-$1 + 2 + \cdots + 2^{h-1} = 2^h - 1$ noder til sammen, og det nederste nivået
-har fra 1 til $2^h$ noder. Da er $2^h \le n \le 2^{h+1} - 1$, og
-$h = \lfloor \lg n \rfloor$.
+En haug er alltid et nesten komplett binærtre. Alle nivåene er fulle, unntatt kanskje det nederste,
+og det fylles fra venstre. Nummerer nodene nivå for nivå fra venstre, med rota som 1, og legg node
+$i$ i $A[i]$. Figur 3 viser en maks-haug med ti elementer tegnet begge veier.
 
-<Term name="Max-Heapify" /> reparerer en haug der bare $A[i]$ kan være for
-liten, altså der begge deltrærne under $i$ er maks-hauger. Finn den største av
-$A[i]$ og de to barna. Er det $A[i]$, er alt i orden. Ellers bytt $A[i]$ med
-det største barnet, så den nye rota er større enn begge, og reparer deltreet
-der det mindre elementet havnet, rekursivt. Elementet synker til det er
-større enn begge barna eller er en løvnode. Byttet må være med det største
-barnet, ellers blir den nye rota mindre enn det andre barnet. Stien går nedover, høyst $h$ steg, så Max-Heapify koster $O(\lg n)$.
+<Figure
+  src="/figures/haug-tabell.svg"
+  alt="Øverst et tre med 16 i rota, 14 og 10 under, så 8, 7, 9 og 3, og nederst 2, 4 og 1. Hver node har indeksen sin fra 1 til 10. Nederst tabellen 16, 14, 10, 8, 7, 9, 3, 2, 4, 1 med buer fra hver indeks i til 2i over tabellen og til 2i + 1 under."
+  caption="Maks-haugen ${A[1 : 10]}$ tegnet som tre og som tabell. Tallet ved hver node er indeksen. Buene går fra hver forelder til venstre barn (over tabellen) og til høyre barn (under)."
+  number={3}
+  width={340}
+  height={418}
+/>
 
-Node $i$ har et venstre barn bare når $2i \le n$, så nodene fra
-$\lfloor n/2 \rfloor + 1$ til $n$ har ingen barn. De er løvnoder og dermed
-maks-hauger alene. <Term name="Build-Max-Heap" /> kaller Max-Heapify på de indre nodene
-fra $\lfloor n/2 \rfloor$ og ned til 1, nedenfra og opp i treet. Når turen
-kommer til $i$, er barna $2i$ og $2i + 1$ løvnoder eller allerede behandlet,
-for de har høyere numre. Begge deltrærne under $i$ er da maks-hauger, så forutsetningen
-for Max-Heapify holder, og etter kallet er også deltreet med rot $i$ en
-maks-haug.
+Hvert nivå har dobbelt så mange plasser som nivået over, så nivå $d$ begynner på indeks $2^d$, og
+venstre barn til den første noden på et nivå er den første noden på neste nivå, $2 \cdot 2^d$. Går
+du én node til høyre på et nivå, har du passert én node til med to barn, så barna flytter to
+plasser til høyre på nivået under. Barna til node $i$ er derfor $2i$ og ${2i + 1}$, og forelderen er
+$\lfloor i/2 \rfloor$. Tabellen trenger ingen pekere:
+
+<Formula
+  tex="\begin{aligned} \text{Left}(i) &= 2i \\ \text{Right}(i) &= 2i + 1 \\ \text{Parent}(i) &= \lfloor i/2 \rfloor \end{aligned}"
+  caption="Haugen som tabell, nummerert nivå for nivå med rota som 1."
+/>
+
+Haugegenskapen for en maks-haug er da ${A[\text{Parent}(i)] \ge A[i]}$ for hver $i$ unntatt rota.
+Tabellen kan være lengre enn haugen. $A.size$ er antall elementer i haugen, som står i
+${A[1 : A.size]}$, og boka skriver $A.heap\text{-}size$. Det største elementet står alltid i $A[1]$:
 
 <CodeBlock
-  id="build-max-heap"
-  title="build_max_heap.py"
-  lang="python"
-  code={`def max_heapify(A, i, size):
-    l, r = 2 * i + 1, 2 * i + 2  # indekser fra 0: rota er A[0]
-    m = i
-    if l < size and A[l] > A[m]:
-        m = l
-    if r < size and A[r] > A[m]:
-        m = r
-    if m != i:
-        A[i], A[m] = A[m], A[i]
-        max_heapify(A, m, size)
+  lang="text"
+  code={`Max-Heap-Maximum(A)
+1  if A.size < 1
+2      error "heap underflow"
+3  return A[1]`}
+/>
 
-def build_max_heap(A, n):
-    for i in range(n // 2 - 1, -1, -1):
-        max_heapify(A, i, n)`}
+En haug med høyde $h$ har fulle nivåer $0$ til $h - 1$, med $2^h - 1$ noder, og fra 1 til $2^h$
+noder på det nederste. Antallet er altså ${2^h \le n \le 2^{h+1} - 1}$, så
+${h = \lfloor \lg n \rfloor}$. Formen er gitt av $n$ alene, og haugen er alltid så lav som et
+binærtre kan bli.
+
+<Quiz
+  question={"Er tabellen $\\langle 33, 19, 20, 15, 13, 10, 2, 13, 16, 12 \\rangle$ en maks-haug?"}
+  options={[
+    "Ja",
+    "Nei, $A[4] = 15$ er mindre enn barnet $A[9] = 16$",
+    "Nei, $A[2] = 19$ er mindre enn søskenet $A[3] = 20$",
+    "Nei, 13 står to ganger",
+  ]}
+  answer={1}
+  explanation={"Barna til $A[4] = 15$ er $A[8] = 13$ og $A[9] = 16$, og $16 > 15$ bryter haugegenskapen. Alle de andre foreldrene er minst like store som barna sine. Haugegenskapen sier ingenting om søsken, så $19 < 20$ er lov, og like nøkler er også lov."}
+/>
+
+### Ta ut det største
+
+Det største elementet står i $A[1]$, men når det tas ut, blir rota tom. Å skyve ${A[2 : A.size]}$
+ett hakk fram, som i en kø, koster lineær tid og gir nesten alle elementene en ny forelder, så
+ingenting sikrer haugegenskapen lenger. Haugen $10, 9, 1, 8, 7$ blir $9, 1, 8, 7$, der 1 står over 7.
+Max-Heap-Extract-Max flytter i stedet det siste elementet,
+$A[A.size]$, opp i rota og gjør haugen ett element mindre. Formen er da i orden, og det eneste
+stedet haugegenskapen kan være brutt, er i rota. Elementet som kom dit, sto nederst og er trolig
+lite.
+
+Elementet får derfor synke. Er det mindre enn det største av barna, bytter de plass, og elementet
+fortsetter fra den nye plassen. Det bytter med det største barnet fordi det barnet blir forelder
+til det andre og må være minst like stort. Max-Heapify($A$, $i$) gjør dette fra node $i$, og den
+forutsetter at deltrærne under $i$ allerede er hauger. Linje 3 til 7 finner $m$, indeksen til den
+største av $A[i]$ og barna, og er $m$ et barn, byttes $A[i]$ og $A[m]$ før kallet fortsetter fra
+$m$.
+
+<CodeBlock
+  id="extract-max-kode"
+  lang="text"
+  code={`Max-Heap-Extract-Max(A)
+1  max = Max-Heap-Maximum(A)
+2  A[1] = A[A.size]
+3  A.size = A.size - 1
+4  Max-Heapify(A, 1)
+5  return max
+
+Max-Heapify(A, i)
+1  l = Left(i)
+2  r = Right(i)
+3  if l ≤ A.size and A[l] > A[i]
+4      m = l
+5  else m = i
+6  if r ≤ A.size and A[r] > A[m]
+7      m = r
+8  if m ≠ i
+9      exchange A[i] with A[m]
+10     Max-Heapify(A, m)`}
 />
 
 <Stepper
-  src="/steppers/build-max-heap.js"
-  codeId="build-max-heap"
-  title="Build-Max-Heap"
-  caption="Tabellen $A$ tegnet som tre og som celler, med indekser fra 0 som i koden. Stiplede noder har Build-Max-Heap ikke nådd ennå. Rødt er noden Max-Heapify står på eller de to som bytter. Barna den sammenlignes med er oransje, og det største av dem er fylt."
-  height={300}
+  src="/steppers/extract-max.js"
+  codeId="extract-max-kode"
+  title="Max-Heap-Extract-Max"
+  height={330}
+  caption="Haugen tegnet som tre og som tabell, med indeksen under hver celle. Klammen under tabellen dekker haugen, ${A[1 : A.size]}$, og en stiplet celle eller node er utenfor. Rødt er elementet som synker og veien det har gått, og en blå ring eller ramme er det steget leser."
 />
 
-$\lfloor n/2 \rfloor$ kall til Max-Heapify som hvert koster $O(\lg n)$, gir $O(n \lg n)$. Det
-er riktig, men ikke stramt, for nesten alle kallene er langt nede i treet, der
-det er lite å synke. Høyden til en node er høyden til deltreet med noden som
-rot, og en node med høyde $k$ synker høyst $k$ steg. Følger du venstre barn $k$
-ganger fra node $i$, kommer du til node $2^k i$, det laveste nummeret $k$ nivåer
-under $i$, så $i$ har høyde minst $k$ nøyaktig når $2^k i \le n$. Nodene $1$
-til $\lfloor n/2^k \rfloor$ har derfor høyde minst $k$, og de med høyde nøyaktig $k$ er nodene fra $\lfloor n/2^{k+1} \rfloor + 1$
-til $\lfloor n/2^k \rfloor$, altså høyst $\lceil n/2^{k+1} \rceil$ av dem.
+I den første instansen er haugen den fra figur 3. 16 tas ut, og 1 flyttes fra $A[10]$ opp i rota.
+Barna til 1 er 14 og 10, så 1 bytter med 14, så med 8 og så med 4, og ender i $A[9]$, der den ikke
+har barn. Haugen er da $14, 8, 10, 4, 7, 9, 3, 2, 1$. Den gamle verdien står igjen i $A[10]$, men
+den er utenfor haugen, siden $A.size = 9$.
+
+Hvert bytte flytter elementet ett nivå ned, så det bytter høyst ${h = \lfloor \lg n \rfloor}$
+ganger, med to sammenligninger per nivå. Med en million elementer er det høyst 19 bytter.
+Max-Heapify og Max-Heap-Extract-Max bruker $O(\lg n)$ tid.
+
+<Example label="Eksamensoppgave" title="Heap-Extract-Max på en tabell som ikke er en haug">
+<ExamRef id="2019-nov" task="9" />
+
+Din venn Smartnes har gitt deg følgende tabell, som hun påstår er en maks-haug (max-heap):
 
 $$
-\begin{aligned}
-T(n) &= \sum_{k=0}^{\lfloor \lg n \rfloor} \left\lceil \frac{n}{2^{k+1}} \right\rceil O(k) \\
-     &= O\!\left( n \sum_{k=0}^{\infty} \frac{k}{2^k} \right) = O(n)
-\end{aligned}
+A = \langle 7, 3, 8, 6, 5, 9, 4, 2 \rangle
 $$
 
-Arbeidet per node vokser lineært med høyden, men antallet noder synker
-eksponentielt med den, og den geometriske faktoren dominerer. Hver indre node
-besøkes, så $\Omega(n)$ gjelder også, og Build-Max-Heap er $\Theta(n)$.
+Du er ikke enig i at dette er en haug, men sier deg likevel villig til å utføre Heap-Extract-Max på
+tabellen, selv om resultatet blir feil. (Du skal altså bare utføre trinnene i Heap-Extract-Max, uten
+å korrigere $A$ på noe vis.)
 
-<Derivation title="Hvorfor rekken konvergerer">
-For $|x| < 1$ er $\sum_{k \ge 0} k x^k = x/(1 - x)^2$. Med $x = 1/2$ er summen
-$(1/2)/(1/4) = 2$, så $T(n) = O(2n) = O(n)$.
-</Derivation>
+Hvordan ser $A$ ut etterpå?
 
-<Callout type="warning" title="Bygging mot innsetting">
-Build-Max-Heap er ikke det samme som $n$ kall til Max-Heap-Insert, og det
-koster ikke det samme. Innsetting lar det nye elementet stige fra bunnen, og
-settes elementene inn i stigende rekkefølge, stiger hvert av dem helt til
-rota: $\sum_i \lg i = \Theta(n \lg n)$. Build-Max-Heap lar elementene synke,
-og de fleste står allerede nesten nederst. Derfor koster byggingen $\Theta(n)$.
-</Callout>
+(Oppgi kun de 7 første elementene av $A$ etter operasjonen.)
 
-## Prioritetskøer
+<Solution>
+Heap-Extract-Max er bokas eldre navn på Max-Heap-Extract-Max. Den returnerer $A[1] = 7$, flytter
+det siste elementet, 2, til $A[1]$ og gjør haugen sju elementer stor:
+${\langle 2, 3, 8, 6, 5, 9, 4 \rangle}$. Så kalles Max-Heapify($A$, 1).
 
-En <Term name="Prioritetskø">prioritetskø</Term> holder en mengde elementer
-med nøkler og støtter Insert, Maximum, Extract-Max og Increase-Key, eller
-min-variantene. Nøklene er prioriteter, så duplikater er vanlige, i motsetning
-til i en oppslagstabell. En lenket liste gir innsetting i konstant tid, men
-lineær tid for å finne maksimum. En maks-haug gir alle fire i logaritmisk tid
-eller bedre.
+Barna til $A[1] = 2$ er $A[2] = 3$ og $A[3] = 8$. Det største er 8, så 2 og 8 bytter plass:
+${\langle 8, 3, 2, 6, 5, 9, 4 \rangle}$. Kallet fortsetter fra $i = 3$. Barna er $A[6] = 9$ og
+$A[7] = 4$, og 2 bytter med 9: ${\langle 8, 3, 9, 6, 5, 2, 4 \rangle}$. Fra $i = 6$ er
+$\text{Left}(6) = 12$ utenfor haugen, så kallet stopper.
 
-Max-Heap-Maximum er $A[1]$, i konstant tid. Max-Heap-Extract-Max tar vare på
-rota, flytter det siste elementet i haugen opp i rota, minsker haugstørrelsen
-med én og kaller Max-Heapify på rota, for nå er rota det eneste som kan være
-feil. Å forskyve resten av tabellen ett hakk i stedet ville kostet
-$\Theta(n)$ og gitt hvert element en ny forelder.
+Max-Heapify retter bare opp stien elementet synker langs. Den ser aldri at 9 nå står under 8, fordi
+den forutsetter at deltrærne allerede var hauger.
 
-Max-Heap-Increase-Key gir elementet på plass $i$ en større nøkkel. Nå kan det
-være større enn forelderen, så det stiger: bytt med forelderen så lenge den er
-mindre. Max-Heap-Insert legger det nye elementet sist i haugen med nøkkel
-$-\infty$ og øker nøkkelen til den riktige verdien, så det stiger på plass.
-Synking og stiging følger begge én sti i treet, $O(\lg n)$. Increase-Key
-trenger indeksen $i$ til elementet, så er elementene objekter, må haugen
-bokføre hvor hvert av dem står, og oppdatere det ved hvert bytte.
+<Answer>$\langle 8, 3, 9, 6, 5, 2, 4 \rangle$</Answer>
+</Solution>
+</Example>
+
+### Sette inn og øke en nøkkel
+
+Når en pasient blir verre, øker nøkkelen. Elementet kan da være større enn forelderen sin, mens alt
+under det fortsatt er i orden, siden de nøklene var høyst like store som den gamle nøkkelen og
+dermed også som den nye. Max-Heap-Increase-Key lar derfor elementet stige. Så lenge det er større enn
+forelderen, bytter de plass. Hvert bytte flytter elementet ett nivå opp, så det bytter høyst
+$\lfloor \lg n \rfloor$ ganger.
+
+Max-Heap-Insert legger det nye elementet $x$ på første ledige plass, $A[A.size + 1]$, så formen er i
+orden. Der kan det være for stort. Først får $x$ nøkkelen $-\infty$, som kan stå hvor som helst uten
+å bryte haugegenskapen, og så øker Max-Heap-Increase-Key nøkkelen til den riktige og lar $x$ stige.
+I Max-Heap-Insert er $n$ antall plasser i tabellen, ikke antall elementer i haugen, som er
+$A.size$.
 
 <CodeBlock
-  id="prioritetsko"
-  title="prioritetsko.py"
-  lang="python"
-  code={`from math import inf
+  id="max-heap-insert-kode"
+  lang="text"
+  code={`Max-Heap-Insert(A, x, n)
+1  if A.size == n
+2      error "heap overflow"
+3  A.size = A.size + 1
+4  k = x.key
+5  x.key = -∞
+6  A[A.size] = x
+7  Max-Heap-Increase-Key(A, x, k)
 
-def max_heap_maximum(A):
-    if len(A) < 1:
-        raise ValueError("heap underflow")
-    return A[0]
-
-def max_heap_extract_max(A):
-    m = max_heap_maximum(A)
-    A[0] = A[-1]
-    A.pop()
-    max_heapify(A, 0, len(A))
-    return m
-
-def max_heap_increase_key(A, i, key):
-    if key < A[i]:
-        raise ValueError("new key is smaller")
-    A[i] = key
-    # indekser fra 0: forelderen til i er (i - 1) // 2
-    while i > 0 and A[(i - 1) // 2] < A[i]:
-        A[i], A[(i - 1) // 2] = A[(i - 1) // 2], A[i]
-        i = (i - 1) // 2
-
-def max_heap_insert(A, key):
-    A.append(-inf)
-    max_heap_increase_key(A, len(A) - 1, key)`}
+Max-Heap-Increase-Key(A, x, key)
+1  if key < x.key
+2      error "new key is smaller"
+3  x.key = key
+4  find index i of x
+5  while i > 1 and A[Parent(i)].key < A[i].key
+6      exchange A[i] with A[Parent(i)]
+7      i = Parent(i)`}
 />
+
+<Stepper
+  src="/steppers/max-heap-insert.js"
+  codeId="max-heap-insert-kode"
+  title="Max-Heap-Insert"
+  height={330}
+  caption="Haugen tegnet som tre og som tabell. Klammen dekker haugen, og en stiplet celle er ledig. $x$ venter ved siden av treet til den settes inn. Rødt er $x$ og veien den har steget, og blå ring er forelderen steget sammenligner med."
+/>
+
+I den første instansen har haugen åtte elementer og plass til ti, og $x$ har nøkkelen 15. $x$
+legges i $A[9]$, under 8, med nøkkelen $-\infty$, og får så nøkkelen 15. 15 er større enn 8 og
+bytter plass med den, så med 14, og stopper under 16. Haugen er da $16, 15, 10, 14, 7, 9, 3, 2, 8$.
+
+Elementene i en prioritetskø er ofte objekter med en nøkkel og andre data. Linje 4 i
+Max-Heap-Increase-Key, «find index i of x», forutsetter at programmet vet hvor i tabellen $x$ står. Det kan for eksempel lagre indeksen i $x$ og oppdatere den ved hvert bytte.
+
+En min-haug har motsatt krav, hver forelder er høyst like stor som barna, og det minste elementet
+står i rota. Alt i denne modulen gjelder speilvendt, med Min-Heap-Extract-Min, Min-Heap-Insert,
+Min-Heap-Decrease-Key og Build-Min-Heap. Du kan også bruke en maks-haug og sette minus foran alle
+nøklene.
 
 <Table
   columns={["Operasjon", "Kjøretid"]}
+  caption="En maks-haug med $n$ elementer som prioritetskø."
   rows={[
-    ["Max-Heapify", "$O(\\lg n)$"],
     ["Max-Heap-Maximum", "$\\Theta(1)$"],
     ["Max-Heap-Extract-Max", "$O(\\lg n)$"],
     ["Max-Heap-Increase-Key", "$O(\\lg n)$"],
     ["Max-Heap-Insert", "$O(\\lg n)$"],
-    ["Build-Max-Heap", "$\\Theta(n)$"],
   ]}
-  align={["left", "left"]}
   rowHeader={false}
-  caption="Haugoperasjonene. Alt som synker eller stiger følger én sti av lengde høyst $\lfloor \lg n \rfloor$."
+/>
+
+<Example label="Eksamensoppgave" title="En stakk av en maks-haug">
+<ExamRef id="2024-des" task="5" />
+
+Hvordan kan du gjenskape funksjonaliteten til en stakk (stack) ved hjelp av en makshaug (max-heap)?
+
+Baser deg på vanlige haugoperasjoner, uten å tenke på hvordan haugen faktisk er implementert.
+Fokuser på hvordan prioritetene/nøklene skal velges.
+
+<Solution>
+En stakk gir alltid ut det elementet som ble lagt inn sist. En maks-haug gir ut elementet med størst
+nøkkel. Gi derfor hvert nytt element en nøkkel som er større enn alle nøklene som allerede er i
+haugen, for eksempel én mer enn nåværende maksimum, eller verdien til en teller som økes for hver
+innsetting. Push er da Max-Heap-Insert med den nye nøkkelen, og Pop er Max-Heap-Extract-Max, som
+gir ut det sist innsatte elementet.
+
+<Answer>Gi hvert nytt element en nøkkel som er større enn alle i haugen, for eksempel fra en teller
+som øker for hver innsetting. Da tar Max-Heap-Extract-Max alltid ut det som sist ble satt inn.</Answer>
+</Solution>
+</Example>
+
+<Callout title="Hauger">
+En haug er et nesten komplett binærtre lagret i en tabell, med barna til $i$ i $2i$ og ${2i + 1}$.
+Hver forelder er minst like stor som barna, så det største elementet står i $A[1]$. Et element som
+er for lite, synker med Max-Heapify, og et som er for stort, stiger med Max-Heap-Increase-Key, begge
+i $O(\lg n)$ tid.
+</Callout>
+
+## Bygge en haug
+
+Skal en usortert tabell ${A[1 : n]}$ bli en haug, kan du sette inn elementene ett og ett med
+Max-Heap-Insert. Hvert element stiger høyst like mange steg som dybden til plassen det settes inn
+på. Build-Max-Heap lar i stedet elementene synke. En løvnode er allerede en haug med ett element,
+så Build-Max-Heap går gjennom de indre nodene bakfra, fra $\lfloor n/2 \rfloor$, som er forelderen
+til den siste noden, og opp til rota, og kaller Max-Heapify på hver av dem:
+
+<CodeBlock
+  lang="text"
+  code={`Build-Max-Heap(A, n)
+1  A.size = n
+2  for i = ⌊n/2⌋ downto 1
+3      Max-Heapify(A, i)`}
+/>
+
+Barna til $i$ har høyere indekser og er behandlet før $i$, så når turen kommer til $i$, er begge
+deltrærne under den hauger. Det er det Max-Heapify forutsetter, og etterpå er deltreet med
+rot $i$ en haug. Induksjon over $i$ nedover viser at hele tabellen er en haug når løkken har
+kommet til rota.
+
+<Simulation
+  src="/sims/haugbygging.js"
+  host="dom"
+  title="To måter å bygge en haug på"
+  height={300}
+  caption="Haugen tegnet som tre, med nøklene når $n \le 15$. Med «én og én» er en stiplet sirkel en plass som ikke er fylt ennå. Grønt er den delen som allerede er en haug, og rødt er elementet fra siste kall og veien det gikk. Tallet til høyre for et nivå er antall bytter i kallene som startet på det nivået, og «bytter» er summen."
+/>
+
+Simuleringen starter med «én og én», stigende input og ${n = 15}$. Trykk «Neste kall» noen ganger.
+Hvert nytt element er det største så langt, så det stiger hele veien til rota. Trykk «Alle kall».
+Tallene til høyre er antall bytter i kallene som startet på hvert nivå: 0, 2, 8 og 24, i alt 34.
+Det nederste nivået har flest noder og lengst vei opp, og står for det meste av arbeidet.
+
+Velg «Build-Max-Heap» og trykk «Neste kall» noen ganger. Kallene går fra ${i = 7}$ og bakover, og
+det grønne, deltrærne som allerede er hauger, vokser oppover fra løvnodene. Etter alle kallene står
+det 3, 4, 4 og 0, i alt 11. Løvnodene synker ikke i det hele tatt, og bare rota synker tre nivåer.
+Med ${n = 63}$ er summene 258 og 57.
+
+Med én og én stiger hvert element høyst sin dybde, og de fleste nodene ligger dypt: halvparten står
+på det nederste nivået. Med Build-Max-Heap synker hvert element høyst sin høyde, antall nivåer under
+det, og de fleste nodene har liten høyde: halvparten er løvnoder med høyde 0, og en firedel har
+høyde 1. I et komplett binærtre med høyde $h$ og ${n = 2^{h+1} - 1}$ noder har $2^{h-k}$ noder
+høyde $k$, så Build-Max-Heap bytter høyst
+
+$$
+\sum_{k=0}^{h} 2^{h-k} \cdot k \allowbreak = 2^h \sum_{k=0}^{h} \frac{k}{2^k} \allowbreak < 2^h \cdot 2 = n + 1
+$$
+
+ganger. Summen $\sum k/2^k$ går mot 2. Det holder at den konvergerer, fordi da er antallet
+bytter høyst en konstant ganger $n$. Løkken går $\lfloor n/2 \rfloor$ runder uansett, så Build-Max-Heap
+bruker $\Theta(n)$ tid. En haug som ikke er komplett, får plass i
+et komplett tre med under dobbelt så mange noder, så grensen er $O(n)$ også da. Én og én med
+stigende input lar hvert av de omtrent $n/2$ elementene på det nederste nivået stige $h$ steg, og
+det er $\Theta(n \lg n)$.
+
+Build-Max-Heap bruker lineær tid, og det strider ikke mot sorteringsgrensen. Grensen sier at det koster
+$\Omega(n \lg n)$ sammenligninger å
+finne den ene rekkefølgen som er sortert. En haug er ikke sortert: de samme nøklene kan stå i
+svært mange rekkefølger som alle er hauger, så grensen gjelder ikke for å bygge en.
+
+<Callout title="Build-Max-Heap">
+Build-Max-Heap kaller Max-Heapify fra $\lfloor n/2 \rfloor$ ned til 1 og bruker $\Theta(n)$ tid,
+fordi de fleste elementene står nederst og synker lite. Det er ikke det samme som $n$ kall til
+Max-Heap-Insert, som bruker $\Theta(n \lg n)$ i verste tilfelle.
+</Callout>
+
+<Quiz
+  question={"Tallene i $A[1 : n]$ står i synkende rekkefølge. Hvor lang tid bruker $n$ kall til Max-Heap-Insert på å bygge en maks-haug av dem, ett og ett fra $A[1]$?"}
+  options={[
+    "$\\Theta(n)$",
+    "$\\Theta(n \\lg n)$",
+    "$\\Theta(\\lg n)$",
+    "$\\Theta(n^2)$",
+  ]}
+  answer={0}
+  explanation={"Hvert nytt element er mindre enn alle som allerede er i haugen, også forelderen, så det stiger ikke et eneste steg. Hvert kall bruker konstant tid, og $n$ kall bruker $\\Theta(n)$. $\\Theta(n \\lg n)$ er det verste tilfellet, med stigende input, der hvert element stiger til rota."}
 />
 
 ## Heapsort
 
-Sortering ved utvelgelse plukker ut det største av de usorterte elementene og
-legger det bakerst, $n$ ganger, og bruker $\Theta(n)$ per plukk.
-<Term name="Heapsort" /> gjør det samme med en maks-haug som usortert del, så
-hvert plukk er en Extract-Max. Bygg haugen av hele $A$. Så, for $i$ fra $n$
-ned til 2: bytt rota $A[1]$ med $A[i]$, minsk haugstørrelsen med én og kall
-Max-Heapify på rota.
-
-Invarianten er at ${A[i + 1 : n]}$ er de $n - i$ største
-elementene, sortert, og at ${A[1 : i]}$ er en maks-haug. Rota er det største
-elementet i ${A[1 : i]}$, så byttet legger det på plass $i$, rett foran de
-$n - i$ elementene som allerede er sortert. Etter byttet er bare den nye rota
-feilplassert i ${A[1 : i - 1]}$, og Max-Heapify flytter den på plass. Sorteringen skjer på
-plass: haugen ligger foran i tabellen, og den sorterte delen vokser bakfra.
+Sortering ved utvelgelse tar ut det største elementet, sorterer resten og legger det største
+bakerst. Det tar lineær tid å finne det største i en usortert tabell, men med en maks-haug står det
+største i $A[1]$, og å ta det ut koster $O(\lg n)$. Heapsort bygger derfor en haug av tabellen og
+tar ut det største $n - 1$ ganger. Den trenger ingen ny tabell til resultatet. Hver gang haugen blir
+ett element mindre, frigjøres plassen $A[i]$ bakerst, og der skal det største av de gjenværende
+elementene stå i den sorterte tabellen.
 
 <CodeBlock
-  id="heapsort"
-  title="heapsort.py"
-  lang="python"
-  code={`def heapsort(A, n):
-    build_max_heap(A, n)
-    size = n
-    for i in range(n - 1, 0, -1):
-        A[0], A[i] = A[i], A[0]
-        size = size - 1
-        max_heapify(A, 0, size)`}
+  id="heapsort-kode"
+  lang="text"
+  code={`Heapsort(A, n)
+1  Build-Max-Heap(A, n)
+2  for i = n downto 2
+3      exchange A[1] with A[i]
+4      A.size = A.size - 1
+5      Max-Heapify(A, 1)`}
 />
 
 <Stepper
   src="/steppers/heapsort.js"
-  codeId="heapsort"
+  codeId="heapsort-kode"
   title="Heapsort"
-  caption="Tabellen $A$ tegnet som tre og som celler, med indekser fra 0 som i koden og haugen bygd på forhånd. Rødt er noden Max-Heapify står på eller de to som bytter. Barna den sammenlignes med er oransje, og grønt er utenfor haugen og ferdig sortert."
-  height={300}
+  height={330}
+  caption="Tabellen tegnet som tre og som tabell. Klammen dekker haugen, og grønt er den sorterte delen bakerst, utenfor haugen. Rødt er elementene som bytter plass, og elementet som synker med veien det har gått."
 />
 
-Byggingen koster $\Theta(n)$, og så følger $n - 1$ kall til Max-Heapify på
-$O(\lg n)$ hver, altså $O(n \lg n)$. Heapsort er sammenligningsbasert, så
-sorteringsgrensen gir $\Omega(n \lg n)$ i verste tilfelle, og verste tilfelle
-er derfor $\Theta(n \lg n)$. Er alle elementene like, stopper hvert
-Max-Heapify med en gang, og beste tilfelle er $\Theta(n)$. Med forskjellige
-elementer er også beste tilfelle $\Theta(n \lg n)$, så sortert input gjør ikke
-Heapsort raskere.
+I den første instansen er tabellen $4, 1, 3, 2, 16, 9, 10, 14, 8, 7$, og Build-Max-Heap gjør den
+til haugen i figur 3. Første runde bytter 16 og 1, så 16 står i $A[10]$, og 1 synker forbi 14,
+8 og 4. Neste runde flytter 14 til $A[9]$. Den grønne delen vokser bakfra, og hvert element som
+havner der, er det største av dem som var igjen i haugen.
 
-<Callout title="Kjøretiden til Heapsort">
-Heapsort sorterer på plass i $\Theta(n \lg n)$ i verste tilfelle. Beste
-tilfelle er $\Theta(n)$ når alle elementene er like, og $\Theta(n \lg n)$ når
-de er forskjellige.
-</Callout>
+Løkken holder invarianten at ${A[i + 1 : n]}$ inneholder de største elementene, sortert, og at
+${A[1 : i]}$ er en haug med resten. Bytte på linje 3 flytter det største i haugen til $A[i]$, rett
+foran de som er større, og Max-Heapify retter opp rota.
+
+Build-Max-Heap bruker $\Theta(n)$, og hvert av de $n - 1$ kallene til Max-Heapify bruker $O(\lg n)$,
+så Heapsort bruker $O(n \lg n)$ tid. Den sammenligner bare elementene, så sorteringsgrensen gir
+$\Omega(n \lg n)$ i verste tilfelle og i gjennomsnitt, og der er Heapsort altså $\Theta(n \lg n)$.
+Er alle elementene like, stopper hvert kall til Max-Heapify med én gang, og Heapsort bruker
+$\Theta(n)$. Som Merge-Sort har Heapsort $\Theta(n \lg n)$ i verste tilfelle, men den sorterer på
+plassen, uten en ekstra tabell.
 
 <Table
   columns={["Algoritme", "Verste", "Snitt", "Beste"]}
+  caption="Sorteringsalgoritmene som sammenligner. For Quicksort er snittet forventet tid med tilfeldig pivot."
   rows={[
     ["Insertion-Sort", "$\\Theta(n^2)$", "$\\Theta(n^2)$", "$\\Theta(n)$"],
-    ["Merge-Sort", "$\\Theta(n \\lg n)$", "$\\Theta(n \\lg n)$", "$\\Theta(n \\lg n)$"],
-    ["Heapsort", "$\\Theta(n \\lg n)$", "$\\Theta(n \\lg n)$", "$\\Theta(n)$"],
-    ["Quicksort", "$\\Theta(n^2)$", "$\\Theta(n \\lg n)$", "$\\Theta(n \\lg n)$"],
-    ["Counting-Sort", "$\\Theta(n + k)$", "$\\Theta(n + k)$", "$\\Theta(n + k)$"],
-    ["Radix-Sort", "$\\Theta(d(n + k))$", "$\\Theta(d(n + k))$", "$\\Theta(d(n + k))$"],
-    ["Bucket-Sort", "$\\Theta(n^2)$", "$\\Theta(n)$", "$\\Theta(n)$"],
+    ["Merge-Sort", "${\\Theta(n \\lg n)}$", "${\\Theta(n \\lg n)}$", "${\\Theta(n \\lg n)}$"],
+    ["Quicksort", "$\\Theta(n^2)$", "${\\Theta(n \\lg n)}$", "${\\Theta(n \\lg n)}$"],
+    ["Heapsort", "${\\Theta(n \\lg n)}$", "${\\Theta(n \\lg n)}$", "$\\Theta(n)$"],
   ]}
-  align={["left", "left", "left", "left"]}
   rowHeader={false}
-  caption="Sorteringsalgoritmene så langt. Beste tilfelle for Heapsort er input der alle elementene er like. Snitt er gjennomsnittet over input, for Quicksort over alle rekkefølger og for Bucket-Sort over uniformt fordelt input. Randomized-Quicksort har forventet $\Theta(n \lg n)$ over sine egne tilfeldige valg, for enhver input."
 />
 
 <Example label="Eksamensoppgave" title="Første iterasjon av Heapsort">
 <ExamRef id="2023-aug-kont" task="13" />
 
-Tabellen $A = \langle 9, 8, 5, 7, 1, 3, 2, 4, 6 \rangle$ representerer en
-haug. Hvordan ser tabellen ut etter første iterasjon av Heapsort?
+Tabellen $A = \langle 9, 8, 5, 7, 1, 3, 2, 4, 6 \rangle$ representerer en haug. Hvordan ser tabellen
+ut etter første iterasjon av Heapsort?
 
-Du skal altså utføre den første av $n - 1$ iterasjoner. Svar ved å liste opp
-elementene i tabellen. Oppgi hele tabellen, inkludert deler som ikke lenger
-er en del av haugen.
+Du skal altså utføre den første av $n - 1$ iterasjoner. Svar ved å liste opp elementene i tabellen.
+Oppgi hele tabellen, inkludert deler som ikke lenger er en del av haugen.
 
 <Solution>
-Første iterasjon bytter rota med siste element og krymper haugen med én:
-$\langle 6, 8, 5, 7, 1, 3, 2, 4, 9 \rangle$ med haugstørrelse 8. Så synker 6
-med Max-Heapify. Barna til 6 er 8 og 5, så 6 bytter med 8:
-$\langle 8, 6, 5, 7, 1, 3, 2, 4 \rangle$. Barna til 6 er nå 7 og 1, så 6
-bytter med 7: $\langle 8, 7, 5, 6, 1, 3, 2, 4 \rangle$. Barna til 6 på plass
-4 ville vært plass 8 og 9. Plass 9 er utenfor haugen og 4 er mindre enn 6,
-så 6 blir stående.
+Tabellen er allerede en maks-haug, så Build-Max-Heap på linje 1 endrer ingenting. Første iterasjon
+har $i = 9$. Linje 3 bytter $A[1] = 9$ og $A[9] = 6$:
+${\langle 6, 8, 5, 7, 1, 3, 2, 4, 9 \rangle}$, og linje 4 gjør haugen åtte elementer stor, så 9 står
+utenfor. Max-Heapify($A$, 1) sammenligner 6 med barna 8 og 5. Det største er 8, så 6 og 8 bytter:
+${\langle 8, 6, 5, 7, 1, 3, 2, 4, 9 \rangle}$. Fra $i = 2$ er barna $A[4] = 7$ og $A[5] = 1$, og 6
+bytter med 7: ${\langle 8, 7, 5, 6, 1, 3, 2, 4, 9 \rangle}$. Fra $i = 4$ er barnet $A[8] = 4$, som er
+mindre enn 6, og $A[9]$ er utenfor haugen, så kallet stopper.
 
 <Answer>$\langle 8, 7, 5, 6, 1, 3, 2, 4, 9 \rangle$</Answer>
 </Solution>
 </Example>
 
-## Sjekk deg selv
-
 <Quiz
-  question="Tabellen $A = \langle 10, 7, 9, 3, 6, 8, 2 \rangle$ er en maks-haug. Hvordan ser $A$ ut etter første runde i løkka i Heapsort?"
+  question={"Heapsort kjøres på $\\langle 5, 3, 4, 1, 2 \\rangle$. Hvordan ser tabellen ut etter to runder av løkka?"}
   options={[
-    "$\\langle 9, 7, 8, 3, 6, 2, 10 \\rangle$",
-    "$\\langle 2, 7, 9, 3, 6, 8, 10 \\rangle$",
-    "$\\langle 9, 7, 2, 3, 6, 8, 10 \\rangle$",
+    "$\\langle 3, 1, 2, 4, 5 \\rangle$",
+    "$\\langle 1, 2, 3, 4, 5 \\rangle$",
+    "$\\langle 2, 1, 4, 3, 5 \\rangle$",
+    "$\\langle 4, 3, 2, 1, 5 \\rangle$",
   ]}
   answer={0}
-  explanation="Rota 10 bytter plass med det siste elementet 2, og haugen krymper til seks elementer. Så synker 2: det største barnet er 9, bytt, og på den nye plassen er barnet 8 større enn 2, bytt igjen. Alternativ to har hoppet over Max-Heapify, og alternativ tre har stoppet etter ett bytte."
+  explanation={"Tabellen er allerede en maks-haug, så Build-Max-Heap endrer ingenting. Første runde bytter 5 og 2, og 2 synker ved å bytte med det største barnet, 4: $\\langle 4, 3, 2, 1, 5 \\rangle$. Andre runde bytter 4 og 1, og 1 bytter med 3: $\\langle 3, 1, 2, 4, 5 \\rangle$. Haugdelen er ikke sortert, bare halen. Du får $\\langle 2, 1, 4, 3, 5 \\rangle$ hvis elementet alltid bytter med venstre barn, og $\\langle 4, 3, 2, 1, 5 \\rangle$ er tabellen etter bare én runde."}
 />
 
+<Callout title="Heapsort">
+Heapsort bygger en maks-haug og bytter $n - 1$ ganger rota med det siste elementet i haugen,
+krymper haugen og lar den nye rota synke. Den sorterer på plassen i $\Theta(n \lg n)$ tid i verste
+tilfelle, og i $\Theta(n)$ når alle elementene er like.
+</Callout>
+
 <KeyTakeaways>
-- Et rotfast tre er rekursivt: hver node er rot i sitt deltre, så en egenskap kan kreves for alle deltrær. Et komplett binærtre med $n$ noder har høyde $\lfloor \lg n \rfloor$. Vilkårlig mange barn per node representeres med pekere til første barn og neste søsken.
-- Binær-søketre-egenskapen: alt i venstre deltre er mindre enn eller lik noden, alt i høyre større enn eller lik. Inorder-Tree-Walk gir sortert rekkefølge i $\Theta(n)$; søk, innsetting, minimum, etterfølger og sletting følger én sti og koster $O(h)$.
-- Høyden avhenger av innsettingsrekkefølgen: sortert input gir en kjede med $h = n - 1$, en tilfeldig permutasjon gir forventet $\Theta(\lg n)$, og balanserte søketrær garanterer det.
-- En haug er et nesten komplett binærtre i en tabell: barna til $i$ er $2i$ og $2i + 1$, forelderen $\lfloor i/2 \rfloor$, høyden $\lfloor \lg n \rfloor$. Haugegenskapen for en maks-haug er $A[\text{Parent}(i)] \ge A[i]$.
-- Max-Heapify lar ett element synke, $O(\lg n)$. Build-Max-Heap kaller den nedenfra og opp på de indre nodene og koster $\Theta(n)$, for de fleste nodene står langt nede. Det er ikke det samme som $n$ innsettinger, som koster $\Theta(n \lg n)$.
-- Som prioritetskø gir haugen Maximum i $\Theta(1)$ og Extract-Max, Increase-Key og Insert i $O(\lg n)$. Heapsort bygger haugen og tar ut maksimum $n - 1$ ganger på plass: $\Theta(n \lg n)$ i verste tilfelle, $\Theta(n)$ i beste når alle elementene er like.
+
+- Hver node i et rotfast tre er rota i sitt eget deltre. Treet lagres med pekere til barna, eller med én peker til første barn og én til neste søsken.
+- Et komplett binærtre med $n$ løvnoder har $n - 1$ indre noder og høyde $\lg n$.
+- I et binært søketre står alt i venstre deltre til en node til venstre for den i sortert rekkefølge og alt i høyre deltre til høyre. Inorder-Tree-Walk skriver ut nøklene sortert i $\Theta(n)$ tid.
+- Tree-Search, Tree-Insert, Tree-Minimum, Tree-Successor og Tree-Delete følger én sti og bruker $O(h)$ tid. Høyden er $n - 1$ for sortert input, forventet $\Theta(\lg n)$ for tilfeldig rekkefølge, og balanserte søketrær garanterer $\Theta(\lg n)$.
+- En haug er et nesten komplett binærtre i en tabell: barna til $i$ er $2i$ og ${2i + 1}$, forelderen er $\lfloor i/2 \rfloor$, og høyden er $\lfloor \lg n \rfloor$. I en maks-haug er hver forelder minst like stor som barna, så det største står i $A[1]$.
+- Max-Heapify lar et element synke og Max-Heap-Increase-Key lar det stige, begge i $O(\lg n)$. Som prioritetskø gir maks-haugen Maximum i $\Theta(1)$ og Extract-Max, Increase-Key og Insert i $O(\lg n)$.
+- Build-Max-Heap bruker $\Theta(n)$ tid, mens $n$ kall til Max-Heap-Insert bruker $\Theta(n \lg n)$ i verste tilfelle.
+- Heapsort sorterer på plassen i $\Theta(n \lg n)$ tid i verste tilfelle og $\Theta(n)$ når alle elementene er like.
+
 </KeyTakeaways>
