@@ -56,7 +56,7 @@ function shuffled(size) {
 // a size change, and it marks a figure ready just before the mount call. So a
 // call while one of this module's ready figures has not drawn yet is that
 // figure's first load. If that markup ever changes, this falls back to "only
-// the very first call", which is what the course's ryggsekk.js does.
+// the very first call".
 const SELF = new URL(import.meta.url).pathname;
 const drawn = new WeakSet();
 let calls = 0;

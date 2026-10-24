@@ -205,8 +205,8 @@ formulas:
       id: stavkapping-rekurrens,
     }
   - {
-      tex: "T(n) = 1 + \\sum_{j=0}^{n-1} T(j) = 2^n",
-      label: "Antall kall Cut-Rod gjør uten lagring, rota medregnet. Trekk $T(n-1)$ fra $T(n)$: da er $T(n) = 2T(n-1)$, og $T(0) = 1$.",
+      tex: "T(0) = 1 \\allowbreak\\quad T(n) = 2T(n - 1) = 2^n",
+      label: "Antall kall Cut-Rod gjør uten lagring, rota medregnet. Rekursjonstreet for $n$ er rekursjonstreet for $n - 1$ med én kopi til av det samme treet under rota.",
       section: "Dynamisk programmering",
       id: cut-rod-kall,
     }
@@ -368,10 +368,10 @@ symbols:
   - { tex: "\\text{Parent}(i)", meaning: "Forelderen til node $i$ i en haug, $\\lfloor i/2 \\rfloor$", section: "Rotfaste trestrukturer", formula: haug-indekser, note: "Haugegenskapen for en maks-haug er $A[\\text{Parent}(i)] \\ge A[i]$." }
   - { tex: "A.size", meaning: "Antall elementer i haugen, som står i ${A[1 : A.size]}$", section: "Rotfaste trestrukturer", term: "Haug", note: "Boka skriver $A.heap\\text{-}size$. Tabellen kan være lengre enn haugen." }
   # ── Dynamisk programmering ──
-  - { tex: "u \\to v", meaning: "En kant i delinstansgrafen: svaret for $v$ bygger på svaret for $u$", section: "Dynamisk programmering", term: "Delinstansgraf", note: "Læreboka tegner kantene motsatt vei." }
-  - { tex: "p_i", meaning: "Prisen for en bit med lengde $i$", section: "Dynamisk programmering", formula: stavkapping-rekurrens, note: "$p_1, \\ldots, p_8 = 1, 5, 8, 9, 10, 17, 17, 20$ i eksemplene. I Python er <code>p[0]</code> en ubrukt plassholder." }
+  - { tex: "u \\to v", meaning: "En pil i delinstansgrafen: svaret for $v$ bygger på svaret for $u$", section: "Dynamisk programmering", term: "Delinstansgraf", note: "Læreboka tegner pilene motsatt vei." }
+  - { tex: "p_i", meaning: "Prisen for en bit med lengde $i$", section: "Dynamisk programmering", formula: stavkapping-rekurrens, note: "$p_1, \\ldots, p_8 = 1, 5, 8, 9, 10, 17, 17, 20$ i eksemplene." }
   - { tex: "r_n", meaning: "Den største totalprisen for en stav med lengde $n$", section: "Dynamisk programmering", formula: stavkapping-rekurrens, id: rn, note: "Lagres i tabellen ${r[0 : n]}$. Ikke segmentgrensen $r$ i ${A[p : r]}$." }
-  - { tex: "s[j]", meaning: "Lengden på den første biten i en optimal kapping av lengde $j$", section: "Dynamisk programmering", note: "Kappingen leses av bakfra: skriv ut $s[n]$, trekk den fra $n$ og gjenta." }
+  - { tex: "s[j]", meaning: "Lengden på den første biten i en best mulig kapping av lengde $j$", section: "Dynamisk programmering", note: "Kappingen leses av bakfra: skriv ut $s[n]$, trekk den fra $n$ og gjenta." }
   - { tex: "X,\\ Y", meaning: "Sekvensene i LCS, $\\langle x_1, \\ldots, x_m \\rangle$ og $\\langle y_1, \\ldots, y_n \\rangle$", section: "Dynamisk programmering", term: "Lengste felles delsekvens", note: "Ikke problemene $X$ og $Y$ i en reduksjon." }
   - { tex: "X_i,\\ Y_j", meaning: "Prefiksene $\\langle x_1, \\ldots, x_i \\rangle$ og $\\langle y_1, \\ldots, y_j \\rangle$, delinstansene i LCS", section: "Dynamisk programmering" }
   - { tex: "c[i, j]", meaning: "Lengden av en LCS av $X_i$ og $Y_j$", section: "Dynamisk programmering", formula: lcs-rekurrens, id: cij, note: "Ikke konstanten $c$ i asymptotisk notasjon." }
@@ -379,7 +379,7 @@ symbols:
   - { tex: "v_i,\\ w_i", meaning: "Verdien og vekten til gjenstand $i$", section: "Dynamisk programmering", term: "Det binære ryggsekkproblemet", formula: ryggsekk-rekurrens }
   - { tex: "W", meaning: "Kapasiteten til ryggsekken", section: "Dynamisk programmering", formula: pseudopolynomisk, id: w, note: "$\\Theta(nW)$ er polynomisk i tallet $W$, men ikke i antall bits." }
   - { tex: "K[i, j]", meaning: "Den største verdien med gjenstandene $1, \\ldots, i$ og kapasitet $j$", section: "Dynamisk programmering", formula: ryggsekk-rekurrens, id: kij, note: "Tabellen har $(n + 1)(W + 1)$ celler." }
-  - { tex: "m", meaning: "Antall bits i $W$, $\\lfloor \\lg W \\rfloor + 1$", section: "Dynamisk programmering", term: "Pseudopolynomisk kjøretid", formula: pseudopolynomisk, note: "$\\Theta(nW) = \\Theta(n 2^m)$, som er eksponentielt i $m$." }
+  - { tex: "m", meaning: "Antall bits i $W$, $\\lfloor \\lg W \\rfloor + 1$", section: "Dynamisk programmering", term: "Pseudopolynomisk kjøretid", formula: pseudopolynomisk, note: "$\\Theta(nW) = \\Theta(n 2^m)$, som er eksponentielt i $m$. Ikke lengden $m$ av $X$ i LCS." }
   # ── Grådighet ──
   - { tex: "v_i / w_i", meaning: "Kiloprisen til gjenstand $i$, verdi per vektenhet", section: "Grådighet", term: "Det kontinuerlige ryggsekkproblemet", note: "Den grådige algoritmen fyller sekken etter synkende kilopris." }
   - { tex: "[s_i, f_i)", meaning: "Aktivitet $a_i$: starttiden $s_i$ og sluttiden $f_i$, et halvåpent intervall", section: "Grådighet", term: "Aktivitetsutvalg", id: aktivitet, note: "Aktivitetene er sortert etter $f_i$. Den tenkte $a_0$ har $f_0 = 0$. Ikke funksjonen $f(n)$." }
@@ -711,32 +711,32 @@ glossary:
 
   - {
       term: "Dynamisk programmering",
-      definition: "Designmetode: rekursiv dekomponering der hvert delsvar lagres første gang det regnes ut og slås opp senere. Gir riktig svar når problemet har optimal delstruktur, og lønner seg når delinstansene overlapper. Løses med memoisering ovenfra og ned, eller iterativt nedenfra og opp i topologisk rekkefølge i delinstansgrafen.",
+      definition: "Designmetode: dekomponer rekursivt, og lagre hvert delsvar første gang det regnes ut, så hver delinstans løses én gang. Lønner seg når delinstansene overlapper, og gir riktig svar når problemet har optimal delstruktur. Løses ovenfra og ned med memoisering, eller nedenfra og opp i en rekkefølge der hver delinstans kommer etter alle den bygger på.",
       section: "Dynamisk programmering",
     }
   - {
       term: "Delinstansgraf",
-      definition: "Én node per forskjellig delinstans, og en kant fra $u$ til $v$ når svaret for $v$ bygger på svaret for $u$. Må være asyklisk, og hver kjede av avhengigheter må ende i et grunntilfelle. Kalltreet til en rekursiv løsning har én node per sti i grafen som ender i instansen. Kjøretiden til dynamisk programmering er som regel lineær i antall noder og kanter.",
+      definition: "Én node per delinstans, og en pil fra $u$ til $v$ når svaret for $v$ bygger direkte på svaret for $u$. Pilene kan ikke gå i ring, og hver kjede av piler bakover ender i et grunntilfelle. Rekursjonstreet har én node for hver vei langs pilene som ender i instansen, så stavkappingens $n + 1$ noder gir et tre med $2^n$. Kjøretiden til dynamisk programmering er som regel lineær i antall noder og piler.",
       section: "Dynamisk programmering",
     }
   - {
       term: "Overlappende delinstanser",
-      definition: "Flere instanser bygger på den samme delinstansen, direkte eller indirekte. Skjer det på mange nivåer, blir en rekursiv løsning uten lagring eksponentiell. I splitt og hersk overlapper delinstansene ikke, så der gir lagring ingenting.",
+      definition: "Flere instanser bygger på den samme delinstansen, direkte eller gjennom andre. En rekursiv løsning uten lagring løser den da på nytt hver gang og kan bli eksponentiell: Cut-Rod gjør $2^n$ kall på $n + 1$ forskjellige delinstanser. I splitt og hersk overlapper delinstansene ikke, så der sparer lagring ingenting.",
       section: "Dynamisk programmering",
     }
   - {
       term: "Optimal delstruktur",
-      definition: "En optimal løsning består av optimale løsninger på delinstansene. Vises som regel ved å bytte ut en del: var den ikke optimal, kunne den byttes ut og gi en bedre løsning. Korteste vei har egenskapen. Lengste enkle vei har den ikke, for to lengste delveier kan bruke de samme nodene.",
+      definition: "En optimal løsning består av optimale løsninger på delinstansene. Vises som regel ved å bytte ut en del: hvis den ikke var optimal, kunne en bedre del byttes inn og gi en bedre løsning. Den korteste veien mellom to steder har egenskapen. Den lengste veien som ikke går gjennom samme sted to ganger, har den ikke, fordi to lengste delveier kan trenge de samme stedene.",
       section: "Dynamisk programmering",
     }
   - {
       term: "Memoisering",
-      definition: "Rekursjon med hukommelse: første kall med et argument regner ut svaret og lagrer det, og senere kall med samme argument slår det opp. Løsningen ovenfra og ned (top-down) i dynamisk programmering. Løser bare delinstansene som faktisk trengs.",
+      definition: "Rekursjon som husker: det første kallet med et sett argumenter regner ut svaret og lagrer det, og senere kall med de samme argumentene slår det opp. Løsningen ovenfra og ned (top-down) i dynamisk programmering, og den løser bare delinstansene som faktisk trengs.",
       section: "Dynamisk programmering",
     }
   - {
       term: "Lengste felles delsekvens",
-      definition: "Forkortet LCS. En lengste sekvens som er en delsekvens av både $X$ og $Y$, der en delsekvens er det som står igjen når null eller flere elementer strykes. LCS-Length fyller $c[i, j]$ for prefiksene $X_i$ og $Y_j$ rad for rad og lagrer en pil i $b$, og Print-LCS følger pilene bakfra. $\\Theta(mn)$.",
+      definition: "Forkortet LCS. En lengste sekvens som er en delsekvens av både $X$ og $Y$, der en delsekvens er det som står igjen når null eller flere elementer strykes uten at rekkefølgen endres. LCS-Length fyller $c[i, j]$ for prefiksene $X_i$ og $Y_j$ rad for rad og lagrer en pil for valget i $b$, og Print-LCS følger pilene bakfra. $\\Theta(mn)$.",
       section: "Dynamisk programmering",
     }
   - {
