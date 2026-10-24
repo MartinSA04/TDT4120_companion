@@ -231,13 +231,13 @@ formulas:
 
   - {
       tex: "B(T) = \\sum_{c \\in C} c.\\mathit{freq} \\cdot d_T(c)",
-      label: "Kostnaden til kodetreet $T$: antall bits i den kodede teksten. Dybden $d_T(c)$ er lengden av kodeordet til $c$. For et huffmantre er det også summen av frekvensene i de indre nodene.",
+      label: "Kostnaden til kodetreet $T$: antall bits i den kodede teksten. Dybden $d_T(c)$ er lengden av kodeordet til $c$. $B(T)$ er også summen av frekvensene i de indre nodene, når hver indre node har summen av frekvensene under seg.",
       section: "Grådighet",
       id: huffman-kostnad,
     }
   - {
       tex: "B(T) = B(T') \\allowbreak + x.\\mathit{freq} + y.\\mathit{freq}",
-      label: "Optimal delstruktur for Huffman: $T'$ har det nye tegnet $z$ i stedet for $x$ og $y$. Får $z$ barna $x$ og $y$, blir kodeordene deres én bit lengre.",
+      label: "Optimal delstruktur for Huffman: $T'$ har det nye tegnet $z$ i stedet for $x$ og $y$. Når $z$ får barna $x$ og $y$, blir kodeordene deres én bit lengre enn kodeordet til $z$.",
       section: "Grådighet",
       id: huffman-delstruktur,
     }
@@ -383,8 +383,9 @@ symbols:
   # ── Grådighet ──
   - { tex: "v_i / w_i", meaning: "Kiloprisen til gjenstand $i$, verdi per vektenhet", section: "Grådighet", term: "Det kontinuerlige ryggsekkproblemet", note: "Den grådige algoritmen fyller sekken etter synkende kilopris." }
   - { tex: "[s_i, f_i)", meaning: "Aktivitet $a_i$: starttiden $s_i$ og sluttiden $f_i$, et halvåpent intervall", section: "Grådighet", term: "Aktivitetsutvalg", id: aktivitet, note: "Aktivitetene er sortert etter $f_i$. Den tenkte $a_0$ har $f_0 = 0$. Ikke funksjonen $f(n)$." }
+  - { tex: "S_k", meaning: "Aktivitetene som starter når $a_k$ er ferdig eller senere: delinstansen som er igjen etter at $a_k$ er valgt", section: "Grådighet", term: "Aktivitetsutvalg", note: "$S_0$ er alle aktivitetene, fordi den tenkte $a_0$ har $f_0 = 0$." }
   - { tex: "k", meaning: "Indeksen til den sist valgte aktiviteten", section: "Grådighet", term: "Aktivitetsutvalg", note: "En ny aktivitet $a_m$ tas med når $s_m \\ge f_k$." }
-  - { tex: "C", meaning: "Alfabetet: tegnene som skal kodes", section: "Grådighet", term: "Huffman-kode", note: "Ikke tellertabellen $C$ i Counting-Sort." }
+  - { tex: "C", meaning: "Alfabetet: tegnene som skal kodes", section: "Grådighet", term: "Huffman-kode", note: "I Decode-PFC er $C$ den kodede teksten, en tabell av bits. Ikke tellertabellen $C$ i Counting-Sort." }
   - { tex: "c.\\mathit{freq}", meaning: "Frekvensen til tegnet $c$: hvor mange ganger det står i teksten", section: "Grådighet", formula: huffman-kostnad, note: "En indre node i et huffmantre har summen av frekvensene under seg." }
   - { tex: "d_T(c)", meaning: "Dybden til løvnoden for $c$ i kodetreet $T$, som er lengden av kodeordet", section: "Grådighet", formula: huffman-kostnad }
   - { tex: "B(T)", meaning: "Kostnaden til kodetreet $T$: antall bits i den kodede teksten", section: "Grådighet", formula: huffman-kostnad }
@@ -757,12 +758,17 @@ glossary:
     }
   - {
       term: "Grådighetsegenskapen",
-      definition: "Det finnes en optimal løsning som tar det første grådige valget. Egenskapen sier bare at det første valget er trygt. At alle de grådige valgene er trygge, følger først sammen med optimal delstruktur, ved induksjon.",
+      definition: "Det finnes en optimal løsning som tar det første grådige valget. Egenskapen sier bare at det første valget er trygt. Først sammen med optimal delstruktur viser induksjon at alle de grådige valgene er trygge.",
       section: "Grådighet",
     }
   - {
       term: "Utvekslingsargument",
       definition: "Bevis for grådighetsegenskapen: ta en vilkårlig optimal løsning, bytt ut ett av valgene med det grådige, og vis at løsningen fortsatt er lovlig og ikke blir dårligere. Da finnes en optimal løsning med det grådige valget.",
+      section: "Grådighet",
+    }
+  - {
+      term: "Forsprangsargument",
+      definition: "Bevis for at en grådig algoritme er optimal: bygg den grådige løsningen og en vilkårlig annen løsning side om side, og vis med induksjon at den grådige aldri ligger bak. I aktivitetsutvalg slutter den $i$-te aktiviteten Greedy-Activity-Selector velger, ikke senere enn den $i$-te i en hvilken som helst annen løsning, så ingen annen løsning har flere.",
       section: "Grådighet",
     }
   - {
@@ -777,7 +783,7 @@ glossary:
     }
   - {
       term: "Prefiksfri kode",
-      definition: "Binær kode der ingen kodeord er et prefiks av et annet, så en kodet tekst kan dekodes ett kodeord om gangen fra starten. Tegnes som et kodetre med tegnene i løvnodene: kodeordet er stien fra rota, med 0 for venstre og 1 for høyre barn, og lengden er dybden.",
+      definition: "Binær kode der ingen kodeord er et prefiks av et annet, så en kodet tekst kan dekodes ett kodeord om gangen fra starten. Tegnes som et kodetre med tegnene i løvnodene: kodeordet er veien fra rota, med 0 for venstre og 1 for høyre barn, og lengden er dybden.",
       section: "Grådighet",
     }
   - {
@@ -897,6 +903,13 @@ glossary:
 # A curated newest-first selection. Dates are the verified exam days, read off
 # page 1 of each oppgavesett ("Eksamen, <dato>") — not guessed.
 exams:
+  - {
+      label: "Kontinuasjonseksamen, august 2026",
+      id: "2026-aug-kont",
+      date: 2026-08-03,
+      url: "https://algdat.idi.ntnu.no/arkiv/2026.aug.tdt4120.oppg.no.pdf",
+      solutionUrl: "https://algdat.idi.ntnu.no/arkiv/2026.aug.tdt4120.losn.no.pdf",
+    }
   - {
       label: "Ordinær eksamen, desember 2025",
       id: "2025-des",

@@ -27,7 +27,7 @@ maintainer), **rewritten** (approved and committed).
 | 05 Rangering i lineær tid | **rewritten** | Rewritten from scratch with a sim of the sorting bound as a game against the «kjiping», a decision-tree figure, a Randomized-Select stepper and a sim of it as one path down the Quicksort tree, a median-of-medians figure, a Counting-Sort stepper, a Radix-Sort sim with both failure modes and a Bucket-Sort sim; approved after round 1 and committed 2026-10-22. |
 | 06 Rotfaste trestrukturer | **rewritten** | Rewritten from scratch with steppers for Tree-Insert, Inorder-Tree-Walk, Max-Heap-Extract-Max, Max-Heap-Insert and Heapsort, a sim of insertion order and height, a sim of the two ways to build a heap, and three figures; approved after round 2 and committed 2026-10-23. Round 2 puts the subject first where round 1 used inverted word order. |
 | 07 Dynamisk programmering | **rewritten** | Rewritten from scratch with a sim of Cut-Rod's calls (without and with storage, and as the subproblem graph), steppers for Bottom-Up-Cut-Rod, LCS-Length with Print-LCS and Knapsack′, and three figures; approved after round 1 and committed 2026-10-24. |
-| 08 Grådighet | to rewrite |  |
+| 08 Grådighet | **rewritten** | Rewritten from scratch with a sim of three greedy rules for aktivitetsutvalg, steppers for Recursive-Activity-Selector, Decode-PFC and Huffman, and four figures (the exchange of activities, binary and continuous knapsack, prefix-free codes, the Huffman swap); approved after round 1 and committed 2026-10-24. |
 | 09 Traversering av grafer | to rewrite | An incremental rewrite from round 3 (not committed) is superseded; rewrite from scratch. |
 | 10 Minimale spenntrær | to rewrite |  |
 | 11 Korteste vei fra én til alle | to rewrite |  |

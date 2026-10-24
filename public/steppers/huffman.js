@@ -1,286 +1,131 @@
 /**
- * Huffman trace for <Stepper>, driving the Python block `huffman` in modul 07.
- * The stage is the min-priority queue Q drawn as a forest, sorted by
- * frequency with the lowest to the left, as in the book's figure: leaves are
- * boxes with character and frequency, internal nodes circles with the sum of
- * the frequencies below them. Each iteration first marks the two trees
- * Extract-Min returns (orange), then shows the new node z (accent) back in the
- * queue. At the end the edges get 0 and 1, the codewords appear under the
- * leaves, and the leaves turn green.
+ * Huffman, for <Stepper>, driving the block `huffman` in modul 08
+ * «Grådighet». The one idea: take the two trees with the lowest frequency
+ * out of the queue, hang them under a new node whose frequency is their sum,
+ * and put that tree back. Every merge adds one bit to the codeword of every
+ * letter under it, so it costs the sum, and Huffman always takes the
+ * cheapest merge there is.
  *
- * Ties are broken the way the Python breaks them: the queue holds
- * (freq, tie, tree) tuples, so of two equal frequencies the one that entered
- * the queue first comes out first.
+ * Block line numbers count the header as line 1, so the procedure's line k is
+ * block line k + 1:
+ *    1 Huffman(C)
+ *    2 1  n = |C|
+ *    3 2  Q = C
+ *    4 3  for i = 1 to n − 1
+ *    5 4      allocate a new node z
+ *    6 5      x = Extract-Min(Q)
+ *    7 6      y = Extract-Min(Q)
+ *    8 7      z.left = x
+ *    9 8      z.right = y
+ *   10 9      z.freq = x.freq + y.freq
+ *   11 10     Insert(Q, z)
+ *   12 11 return Extract-Min(Q)
+ * (CLRS 4th ed. 15.3.)
  *
- * Line numbers refer to that <CodeBlock>:
- *    1 import heapq
- *    2 from itertools import count
- *    3
- *    4 def huffman(C):
- *    5     tie = count()
- *    6     Q = [(freq, next(tie), c) for c, freq in C.items()]
- *    7     heapq.heapify(Q)
- *    8     for i in range(1, len(C)):
- *    9         fx, _, x = heapq.heappop(Q)
- *   10         fy, _, y = heapq.heappop(Q)
- *   11         z = (x, y)
- *   12         heapq.heappush(Q, (fx + fy, next(tie), z))
- *   13     return Q[0][2]
- *   14
- *   15 def codes(T, prefix=""):
- *   16     if isinstance(T, str):
- *   17         return {T: prefix}
- *   18     return codes(T[0], prefix + "0") | codes(T[1], prefix + "1")
+ * Frames: the queue [2, 3]; per round x [4, 5, 6], y [7], the new tree
+ * [8, 9, 10], back in the queue [11]; last the root and the codewords [12].
+ * 2 + 4(n − 1) frames.
  *
- * Colours are framework tokens only, so frames re-theme on the light/dark
- * toggle without the module knowing which theme is active.
+ * The queue is drawn as a forest, trees in the order they leave the queue
+ * (frequency, and on a tie the one that came in first). The instance is the
+ * lecture's: A 5, B 9, C 12, D 13, E 16, F 35. Rounds (checked in node):
+ * 5 + 9 = 14, 12 + 13 = 25, 14 + 16 = 30, 25 + 30 = 55, 35 + 55 = 90.
+ * Codewords F 0, C 100, D 101, A 1100, B 1101, E 111; B(T) = 214 = 14 + 25 +
+ * 30 + 55 + 90, against 270 with 3 bits per letter. Later instances (the
+ * shuffle button): 3–7 letters with random frequencies 1–40.
+ *
+ * Marks (the marks of _kodetre.js / _tre.js): x and y accent while they are
+ * taken out; the new node z accent; a tree back in the queue plain.
  */
 
-const esc = (v) =>
-  String(v).replace(
-    /[&<>"]/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
-  );
+import { svgWrap, text } from "./_tre.js";
+import { firstView } from "./_dp.js";
+import { LECTURE, huffman, layout, drawTree, depth, codes, leaves } from "./_kodetre.js";
 
-// The lecture's example: A:5 B:9 C:12 D:13 E:16 F:35.
-const FIRST = [5, 9, 12, 13, 16, 35];
+const view = firstView(import.meta.url);
 
-let calls = 0;
-
-function sample(size) {
-  return Array.from({ length: size }, () => 4 + Math.floor(Math.random() * 27));
+function randomPairs() {
+  const n = 3 + Math.floor(Math.random() * 5);
+  return "ABCDEFG"
+    .slice(0, n)
+    .split("")
+    .map((ch) => [ch, 1 + Math.floor(Math.random() * 40)]);
 }
 
-const LETTERS = "ABCDEFG";
-
-const STYLE = {
-  plain: { fill: "none", stroke: "var(--border)", text: "var(--fg)" },
-  pick: { fill: "color-mix(in srgb, var(--orange) 18%, transparent)", stroke: "var(--orange)", text: "var(--fg)", wdt: 2 },
-  made: { fill: "var(--accent-weak)", stroke: "var(--accent)", text: "var(--accent-ink)", wdt: 2 },
-  coded: { fill: "color-mix(in srgb, var(--green) 16%, transparent)", stroke: "var(--green)", text: "var(--fg)", wdt: 1.6 },
-};
-
-const FONT = "font-family:var(--font-mono);font-size:var(--text-xs)";
-
-const name = (t) => (t.ch ? `${t.ch}:${t.freq}` : String(t.freq));
-const height = (t) => (t.ch ? 0 : 1 + Math.max(height(t.left), height(t.right)));
-const leaves = (t) => (t.ch ? [t] : [...leaves(t.left), ...leaves(t.right)]);
+const name = (t) => (t.ch ? `${t.ch}:${t.freq}` : `treet med ${t.freq}`);
 
 export default {
-  sizeRange: { min: 4, max: 7, default: 6 },
-  // The first queue is the lecture's example; after that, random frequencies.
-  defaultData(size = 6) {
-    if (calls++ === 0 && size === FIRST.length) return FIRST;
-    return sample(size);
+  defaultData() {
+    return view.isFirst() ? LECTURE.map((p) => [...p]) : randomPairs();
   },
 
-  run(input) {
-    const freqs = [...input];
-    const n = freqs.length;
-    let tie = 0;
-    let Q = freqs.map((f, i) => ({ freq: f, tie: tie++, tree: { ch: LETTERS[i], freq: f, id: i } }));
-    const order = () => [...Q].sort((a, b) => a.freq - b.freq || a.tie - b.tie);
-
-    // Run once to fix the height of the final tree, so the layout never rescales.
-    let H = 0;
-    {
-      let q = Q.map((e) => ({ ...e }));
-      let t = tie;
-      for (let i = 1; i < n; i++) {
-        q.sort((a, b) => a.freq - b.freq || a.tie - b.tie);
-        const [x, y] = q.splice(0, 2);
-        q.push({ freq: x.freq + y.freq, tie: t++, tree: { left: x.tree, right: y.tree, freq: x.freq + y.freq } });
-      }
-      H = height(q[0].tree);
-    }
-
+  run(pairs) {
+    const { rounds, root, start } = huffman(pairs);
+    const n = pairs.length;
+    const levels = depth(root);
     const frames = [];
-    let nextId = n;
-    const snap = (line, desc, vars, extra = {}) =>
-      frames.push({ line, desc, vars, n, H, forest: order().map((e) => e.tree), phase: "build", ...extra });
+    const V = { n, i: "–", x: "–", y: "–" };
+    const snap = (line, desc, forest, marks = {}, extra = {}) =>
+      frames.push({ line, desc, vars: { ...V }, hf: { forest, marks, levels, n, ...extra } });
 
-    snap(
-      [5, 6, 7],
-      `Q = C: én løvnode per tegn i en min-prioritetskø på frekvens. Køen er tegnet sortert, med lavest frekvens til venstre.`,
-      { "len(Q)": n },
-    );
-
-    const merged = [];
-    for (let i = 1; i < n; i++) {
-      const [ex, ey] = order().slice(0, 2);
+    snap([2, 3], `Q er en min-prioritetskø med de ${n} tegnene, hvert som et tre med én node. Køen er tegnet i den rekkefølgen trærne tas ut: lavest frekvens først.`, start);
+    rounds.forEach((r, k) => {
+      const i = k + 1;
+      V.i = i;
+      const tieX = r.before[1] && r.before[1].freq === r.x.freq && r.before[0] === r.x;
+      V.x = name(r.x);
+      V.y = "–";
+      snap([4, 5, 6], `Runde ${i}: x = Extract-Min(Q) gir ${name(r.x)}, lavest frekvens i køen${tieX ? " (lik frekvens: den som kom først inn i køen, tas først)" : ""}.`, r.before, { [r.x.id]: "current" });
+      V.y = name(r.y);
+      snap(7, `y = Extract-Min(Q) gir ${name(r.y)}, lavest av det som er igjen.`, r.before, { [r.x.id]: "current", [r.y.id]: "current" });
+      const rest = r.before.slice(2);
       snap(
-        [9, 10],
-        `Runde ${i} av ${n - 1}: Extract-Min to ganger gir de to trærne med lavest frekvens, x = ${name(ex.tree)} og y = ${name(ey.tree)}.`,
-        { i, fx: ex.freq, fy: ey.freq },
-        { pick: [ex.tree.id, ey.tree.id] },
+        [8, 9, 10],
+        `Ny node z med x til venstre og y til høyre, og z.freq = ${r.x.freq} + ${r.y.freq} = ${r.z.freq}. Hvert tegn under z får én bit til i kodeordet, så sammenslåingen koster ${r.z.freq} bits i teksten.`,
+        [r.z, ...rest],
+        { [r.z.id]: "current" },
       );
-      const z = { left: ex.tree, right: ey.tree, freq: ex.freq + ey.freq, id: nextId++ };
-      merged.push(z.freq);
-      Q = Q.filter((e) => e !== ex && e !== ey);
-      Q.push({ freq: z.freq, tie: tie++, tree: z });
-      snap(
-        [11, 12],
-        `z får x som venstre barn og y som høyre, og frekvensen ${ex.freq} + ${ey.freq} = ${z.freq}. z settes inn i køen, som nå har ${Q.length} ${Q.length === 1 ? "tre" : "trær"}.`,
-        { i, "fx + fy": z.freq, "len(Q)": Q.length },
-        { made: z.id },
-      );
-    }
-
-    const T = Q[0].tree;
-    snap(
-      13,
-      `Etter n − 1 = ${n - 1} sammenslåinger er ett tre igjen i køen. Det er kodetreet, og rota har frekvensen ${T.freq}, summen av alle.`,
-      { "len(Q)": 1 },
-    );
-
-    const codes = new Map();
-    const walk = (t, p) => {
-      if (t.ch) codes.set(t.ch, p);
-      else {
-        walk(t.left, p + "0");
-        walk(t.right, p + "1");
-      }
+      snap(11, `Insert(Q, z): treet går tilbake i køen, ordnet etter frekvensen ${r.z.freq}. ${r.after.length === 1 ? "Nå er det bare ett tre igjen." : `Køen har ${r.after.length} trær.`}`, r.after, { [r.z.id]: "done" });
+    });
+    V.i = V.x = V.y = "–";
+    const inner = [];
+    const walk = (t) => {
+      if (t.ch) return;
+      inner.push(t.freq);
+      walk(t.left);
+      walk(t.right);
     };
-    walk(T, "");
-    const ls = leaves(T);
+    walk(root);
+    inner.sort((a, b) => a - b);
+    const total = inner.reduce((a, b) => a + b, 0);
+    const fixed = Math.ceil(Math.log2(n)) * pairs.reduce((s, p) => s + p[1], 0);
     snap(
-      [15, 16, 17, 18],
-      `codes(T): 0 er venstre og 1 er høyre. Kodeordet til et tegn er stien fra rota, så lengden er dybden. ${ls
-        .map((l) => `${l.ch} = ${codes.get(l.ch)}`)
-        .join(", ")}.`,
+      12,
+      `return Extract-Min(Q) gir rota. Kodeordet til et tegn er veien fra rota, 0 til venstre og 1 til høyre. B(T) = ${inner.join(" + ")} = ${total} bits, mot ${fixed} med ${Math.ceil(Math.log2(n))} bits per tegn.`,
+      [root],
       {},
-      { phase: "codes", codes: Object.fromEntries(codes) },
+      { final: true },
     );
-
-    const terms = [...ls].sort((a, b) => a.ch.localeCompare(b.ch));
-    const B = terms.reduce((s, l) => s + l.freq * codes.get(l.ch).length, 0);
-    snap(
-      [],
-      `B(T) = ${terms.map((l) => `${l.freq}·${codes.get(l.ch).length}`).join(" + ")} = ${B}. Det er også summen av frekvensene i de indre nodene, ${merged.join(" + ")} = ${B}.`,
-      {},
-      { phase: "codes", codes: Object.fromEntries(codes) },
-    );
-
     return frames;
   },
 
-  render(stage, frame, api) {
+  render(stage, fr, api) {
+    view.drawn.add(stage);
     const { w, h } = api.getSize();
-    const { n, H, forest } = frame;
-    if (!n || w <= 0 || h <= 0) {
+    if (w <= 0 || h <= 0) {
       stage.innerHTML = "";
       return;
     }
-
-    const PAD = 4;
-    const BOX_H = 22;
-    const R = 13;
-    const coded = frame.phase === "codes";
-    // Room for the codeword under the deepest leaf, kept in every frame so the
-    // layout does not move when the codes appear.
-    const CODE_H = 16;
-    const colW = (w - 2 * PAD) / n;
-    const boxW = Math.min(colW - 6, 46);
-    const top = R + 2;
-    const bottom = h - CODE_H - BOX_H / 2 - 4;
-    const levelH = H > 0 ? Math.min(56, (bottom - top) / H) : 0;
-
-    // Leaves take consecutive columns in queue order; a parent sits midway.
-    const pos = new Map();
-    let col = 0;
-    const place = (t, depth) => {
-      if (t.ch) {
-        pos.set(t, { x: PAD + colW * (col + 0.5), y: top + depth * levelH });
-        col += 1;
-      } else {
-        place(t.left, depth + 1);
-        place(t.right, depth + 1);
-        const a = pos.get(t.left);
-        const b = pos.get(t.right);
-        pos.set(t, { x: (a.x + b.x) / 2, y: top + depth * levelH });
-      }
-    };
-    for (const t of forest) place(t, 0);
-
-    const pick = new Set(frame.pick || []);
-    const styleOf = (t) => {
-      if (coded && t.ch) return STYLE.coded;
-      if (pick.has(t.id)) return STYLE.pick;
-      if (frame.made === t.id) return STYLE.made;
-      return STYLE.plain;
-    };
-    // A picked tree is orange all through, since all of it leaves the queue;
-    // a new node z has only its own two edges in accent.
-    const edgeColour = (t, picked) =>
-      picked ? "var(--orange)" : frame.made === t.id ? "var(--accent)" : "var(--border)";
-
+    const { forest, marks, levels, final } = fr.hf;
+    const fs = 0.74 * parseFloat(getComputedStyle(document.documentElement).fontSize || "16");
+    const below = final ? 1.6 * fs : 0;
+    const L = layout(forest, { x: 4, y: 6, w: w - 8, h: h - 12 }, { levels, below, maxDy: 54, fitGaps: fr.hf.n - 1 });
+    const mk = new Map(Object.entries(marks).map(([k, v]) => [Number(k), v]));
     let svg = "";
-    const edges = (t, picked) => {
-      if (t.ch) return;
-      const p = pos.get(t);
-      const inPick = picked || pick.has(t.id);
-      for (const [c, bit] of [
-        [t.left, "0"],
-        [t.right, "1"],
-      ]) {
-        const q = pos.get(c);
-        const dx = q.x - p.x;
-        const dy = q.y - p.y;
-        const len = Math.hypot(dx, dy) || 1;
-        const x1 = p.x + (dx / len) * R;
-        const y1 = p.y + (dy / len) * R;
-        // End on the child's outline: the circle, or the top of the box.
-        let x2 = q.x - (dx / len) * R;
-        let y2 = q.y - (dy / len) * R;
-        if (c.ch) {
-          y2 = q.y - BOX_H / 2;
-          x2 = p.x + (dx / dy) * (y2 - p.y);
-        }
-        svg +=
-          `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" ` +
-          `style="stroke:${edgeColour(t, inPick)}" stroke-width="1.4"/>`;
-        if (coded) {
-          const mx = (x1 + x2) / 2 + (bit === "0" ? -7 : 7);
-          const my = (y1 + y2) / 2 + 4;
-          svg +=
-            `<text x="${mx.toFixed(1)}" y="${my.toFixed(1)}" text-anchor="middle" ` +
-            `style="fill:var(--muted);${FONT}">${bit}</text>`;
-        }
-        edges(c, inPick);
-      }
-    };
-    for (const t of forest) edges(t, false);
-
-    const nodes = (t) => {
-      const { x, y } = pos.get(t);
-      const st = styleOf(t);
-      if (t.ch) {
-        svg +=
-          `<rect x="${(x - boxW / 2).toFixed(1)}" y="${(y - BOX_H / 2).toFixed(1)}" width="${boxW.toFixed(1)}" ` +
-          `height="${BOX_H}" rx="4" style="fill:${st.fill};stroke:${st.stroke}" stroke-width="${st.wdt ?? 1.2}"/>`;
-        svg +=
-          `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" ` +
-          `style="fill:${st.text};${FONT};font-weight:600">${esc(name(t))}</text>`;
-        if (coded) {
-          svg +=
-            `<text x="${x.toFixed(1)}" y="${(y + BOX_H / 2 + 14).toFixed(1)}" text-anchor="middle" ` +
-            `style="fill:var(--fg);${FONT}">${esc(frame.codes[t.ch])}</text>`;
-        }
-        return;
-      }
-      svg +=
-        `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}" ` +
-        `style="fill:${st.fill};stroke:${st.stroke}" stroke-width="${st.wdt ?? 1.2}"/>`;
-      svg +=
-        `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" ` +
-        `style="fill:${st.text};${FONT};font-weight:600">${t.freq}</text>`;
-      nodes(t.left);
-      nodes(t.right);
-    };
-    for (const t of forest) nodes(t);
-
-    stage.innerHTML =
-      `<svg width="100%" height="100%" viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" ` +
-      `preserveAspectRatio="none" role="img" aria-hidden="true" style="display:block">${svg}</svg>`;
+    for (const t of forest) svg += drawTree(t, L, mk, new Map(), { bits: !!final, codes: !!final });
+    const say = forest.map((t) => (t.ch ? `${t.ch} ${t.freq}` : `tre med ${t.freq} (${leaves(t).map((l) => l.ch).join("")})`)).join(", ");
+    const cw = final ? ` Kodeord: ${Object.entries(codes(forest[0])).map(([c, b]) => `${c} ${b}`).join(", ")}.` : "";
+    stage.setAttribute("aria-label", `Køen: ${say}.${cw}`);
+    stage.innerHTML = svgWrap(w, h, svg).replace("<svg ", '<svg aria-hidden="true" ');
   },
 };
