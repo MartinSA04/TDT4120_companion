@@ -29,7 +29,7 @@ maintainer), **rewritten** (approved and committed).
 | 07 Dynamisk programmering | **rewritten** | Rewritten from scratch with a sim of Cut-Rod's calls (without and with storage, and as the subproblem graph), steppers for Bottom-Up-Cut-Rod, LCS-Length with Print-LCS and Knapsack′, and three figures; approved after round 1 and committed 2026-10-24. |
 | 08 Grådighet | **rewritten** | Rewritten from scratch with a sim of three greedy rules for aktivitetsutvalg, steppers for Recursive-Activity-Selector, Decode-PFC and Huffman, and four figures (the exchange of activities, binary and continuous knapsack, prefix-free codes, the Huffman swap); approved after round 1 and committed 2026-10-24. |
 | 09 Traversering av grafer | **rewritten** | Rewritten from scratch with a sim of the to-do list on a street grid (oldest first, newest first or by hand), steppers for DFS (with the parentheses as a time row), Topological-Sort, Strongly-Connected-Components and BFS with Print-Path, and three figures (the graph in memory, edge classes, the component graph); approved after round 1 and committed 2026-10-24. |
-| 10 Minimale spenntrær | to rewrite |  |
+| 10 Minimale spenntrær | **rewritten** | Rewritten from scratch around one village after a snowfall, with a sim for plowing by hand, a sim of the cut as a river the reader moves farms across, steppers for MST-Kruskal (with the river round u's tree), Connected-Components on disjoint sets (the village and the pointer forest together) and MST-Prim (with the river round the tree), and a figure of the exchange proof; approved after round 1 and committed 2026-10-24. |
 | 11 Korteste vei fra én til alle | to rewrite |  |
 | 12 Korteste vei fra alle til alle | to rewrite |  |
 | 13 Maksimal flyt | to rewrite |  |

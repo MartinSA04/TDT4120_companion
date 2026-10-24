@@ -1,157 +1,170 @@
 /**
- * MST-Kruskal trace for <Stepper>, driving the Python block `kruskal` in
- * modul 09, on the lecture's weighted graph. The edges in A get a band like
- * a traversal tree, the edge being looked at is in the accent colour, and an
- * edge that is skipped stays dashed. An edge that is skipped is dashed in the
- * accent colour while it is looked at, and the path in A between its ends is
- * drawn in the accent too, so the cycle it would close shows as one loop. Under the graph the
- * edges stand sorted by weight: taken ones filled, skipped ones faint.
+ * MST-Kruskal trace for <Stepper>, driving the block `kruskal-kode` in modul
+ * 10 «Minimale spenntrær». The first input is the lecture's weighted graph
+ * (the village of the module); shuffling deals new weights from 1 to 15 on
+ * the same graph. Ties keep the graph's edge order (a stable sort).
  *
- * Line numbers refer to that <CodeBlock>:
- *    1 def mst_kruskal(V, E, w):  # w[u, v] er vekten til kanten (u, v)
- *    2     A = []
- *    3     for v in V:
- *    4         make_set(v)
- *    5     E = sorted(E, key=lambda e: w[e])
- *    6     for u, v in E:
- *    7         if find_set(u) != find_set(v):
- *    8             A.append((u, v))
- *    9             union(u, v)
- *   10     return A
+ * Stage: the graph on top, the edges sorted by weight in a row under it.
+ * Edges in A have a band. The current edge is in the accent. When it joins
+ * two trees, the river is drawn around the tree that u lies in: that cut
+ * respects A, and the current edge is the shortest one across it. When both
+ * ends are in one tree, the path between them in A is in the accent too: the
+ * sykel the edge would close. In the row, a taken edge is filled, a skipped
+ * one is struck through, and the current one is ringed.
  *
- * The disjoint sets are a black box here, as in the lecture: the stepper
- * keeps its own component labels and draws only the forest (V, A).
+ * Block lines count the header as line 1, so code line k is block line k + 1.
  *
  * Colours are framework tokens only, so frames re-theme on the light/dark
  * toggle without the module knowing which theme is active.
  */
-
-import { EDGE, NODE, VEKTET, cellsSvg, graphSvg, place, reweighted, wrapSvg } from "./_graf.js";
-
-const CYCLE = { stroke: "var(--accent)", wdt: 2.4, band: true };
-const CUR_SKIP = { stroke: "var(--accent)", wdt: 2.4, dash: "6 4" };
-const SKIPPED = { stroke: "var(--muted)", wdt: 1.2, dash: "4 3", opacity: 0.7 };
-
-let calls = 0;
+import { EDGE, FONT, NODE, VEKTET, esc, graphSvg, place, reweighted, wrapSvg } from "./_graf.js";
+import { riverPath, riverSvg } from "./_elv.js";
 
 const key = (e) => `${e.from}-${e.to}`;
+let calls = 0;
 
-/** The path from u to v along the edges in A, as a list of edge keys. */
-function pathInA(graph, A, u, v) {
+/** The path from a to b along the edges in `A` (keys), as a list of edge keys. */
+function pathIn(graph, A, a, b) {
   const adj = new Map(graph.nodes.map((n) => [n.id, []]));
   for (const e of graph.edges) {
     if (!A.has(key(e))) continue;
     adj.get(e.from).push([e.to, key(e)]);
     adj.get(e.to).push([e.from, key(e)]);
   }
-  const back = new Map([[u, null]]);
-  const todo = [u];
-  while (todo.length) {
-    const x = todo.shift();
-    for (const [y, k] of adj.get(x)) if (!back.has(y)) back.set(y, [x, k]), todo.push(y);
+  const prev = new Map([[a, null]]);
+  const q = [a];
+  while (q.length) {
+    const x = q.shift();
+    for (const [y, k] of adj.get(x)) {
+      if (prev.has(y)) continue;
+      prev.set(y, [x, k]);
+      q.push(y);
+    }
   }
-  const keys = [];
-  const nodes = [v];
-  for (let x = v; back.get(x); x = back.get(x)[0]) {
-    keys.push(back.get(x)[1]);
-    nodes.push(back.get(x)[0]);
-  }
-  return { keys, nodes: nodes.reverse() };
+  const out = [];
+  for (let y = b; prev.get(y); y = prev.get(y)[0]) out.push(prev.get(y)[1]);
+  return out;
 }
 
 export default {
-  // The lecture's weights first; after that, new random weights on the same graph.
   defaultData() {
     return calls++ === 0 ? VEKTET : reweighted(VEKTET);
   },
 
   run(graph) {
-    // Python's sorted is stable, so ties keep the order of E.
-    const sorted = graph.edges.map((e, i) => ({ e, i })).sort((a, b) => a.e.w - b.e.w || a.i - b.i).map((x) => x.e);
-    const comp = new Map(graph.nodes.map((n) => [n.id, n.id]));
-    const A = new Set();
-    const skipped = new Set();
-    let total = 0;
     const frames = [];
-    const snap = (line, desc, vars, extra = {}) =>
-      frames.push({ line, desc, vars, graph, sorted, A: new Set(A), skipped: new Set(skipped), ...extra });
+    const sorted = graph.edges.map((e, i) => ({ ...e, i })).sort((a, b) => a.w - b.w || a.i - b.i);
+    const status = new Map(); // key → "taken" | "skipped"
+    const A = new Set();
+    const p = new Map(graph.nodes.map((n) => [n.id, n.id]));
+    const find = (x) => (p.get(x) === x ? x : find(p.get(x)));
+    const snap = (line, desc, extra = {}) =>
+      frames.push({
+        graph,
+        sorted,
+        line,
+        desc,
+        A: new Set(A),
+        status: new Map(status),
+        listed: extra.listed ?? true,
+        cur: extra.cur ?? null,
+        river: extra.river ?? null,
+        cycle: extra.cycle ?? [],
+        vars: extra.vars,
+      });
 
-    snap([2, 3, 4, 5], "A er tom, og Make-Set gjør hver node til sitt eget tre. Kantene sorteres etter stigende vekt.", {});
-
-    sorted.forEach((e, idx) => {
-      const { from: u, to: v, w } = e;
-      const vars = { u, v, "w[u, v]": w };
-      if (comp.get(u) !== comp.get(v)) {
-        A.add(key(e));
-        total += w;
-        const [keep, gone] = [comp.get(v), comp.get(u)];
-        for (const [x, c] of comp) if (c === gone) comp.set(x, keep);
+    snap(2, "A = ∅: ingen kanter er valgt ennå.", { listed: false });
+    snap([3, 4], "Make-Set(v) for hver node: hver node er en mengde for seg, og i skogen (V, A) er hver node et tre for seg.", { listed: false });
+    snap([5, 6], "Kantene sorteres etter vekt. Raden under grafen viser rekkefølgen.");
+    for (const e of sorted) {
+      const k = key(e);
+      const vars = { "(u, v)": `(${e.from}, ${e.to})`, "w(u, v)": e.w };
+      const ru = find(e.from);
+      const rv = find(e.to);
+      if (ru !== rv) {
+        const tree = graph.nodes.map((n) => n.id).filter((id) => find(id) === ru);
         snap(
-          [6, 7, 8, 9],
-          `Kanten (${u}, ${v}) med vekt ${w}: ${u} og ${v} er i ulike trær. Kanten legges i A, og Union slår sammen de to trærne.`,
-          vars,
-          { cur: key(e), idx, ends: [u, v] },
+          [7, 8],
+          `${e.from} og ${e.to} er i ulike trær. Elva rundt treet til ${e.from} krysses ikke av noen kant i A, og (${e.from}, ${e.to}) er den korteste broen over den.`,
+          { cur: e, river: tree, vars },
         );
+        A.add(k);
+        status.set(k, "taken");
+        p.set(ru, rv);
+        snap([9, 10], `(${e.from}, ${e.to}) legges til A, og Union slår sammen de to trærne.`, { cur: e, vars });
       } else {
-        const { keys, nodes } = pathInA(graph, A, u, v);
-        skipped.add(key(e));
+        status.set(k, "skipped");
         snap(
-          [6, 7],
-          `Kanten (${u}, ${v}) med vekt ${w}: ${u} og ${v} er alt i samme tre, og kanten ville lukket sykelen ${nodes.join(", ")}. Den hoppes over.`,
-          vars,
-          { cur: key(e), idx, ends: [u, v], cycle: keys },
+          [7, 8],
+          `${e.from} og ${e.to} er alt i samme tre. Kanten ville lukket en sykel med den markerte stien i A, så den hoppes over.`,
+          { cur: e, cycle: pathIn(graph, A, e.from, e.to), vars },
         );
       }
-    });
-
-    snap(
-      10,
-      `A har ${A.size} kanter og når alle nodene, med vektsum ${total}. A er et minimalt spenntre.`,
-      {},
-      { idx: sorted.length },
-    );
+    }
+    const total = graph.edges.filter((e) => A.has(key(e))).reduce((s, e) => s + e.w, 0);
+    snap(11, `Alle kantene er sett. A har ${A.size} kanter med vektsum ${total} og er et minimalt spenntre.`);
     return frames;
   },
 
-  render(stage, frame, api) {
-    const { w, h } = api.getSize();
-    const { graph } = frame;
-    if (!graph || w <= 0 || h <= 0) {
-      stage.innerHTML = "";
-      return;
+  render(stage, f, { getSize }) {
+    const { w, h } = getSize();
+    const n = f.sorted.length;
+    // One row of cells when they fit, else two.
+    const rows = w / n >= 24 ? 1 : 2;
+    const perRow = Math.ceil(n / rows);
+    const cw = Math.min(30, (w - 16) / perRow);
+    const ch = 24;
+    const rowH = rows * (ch + 6) + 8;
+    const gh = h - rowH;
+    const r = Math.max(12, Math.min(15, w / 28));
+    const pos = place(f.graph.nodes, { x: 0, y: 0, w, h: gh }, { l: r + 10, r: r + 10, t: r + 8, b: r + 8 });
+    const cyc = new Set(f.cycle);
+    const curK = f.cur ? key(f.cur) : null;
+    let svg = "";
+    if (f.river) {
+      const inS = new Set(f.river);
+      svg += riverSvg(riverPath(f.graph.nodes.map((x) => x.id), f.graph.edges, (id) => inS.has(id), pos, w, gh));
     }
-    const CELL_H = 24;
-    const graphH = h - CELL_H - 16;
-    const r = Math.max(10, Math.min(14, w / 30));
-    const shape = { r };
-    const pos = place(graph.nodes, { x: 0, y: 0, w, h: graphH }, { l: r + 6, r: r + 6, t: r + 6, b: r + 6 });
-
-    const cycle = new Set(frame.cycle ?? []);
-    const nodeStyle = (nd) => ({ st: NODE.white, ring: (frame.ends ?? []).includes(nd.id) });
-    const edgeStyle = (e) => {
-      const k = key(e);
-      const base = { weight: e.w, weightColor: "var(--muted)" };
-      if (frame.cur === k) return { ...base, st: frame.cycle ? CUR_SKIP : EDGE.cur, weightColor: "var(--accent-ink)", weightBold: true };
-      if (cycle.has(k)) return { ...base, st: CYCLE, weightColor: "var(--accent-ink)", weightBold: true };
-      if (frame.A.has(k)) return { ...base, st: EDGE.tree, weightColor: "var(--fg)", weightBold: true };
-      if (frame.skipped.has(k)) return { ...base, st: SKIPPED, weightColor: "var(--faint)" };
-      return { ...base, st: EDGE.plain };
-    };
-    let svg = graphSvg(graph, pos, () => shape, nodeStyle, edgeStyle);
-
-    // The sorted edge list: taken edges filled, skipped ones faint, the current one in the accent.
-    const n = frame.sorted.length;
-    const cellW = Math.min(34, (w - 2) / n);
-    const x0 = (w - cellW * n) / 2;
-    const y = h - CELL_H - 2;
-    svg += cellsSvg(x0, y, cellW, CELL_H, frame.sorted.map((e) => e.w), (i) => {
-      const k = key(frame.sorted[i]);
-      if (i === frame.idx) return { fill: "var(--accent-weak)", stroke: "var(--accent)", text: "var(--accent-ink)", wdt: 2 };
-      if (frame.A.has(k)) return { fill: "color-mix(in srgb, var(--fg) 16%, transparent)", stroke: "var(--fg)", text: "var(--fg)" };
-      if (frame.skipped.has(k)) return { fill: "none", stroke: "var(--border)", text: "var(--faint)" };
-      return { fill: "var(--bg)", stroke: "var(--muted)", text: "var(--fg)" };
-    });
-
+    svg += graphSvg(
+      f.graph,
+      pos,
+      () => ({ r }),
+      () => ({ st: NODE.white }),
+      (e) => {
+        const k = key(e);
+        if (k === curK) {
+          return { st: EDGE.cur, weight: e.w, weightColor: "var(--accent)", weightBold: true };
+        }
+        if (cyc.has(k)) return { st: { ...EDGE.tree, stroke: "var(--accent)" }, weight: e.w, weightColor: "var(--accent)", weightBold: true };
+        if (f.A.has(k)) return { st: EDGE.tree, weight: e.w, weightColor: "var(--fg)", weightBold: true };
+        if (f.status.get(k) === "skipped") return { st: EDGE.faded, weight: e.w, weightColor: "var(--faint)" };
+        return { st: EDGE.plain, weight: e.w };
+      },
+    );
+    if (f.listed) {
+      const x0 = (w - perRow * cw) / 2;
+      f.sorted.forEach((e, i) => {
+        const k = key(e);
+        const cx = x0 + (i % perRow) * cw;
+        const cy = gh + 4 + Math.floor(i / perRow) * (ch + 6);
+        const s = f.status.get(k);
+        const isCur = k === curK;
+        const fill = s === "taken" ? "var(--fg)" : "var(--bg)";
+        const text = s === "taken" ? "var(--bg)" : s === "skipped" ? "var(--faint)" : "var(--fg)";
+        const stroke = isCur ? "var(--accent)" : s === "skipped" ? "var(--border)" : "var(--muted)";
+        svg +=
+          `<rect x="${(cx + 1.5).toFixed(1)}" y="${cy.toFixed(1)}" width="${(cw - 3).toFixed(1)}" height="${ch}" rx="4" ` +
+          `style="fill:${fill};stroke:${stroke}" stroke-width="${isCur ? 2.4 : 1.1}"/>` +
+          `<text x="${(cx + cw / 2).toFixed(1)}" y="${(cy + ch / 2 + 4).toFixed(1)}" text-anchor="middle" ` +
+          `style="fill:${text};${FONT};font-weight:${isCur ? 600 : 400}">${esc(e.w)}</text>`;
+        if (s === "skipped") {
+          svg +=
+            `<line x1="${(cx + 5).toFixed(1)}" y1="${(cy + ch - 5).toFixed(1)}" x2="${(cx + cw - 5).toFixed(1)}" y2="${(cy + 5).toFixed(1)}" ` +
+            `style="stroke:var(--faint)" stroke-width="1"/>`;
+        }
+      });
+    }
     stage.innerHTML = wrapSvg(w, h, svg);
+    stage.setAttribute("aria-label", f.desc);
   },
 };

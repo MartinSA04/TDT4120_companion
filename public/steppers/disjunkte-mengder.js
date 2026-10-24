@@ -1,275 +1,215 @@
 /**
- * Disjoint-set forest trace for <Stepper>, driving the Python block
- * `disjunkte-mengder` in modul 09. It runs Connected-Components on the
- * lecture's graph (the textbook's ten nodes a–j, edges in the book's order)
- * and then two Same-Component queries, the first of which compresses a path.
+ * Disjoint-set forest trace for <Stepper>, driving the block
+ * `disjunkte-mengder` in modul 10 «Minimale spenntrær». It runs
+ * Connected-Components on the strekninger plowed in the village, in the order
+ * they were plowed, and ends with Same-Component(1, 4). The first input is
+ * fixed so that it shows a link of two equal ranks, a link of unequal ranks,
+ * a strekning inside one set and two path compressions; shuffling deals 7–10
+ * random strekninger in a random order.
  *
- * The stage has the edge list on top (current edge in the accent, edges that
- * led to a Union filled, edges inside one set faint) and the forest under
- * it: every arrow is a parent pointer x.p, a root points to itself, and the
- * number left of a node is its rank. Nodes on the path Find-Set follows are
- * ringed, and a pointer that changes in the step is in the accent colour.
- * When the trees do not fit side by side, they wrap onto a second row.
+ * Stage: the village on top with the plowed strekninger banded (no lengths:
+ * Connected-Components does not use them), the forest of parent pointers
+ * under it. Every arrow is a pointer x.p, a root points to itself, and the
+ * number left of a root is its rank (only roots' ranks are ever compared, and
+ * at phone width a rank by every node collides with its neighbours). The
+ * trees wrap onto more rows when they do not fit. Nodes on the path Find-Set follows are
+ * ringed, and a pointer that changes in the step is in the accent.
  *
- * Line numbers refer to that <CodeBlock>:
- *    1 p, rank = {}, {}  # x.p og x.rank er p[x] og rank[x]
- *    2
- *    3 def make_set(x):
- *    4     p[x] = x
- *    5     rank[x] = 0
- *    6
- *    7 def find_set(x):
- *    8     if x != p[x]:
- *    9         p[x] = find_set(p[x])
- *   10     return p[x]
- *   11
- *   12 def link(x, y):
- *   13     if rank[x] > rank[y]:
- *   14         p[y] = x
- *   15     else:
- *   16         p[x] = y
- *   17         if rank[x] == rank[y]:
- *   18             rank[y] += 1
- *   19
- *   20 def union(x, y):
- *   21     link(find_set(x), find_set(y))
+ * Line numbers refer to the block (header = line 1 of each procedure):
+ *    1 Make-Set(x)        5 Union(x, y)        8 Link(x, y)          15 Find-Set(x)
+ *    2 1 x.p = x          6 1 Link(Find-…)     9 1 if x.rank > y.rank 16 1 if x ≠ x.p
+ *    3 2 x.rank = 0                           10 2   y.p = x         17 2   x.p = Find-Set(x.p)
+ *                                             11 3 else x.p = y      18 3 return x.p
+ *                                             12 4   if x.rank == y.rank
+ *                                             13 5     y.rank = y.rank + 1
  *
  * Colours are framework tokens only, so frames re-theme on the light/dark
  * toggle without the module knowing which theme is active.
  */
+import { EDGE, FONT, NODE, VEKTET, esc, graphSvg, nodeSvg, place, shuffle, wrapSvg } from "./_graf.js";
 
-import { EDGE, FONT, NODE, cellsSvg, edgeGeom, edgeSvg, esc, nodeSvg, shuffle, wrapSvg } from "./_graf.js";
-
-const IDS = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"];
-const BOOK = [["b", "d"], ["e", "f"], ["a", "c"], ["h", "i"], ["a", "b"], ["f", "g"], ["b", "c"]];
-const PTR = { stroke: "var(--fg)", wdt: 1.3 };
-
+const L = { makeSet: [2, 3], linkGt: [6, 9, 10], linkNe: [6, 9, 11, 12], linkEq: [6, 9, 11, 12, 13], find: [16, 17, 18], findRoot: [16, 18] };
+const FIXED = [[7, 8], [1, 2], [3, 9], [8, 9], [6, 7], [2, 8], [3, 6], [4, 5], [5, 6]];
+const QUERY = [1, 4];
 let calls = 0;
 
 export default {
-  // The book's edges first; after that, random graphs on the same ten nodes.
   defaultData() {
-    if (calls++ === 0) return BOOK;
-    const pairs = [];
-    for (let i = 0; i < IDS.length; i++) for (let j = i + 1; j < IDS.length; j++) pairs.push([IDS[i], IDS[j]]);
-    return shuffle(pairs).slice(0, 7 + Math.floor(Math.random() * 3)).map((e) => (Math.random() < 0.5 ? e : [e[1], e[0]]));
+    if (calls++ === 0) return FIXED;
+    const k = 7 + Math.floor(Math.random() * 4);
+    return shuffle(VEKTET.edges.map((e) => (Math.random() < 0.5 ? [e.from, e.to] : [e.to, e.from]))).slice(0, k);
   },
 
-  run(edges) {
-    const p = {};
-    const rank = {};
-    const status = edges.map(() => "todo");
+  run(order) {
+    const ids = VEKTET.nodes.map((n) => n.id);
+    const p = new Map(ids.map((x) => [x, x]));
+    const rank = new Map(ids.map((x) => [x, 0]));
+    const plowed = new Set();
     const frames = [];
-    let idx = -1;
-    const snap = (line, desc, vars, extra = {}) =>
-      frames.push({ line, desc, vars, edges, status: [...status], idx, p: { ...p }, rank: { ...rank }, ...extra });
+    const snap = (line, desc, extra = {}) =>
+      frames.push({
+        line,
+        desc,
+        p: new Map(p),
+        rank: new Map(rank),
+        plowed: new Set(plowed),
+        cur: extra.cur ?? null,
+        path: extra.path ?? [],
+        changed: extra.changed ?? [],
+        vars: extra.vars,
+      });
 
-    for (const x of IDS) {
-      p[x] = x;
-      rank[x] = 0;
-    }
-    snap([4, 5], "Make-Set på alle nodene: hver node er en rot med rang 0 og peker på seg selv.", {});
-
-    const pathOf = (x) => {
+    /** Find-Set with path compression, as one or two frames. */
+    const findSet = (x, cur, vars) => {
       const path = [x];
-      while (p[path[path.length - 1]] !== path[path.length - 1]) path.push(p[path[path.length - 1]]);
-      return path;
-    };
-    // Find-Set(x) as frames: one frame if nothing changes, else the path and then the compression.
-    const find = (x, lead) => {
-      const path = pathOf(x);
-      const root = path[path.length - 1];
-      const moved = path.slice(0, -1).filter((y) => p[y] !== root);
-      if (!moved.length) return { root, path };
-      snap([8, 9], `${lead}Find-Set(${x}) følger ${path.join(" → ")} til rota ${root}.`, { x }, { path });
-      for (const y of moved) p[y] = root;
-      snap(
-        [9, 10],
-        `På vei ut av rekursjonen får ${moved.join(" og ")} forelder ${root}. Neste Find-Set fra ${moved[0]} går rett til rota.`,
-        { x },
-        { path, changed: moved },
-      );
-      return { root, path, compressed: true };
+      while (p.get(path.at(-1)) !== path.at(-1)) path.push(p.get(path.at(-1)));
+      const root = path.at(-1);
+      if (path.length <= 2) {
+        snap(path.length === 1 ? L.findRoot : L.find, path.length === 1 ? `Find-Set(${x}): ${x} er en rot og representerer mengden sin.` : `Find-Set(${x}): forelderen ${root} er rota.`, { cur, path, vars });
+        return root;
+      }
+      snap(L.find, `Find-Set(${x}) følger pekerne ${path.join(" → ")} opp til rota ${root}.`, { cur, path, vars });
+      const changed = path.slice(0, -2);
+      for (const y of changed) p.set(y, root);
+      snap(17, `På vei tilbake setter Find-Set ${changed.join(" og ")}.p = ${root}: ${changed.length > 1 ? "nodene" : "noden"} peker nå rett på rota.`, { cur, path, changed, vars });
+      return root;
     };
 
-    edges.forEach(([u, v], i) => {
-      idx = i;
-      const lead = `Kanten (${u}, ${v}): `;
-      const fu = find(u, lead);
-      const fv = find(v, fu.compressed ? "" : lead);
-      const both = [...fu.path, ...fv.path];
-      if (fu.root === fv.root) {
-        status[i] = "skip";
-        snap(
-          [8, 10],
-          `${fu.compressed || fv.compressed ? "" : lead}Find-Set(${u}) = Find-Set(${v}) = ${fu.root}, så ${u} og ${v} er alt i samme mengde, og Union kalles ikke.`,
-          { u, v },
-          { path: both },
-        );
-        return;
+    snap(L.makeSet, "Make-Set for hver gård: hver gård er en mengde for seg, og hver rot peker på seg selv.");
+    for (const [u, v] of order) {
+      const cur = [u, v];
+      plowed.add(`${Math.min(u, v)}-${Math.max(u, v)}`);
+      const vars = { "(u, v)": `(${u}, ${v})` };
+      const x = findSet(u, cur, vars);
+      const y = findSet(v, cur, vars);
+      if (x === y) {
+        snap(null, `Begge har rota ${x}: gårdene henger alt sammen, så det blir ingen Union.`, { cur, vars });
+        continue;
       }
-      snap(
-        [8, 10],
-        `${fu.compressed || fv.compressed ? "" : lead}` +
-          (fu.path.length === 1 && fv.path.length === 1
-            ? `${u} og ${v} er røtter, så Find-Set gir ${u} og ${v}. Mengdene er ulike.`
-            : `Find-Set(${u}) = ${fu.root} og Find-Set(${v}) = ${fv.root}. Mengdene er ulike.`),
-        { u, v },
-        { path: both },
-      );
-      const [x, y] = [fu.root, fv.root];
-      status[i] = "union";
-      if (rank[x] > rank[y]) {
-        p[y] = x;
-        snap([13, 14, 21], `Union kaller Link(${x}, ${y}). ${x} har høyere rang enn ${y}, så ${y}.p = ${x}, og rangene endres ikke.`, { x, y }, { changed: [y], path: [x, y] });
-      } else if (rank[x] < rank[y]) {
-        p[x] = y;
-        snap([15, 16, 17, 21], `Union kaller Link(${x}, ${y}). ${y} har høyere rang enn ${x}, så ${x}.p = ${y}, og rangene endres ikke.`, { x, y }, { changed: [x], path: [x, y] });
+      const lv = { ...vars, "x.rank": rank.get(x), "y.rank": rank.get(y) };
+      if (rank.get(x) > rank.get(y)) {
+        p.set(y, x);
+        snap(L.linkGt, `Union(${u}, ${v}) kaller Link(${x}, ${y}). ${x} har høyest rang, så ${y} henges under ${x}, og rangene endres ikke.`, { cur, changed: [y], vars: lv });
+      } else if (rank.get(x) < rank.get(y)) {
+        p.set(x, y);
+        snap(L.linkNe, `Union(${u}, ${v}) kaller Link(${x}, ${y}). ${y} har høyest rang, så ${x} henges under ${y}, og rangene endres ikke.`, { cur, changed: [x], vars: lv });
       } else {
-        p[x] = y;
-        rank[y] += 1;
-        snap(
-          [15, 16, 17, 18, 21],
-          `Union kaller Link(${x}, ${y}). Begge har rang ${rank[x]}, så ${x}.p = ${y}, og ${y} får rang ${rank[y]}.`,
-          { x, y },
-          { changed: [x], path: [x, y], bumped: y },
-        );
+        p.set(x, y);
+        rank.set(y, rank.get(y) + 1);
+        // The strip shows the ranks Link compared; the drawing shows the new rank.
+        snap(L.linkEq, `Union(${u}, ${v}) kaller Link(${x}, ${y}). Rangene er like, så ${x} henges under ${y}, og rangen til ${y} øker til ${rank.get(y)}.`, { cur, changed: [x], vars: lv });
       }
-    });
-
-    idx = edges.length;
-    // Same-Component: first from the deepest node to another node in its set, then across two sets.
-    const depth = (x) => pathOf(x).length - 1;
-    const deepest = [...IDS].sort((a, b) => depth(b) - depth(a) || IDS.indexOf(a) - IDS.indexOf(b))[0];
-    const rootOf = (x) => pathOf(x)[pathOf(x).length - 1];
-    const mate = IDS.find((y) => y !== deepest && rootOf(y) === rootOf(deepest) && p[y] !== deepest);
-    const other = IDS.find((y) => rootOf(y) !== rootOf(deepest));
-    const queries = [];
-    if (mate) queries.push([deepest, mate]);
-    if (other) queries.push([deepest, other]);
-    for (const [u, v] of queries) {
-      const lead = `Same-Component(${u}, ${v}): `;
-      const fu = find(u, lead);
-      const fv = find(v, "");
-      const same = fu.root === fv.root;
-      snap(
-        [8, 10],
-        `${fu.compressed ? "" : lead}Find-Set(${u}) = ${fu.root} og Find-Set(${v}) = ${fv.root}, så Same-Component(${u}, ${v}) gir ${same ? "True" : "False"}.`,
-        { u, v },
-        { path: [...fu.path, ...fv.path] },
-      );
     }
+    const [a, b] = QUERY;
+    const qv = { "(u, v)": `(${a}, ${b})` };
+    const ra = findSet(a, null, qv);
+    const rb = findSet(b, null, qv);
+    snap(L.find, `Same-Component(${a}, ${b}): rotene er ${ra} og ${rb}, så svaret er ${ra === rb ? "true" : "false"}.`, { vars: qv });
     return frames;
   },
 
-  render(stage, frame, api) {
-    const { w, h } = api.getSize();
-    if (!frame.p || w <= 0 || h <= 0) {
-      stage.innerHTML = "";
-      return;
-    }
+  render(stage, f, { getSize }) {
+    const { w, h } = getSize();
+    const gh = Math.round(h * 0.4);
     const r = Math.max(10, Math.min(13, w / 32));
-    const shape = { r };
-    const CELL_H = 24;
-    let svg = "";
+    // The village, small, with the plowed strekninger.
+    const pos = place(VEKTET.nodes, { x: 0, y: 0, w, h: gh }, { l: w * 0.14 + r, r: w * 0.14 + r, t: r + 6, b: r + 6 });
+    const cur = f.cur ? `${Math.min(...f.cur)}-${Math.max(...f.cur)}` : null;
+    let svg = graphSvg(
+      { ...VEKTET, edges: VEKTET.edges },
+      pos,
+      () => ({ r }),
+      () => ({ st: NODE.white }),
+      (e) => {
+        const k = `${e.from}-${e.to}`;
+        if (k === cur) return { st: EDGE.cur };
+        if (f.plowed.has(k)) return { st: EDGE.tree };
+        return { st: EDGE.faded };
+      },
+    );
+    svg += `<line x1="8" x2="${w - 8}" y1="${gh + 4}" y2="${gh + 4}" style="stroke:var(--border)" stroke-width="1"/>`;
 
-    // The edge list on top.
-    const n = frame.edges.length;
-    const cellW = Math.min(52, (w - 4) / n);
-    const cx0 = (w - cellW * n) / 2;
-    svg += cellsSvg(cx0, 2, cellW, CELL_H, frame.edges.map(([u, v]) => `${u},${v}`), (i) => {
-      if (i === frame.idx) return { fill: "var(--accent-weak)", stroke: "var(--accent)", text: "var(--accent-ink)", wdt: 2 };
-      if (frame.status[i] === "union") return { fill: "color-mix(in srgb, var(--fg) 16%, transparent)", stroke: "var(--fg)", text: "var(--fg)" };
-      if (frame.status[i] === "skip") return { fill: "none", stroke: "var(--border)", text: "var(--faint)" };
-      return { fill: "var(--bg)", stroke: "var(--muted)", text: "var(--fg)" };
-    });
-
-    // The forest: trees left to right by their first node, wrapped into rows.
-    const p = frame.p;
-    const kids = new Map(IDS.map((x) => [x, []]));
+    // The forest: children of each node, roots in id order, wrapped into rows
+    // so that a node keeps about 46 px of width for itself and its rank.
+    const ids = VEKTET.nodes.map((n) => n.id);
+    const kids = new Map(ids.map((x) => [x, []]));
     const roots = [];
-    for (const x of IDS) (p[x] === x ? roots : kids.get(p[x])).push(x);
-    const first = (x) => Math.min(IDS.indexOf(x), ...kids.get(x).map(first));
-    const levels = (x) => 1 + Math.max(0, ...kids.get(x).map(levels));
-    const leaves = (x) => (kids.get(x).length ? kids.get(x).reduce((s, c) => s + leaves(c), 0) : 1);
-    roots.sort((a, b) => first(a) - first(b));
-    const SW = 2 * r + 34;
-    const perRow = Math.max(1, Math.floor(w / SW));
+    for (const x of ids) {
+      if (f.p.get(x) === x) roots.push(x);
+      else kids.get(f.p.get(x)).push(x);
+    }
+    const width = (x) => Math.max(1, kids.get(x).reduce((s, c) => s + width(c), 0));
+    const depth = (x) => kids.get(x).reduce((m, c) => Math.max(m, 1 + depth(c)), 0);
+    const GAP = 0.35;
+    const cap = (w - 16) / 46;
     const rows = [];
-    let row = [];
-    let used = 0;
-    for (const t of roots) {
-      if (row.length && used + leaves(t) > perRow) {
-        rows.push(row);
-        row = [];
-        used = 0;
-      }
-      row.push(t);
-      used += leaves(t);
+    for (const x of roots) {
+      const row = rows.at(-1);
+      const used = row ? row.reduce((s2, y) => s2 + width(y), 0) + row.length * GAP : 0;
+      if (row && used + width(x) <= cap) row.push(x);
+      else rows.push([x]);
     }
-    if (row.length) rows.push(row);
-
-    const LOOP = r + 16; // room above a root for its self-loop
-    const top = CELL_H + 10;
-    const avail = h - top - 4;
-    const fixed = rows.reduce((s, rw) => s + LOOP + 2 * r + 6, 0);
-    const gaps = rows.reduce((s, rw) => s + Math.max(...rw.map(levels)) - 1, 0);
-    const LS = gaps ? Math.max(30, Math.min(54, (avail - fixed) / gaps)) : 0;
-    const usedH = fixed + gaps * LS;
-    let y0 = top + Math.max(0, (avail - usedH) / 2);
-    const pos = new Map();
-    for (const rw of rows) {
-      const lv = Math.max(...rw.map(levels));
-      let x = (w - rw.reduce((s, t) => s + leaves(t), 0) * SW) / 2 + SW / 2;
-      const put = (node, d) => {
-        const yy = y0 + LOOP + r + d * LS;
-        const ks = kids.get(node);
-        if (!ks.length) {
-          pos.set(node, { x, y: yy });
-          x += SW;
-          return;
+    const levels = rows.reduce((s2, row) => s2 + 1 + Math.max(...row.map(depth)), 0);
+    const lev = Math.min(46, (h - gh - 20 - rows.length * 58) / Math.max(1, levels - rows.length));
+    const at = new Map();
+    let fr = 13;
+    let y0 = gh + 30;
+    for (const row of rows) {
+      const total = row.reduce((s2, x) => s2 + width(x), 0) + (row.length - 1) * GAP;
+      const unit = Math.min(46, (w - 16) / total);
+      fr = Math.min(fr, Math.max(9, unit * 0.27));
+      let cx = (w - total * unit) / 2;
+      const lay = (x, d, left) => {
+        at.set(x, { x: left + (width(x) * unit) / 2, y: y0 + d * lev });
+        let l = left;
+        for (const c of kids.get(x)) {
+          lay(c, d + 1, l);
+          l += width(c) * unit;
         }
-        ks.forEach((k) => put(k, d + 1));
-        const xs = ks.map((k) => pos.get(k).x);
-        pos.set(node, { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: yy });
       };
-      rw.forEach((t) => put(t, 0));
-      y0 += LOOP + 2 * r + 6 + (lv - 1) * LS;
+      for (const x of row) {
+        lay(x, 0, cx);
+        cx += (width(x) + GAP) * unit;
+      }
+      y0 += Math.max(...row.map(depth)) * lev + 2 * fr + 32;
     }
-
-    const changed = new Set(frame.changed ?? []);
-    const onPath = new Set(frame.path ?? []);
-    for (const x of IDS) {
-      const a = pos.get(x);
-      // A ringed root gets its loop lifted clear of the ring.
-      const lift = onPath.has(x) ? 4 : 0;
-      if (p[x] !== x) {
-        const g = edgeGeom(a, pos.get(p[x]), shape, shape, 0);
-        svg += edgeSvg(g, changed.has(x) ? EDGE.cur : PTR);
+    const onPath = new Set(f.path);
+    const changed = new Set(f.changed);
+    // Pointers: child → parent, a self-loop on each root.
+    for (const x of ids) {
+      const a = at.get(x);
+      const col = changed.has(x) ? "var(--accent)" : "var(--fg)";
+      const wd = changed.has(x) ? 2.2 : 1.2;
+      if (f.p.get(x) === x) {
+        svg +=
+          `<path d="M${(a.x - 5).toFixed(1)} ${(a.y - fr).toFixed(1)} C${(a.x - 12).toFixed(1)} ${(a.y - fr - 16).toFixed(1)} ` +
+          `${(a.x + 12).toFixed(1)} ${(a.y - fr - 16).toFixed(1)} ${(a.x + 4).toFixed(1)} ${(a.y - fr - 1).toFixed(1)}" ` +
+          `fill="none" style="stroke:${col}" stroke-width="${wd}"/>` +
+          `<polygon points="${(a.x + 3).toFixed(1)},${(a.y - fr + 0.5).toFixed(1)} ${(a.x + 1).toFixed(1)},${(a.y - fr - 6).toFixed(1)} ${(a.x + 8).toFixed(1)},${(a.y - fr - 4).toFixed(1)}" style="fill:${col}"/>`;
         continue;
       }
-      // A root points to itself: a small loop over the node.
-      const s = { x: a.x - r * 0.42, y: a.y - r * 0.9 - lift };
-      const e = { x: a.x + r * 0.42, y: a.y - r * 0.9 - lift };
-      const c1 = { x: a.x - r * 1.1, y: a.y - r - 15 - lift };
-      const c2 = { x: a.x + r * 1.1, y: a.y - r - 15 - lift };
-      const len = Math.hypot(e.x - c2.x, e.y - c2.y);
-      const [ux, uy] = [(e.x - c2.x) / len, (e.y - c2.y) / len];
-      const b = { x: e.x - ux * 6, y: e.y - uy * 6 };
+      const b = at.get(f.p.get(x));
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const s = { x: a.x + ux * fr, y: a.y + uy * fr };
+      const t = { x: b.x - ux * (fr + 1), y: b.y - uy * (fr + 1) };
+      const base = { x: t.x - ux * 7, y: t.y - uy * 7 };
       svg +=
-        `<path d="M${s.x.toFixed(1)} ${s.y.toFixed(1)} C${c1.x.toFixed(1)} ${c1.y.toFixed(1)} ${c2.x.toFixed(1)} ${c2.y.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}" ` +
-        `fill="none" style="stroke:var(--muted)" stroke-width="1.2"/>` +
-        `<polygon points="${e.x.toFixed(1)},${e.y.toFixed(1)} ${(b.x - uy * 3.5).toFixed(1)},${(b.y + ux * 3.5).toFixed(1)} ${(b.x + uy * 3.5).toFixed(1)},${(b.y - ux * 3.5).toFixed(1)}" style="fill:var(--muted)"/>`;
+        `<line x1="${s.x.toFixed(1)}" y1="${s.y.toFixed(1)}" x2="${base.x.toFixed(1)}" y2="${base.y.toFixed(1)}" style="stroke:${col}" stroke-width="${wd}"/>` +
+        `<polygon points="${t.x.toFixed(1)},${t.y.toFixed(1)} ${(base.x - uy * 3.5).toFixed(1)},${(base.y + ux * 3.5).toFixed(1)} ${(base.x + uy * 3.5).toFixed(1)},${(base.y - ux * 3.5).toFixed(1)}" style="fill:${col}"/>`;
     }
-    for (const x of IDS) {
-      const a = pos.get(x);
-      svg += nodeSvg(a, shape, x, NODE.white, onPath.has(x));
-      const bumped = frame.bumped === x;
+    for (const x of ids) {
+      const a = at.get(x);
+      svg += nodeSvg(a, { r: fr }, x, NODE.white, onPath.has(x));
+      if (f.p.get(x) !== x) continue;
       svg +=
-        `<text x="${(a.x - r - 9).toFixed(1)}" y="${(a.y + 4).toFixed(1)}" text-anchor="end" ` +
-        `style="fill:${bumped ? "var(--accent-ink)" : "var(--muted)"};${FONT}${bumped ? ";font-weight:600" : ""}">${esc(frame.rank[x])}</text>`;
+        `<text x="${(a.x - fr - 10).toFixed(1)}" y="${(a.y + 4).toFixed(1)}" text-anchor="end" ` +
+        `style="fill:var(--muted);${FONT}">${esc(f.rank.get(x))}</text>`;
     }
-
     stage.innerHTML = wrapSvg(w, h, svg);
+    stage.setAttribute("aria-label", f.desc);
   },
 };

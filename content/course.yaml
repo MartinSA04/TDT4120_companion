@@ -293,7 +293,7 @@ formulas:
     }
   - {
       tex: "O(m\\,\\alpha(n))",
-      label: "$m$ operasjoner på disjunkte mengder, der $n$ av dem er Make-Set, med union by rank og stikomprimering. $\\alpha(n) \\le 4$ for alle $n$ under $10^{80}$. Med union by rank alene er grensen $O(m \\lg n)$.",
+      label: "$m$ operasjoner på disjunkte mengder, der $n$ av dem er Make-Set, med union by rank og stikomprimering. $\\alpha(n) \\le 4$ for alle $n$ opp til $16^{512}$. Med union by rank alene er grensen $O(m \\lg n)$.",
       section: "Minimale spenntrær",
       id: disjunkte-mengder-kjoretid,
     }
@@ -305,7 +305,7 @@ formulas:
     }
   - {
       tex: "O(E \\lg E) = O(E \\lg V)",
-      label: "MST-Kruskal: sorteringen tar $O(E \\lg E)$, og løkka tar $O(E \\lg V)$ med union by rank. Siden $|E| < |V|^2$, er $\\lg |E| < 2 \\lg |V|$.",
+      label: "MST-Kruskal: sorteringen tar $O(E \\lg E)$, og Find-Set og Union i løkka tar $O(E\\,\\alpha(V))$ med union by rank og stikomprimering. Siden $|E| < |V|^2$, er $\\lg |E| < 2 \\lg |V|$.",
       section: "Minimale spenntrær",
       id: kruskal-kjoretid,
     }
@@ -418,7 +418,7 @@ symbols:
   # ── Minimale spenntrær ──
   - { tex: "x.p", meaning: "Forelderen til $x$ i en disjunkt-mengde-skog", section: "Minimale spenntrær", term: "Disjunkte mengder", id: forelder, note: "En rot har $x.p = x$ og er representanten for mengden. Ikke forgjengeren $u.\\pi$." }
   - { tex: "x.\\mathit{rank}", meaning: "Rangen til $x$: en øvre grense for høyden til $x$", section: "Minimale spenntrær", term: "Union by rank", formula: rang-grense, id: rank, note: "Ikke rangen $i$ i Randomized-Select." }
-  - { tex: "\\alpha(n)", meaning: "En funksjon som vokser svært sakte, i kjøretiden for disjunkte mengder", section: "Minimale spenntrær", formula: disjunkte-mengder-kjoretid, id: alfa-n, note: "$\\alpha(n) \\le 4$ for alle $n$ under $10^{80}$. Ikke belastningsfaktoren $\\alpha$." }
+  - { tex: "\\alpha(n)", meaning: "En funksjon som vokser svært sakte, i kjøretiden for disjunkte mengder", section: "Minimale spenntrær", formula: disjunkte-mengder-kjoretid, id: alfa-n, note: "$\\alpha(n) \\le 4$ for alle $n$ opp til $16^{512}$. Ikke belastningsfaktoren $\\alpha$." }
   - { tex: "m,\\ n", meaning: "For disjunkte mengder: antall operasjoner, og hvor mange av dem som er Make-Set", section: "Minimale spenntrær", formula: disjunkte-mengder-kjoretid, note: "$n \\le m$, og $n$ er antall elementer." }
   - { tex: "w(u, v)", meaning: "Vekten til kanten $(u, v)$", section: "Minimale spenntrær", note: "I en urettet graf er $w(u, v) = w(v, u)$. Ikke kapasiteten $W$ i ryggsekkproblemet." }
   - { tex: "w(T)", meaning: "Vektsummen til kantene i $T$", section: "Minimale spenntrær", term: "Minimalt spenntre", formula: trygg-kant-bytte }
@@ -873,7 +873,7 @@ glossary:
     }
   - {
       term: "Union by rank",
-      definition: "Heuristikk for disjunkt-mengde-skoger. Hver node har en rang $x.\\mathit{rank}$, en øvre grense for høyden. Link henger rota med lavest rang under rota med høyest rang, og har røttene samme rang, får den nye rota rangen økt med 1. Et tre med rot av rang $k$ har minst $2^k$ noder, så med $n$ elementer er høyden høyst $\\lg n$.",
+      definition: "Heuristikk for disjunkt-mengde-skoger. Hver node har en rang $x.\\mathit{rank}$, en øvre grense for høyden. Link henger rota med lavest rang under rota med høyest rang, og når røttene har samme rang, øker rangen til den nye rota med 1. Et tre med rot av rang $k$ har minst $2^k$ noder, så med $n$ elementer er høyden høyst $\\lg n$.",
       section: "Minimale spenntrær",
     }
   - {
@@ -883,7 +883,7 @@ glossary:
     }
   - {
       term: "Spenntre",
-      definition: "Et tre av kanter fra en sammenhengende, urettet graf som når alle nodene. Har $|V| - 1$ kanter.",
+      definition: "En mengde kanter $T \\subseteq E$ i en sammenhengende, urettet graf som kobler sammen alle nodene og ikke har noen sykel. Har alltid $|V| - 1$ kanter: uten kanter er hver node en gruppe for seg, og hver kant i treet slår sammen to grupper til én.",
       section: "Minimale spenntrær",
     }
   - {
@@ -898,17 +898,17 @@ glossary:
     }
   - {
       term: "Lett kant",
-      definition: "En kant med lavest vekt blant kantene som krysser et snitt. Er flere like lette, er alle lette. En lett kant over et snitt som respekterer $A$, er trygg for $A$.",
+      definition: "En kant med lavest vekt blant kantene som krysser et snitt. Flere kanter kan være like lette. En lett kant over et snitt som respekterer $A$, er trygg for $A$.",
       section: "Minimale spenntrær",
     }
   - {
       term: "Trygg kant",
-      definition: "Er $A$ en delmengde av et minimalt spenntre, er kanten $(u, v)$ trygg for $A$ når $A \\cup \\{(u, v)\\}$ også er det. Generic-MST legger bare til trygge kanter, så $A$ ender som et minimalt spenntre.",
+      definition: "Når $A$ er en delmengde av et minimalt spenntre, er kanten $(u, v)$ trygg for $A$ hvis $A \\cup \\{(u, v)\\}$ også er en delmengde av et minimalt spenntre. Generic-MST legger bare til trygge kanter, så $A$ ender som et minimalt spenntre.",
       section: "Minimale spenntrær",
     }
   - {
       term: "MST-Kruskal",
-      definition: "Kruskals algoritme. Går gjennom kantene i stigende vekt og legger hver kant til $A$ når endene er i ulike trær i skogen $(V, A)$. Trærne holdes i disjunkte mengder. $O(E \\lg V)$.",
+      definition: "Kruskals algoritme. Går gjennom kantene i stigende vekt og legger hver kant til $A$ når endene er i ulike trær i skogen $(V, A)$. Snittet rundt treet til den ene enden gjør kanten trygg. Trærne holdes i disjunkte mengder. $O(E \\lg V)$.",
       section: "Minimale spenntrær",
     }
   - {

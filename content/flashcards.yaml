@@ -312,6 +312,9 @@ cards:
     back: "Hvis du bare bytter køen med en stakk, blir det ikke DFS-Visit: en node blir grå idet den legges på stakken, så forgjengeren blir den første noden som oppdaget den. Du får DFS når en node blir grå først når den kommer øverst i stakken. I vilkårlig rekkefølge besøkes fortsatt alle nodene som kan nås, men $v.d$ er ikke lenger korteste avstand."
     section: "Traversering av grafer"
   # ── Minimale spenntrær ─────────────────────────────────────────────────────
+  - front: "Hvorfor har et spenntre alltid $|V| - 1$ kanter?"
+    back: "Uten kanter er hver node en gruppe for seg, $|V|$ grupper. En kant i et spenntre går mellom to ulike grupper, ellers ville den lukket en sykel, så hver kant slår sammen to grupper til én. Fra $|V|$ grupper til én trengs $|V| - 1$ kanter."
+    section: "Minimale spenntrær"
   - front: "Hva gjør union by rank og stikomprimering, og hva blir kjøretiden?"
     back: "Union by rank henger rota med lavest rang under rota med høyest rang, så høyden blir høyst $\\lg n$. Stikomprimering lar Find-Set sette hver node på stien rett under rota. Sammen tar $m$ operasjoner $O(m\\,\\alpha(n))$, og $\\alpha(n) \\le 4$ i praksis."
     section: "Minimale spenntrær"

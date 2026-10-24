@@ -2,389 +2,287 @@
 order: 10
 num: "09"
 title: Minimale spenntrær
-summary: "Et minimalt spenntre kobler sammen alle nodene i en vektet, urettet graf med lavest mulig vektsum. En lett kant over et snitt som respekterer kantene du alt har valgt, er alltid trygg, så MST-Kruskal og MST-Prim kan velge kantene grådig. MST-Kruskal holder styr på trærne med disjunkte mengder, og begge bruker O(E lg V)."
+summary: "Hvordan du kobler sammen alle nodene i en vektet, urettet graf så billig som mulig: hvorfor den letteste kanten over et snitt er trygg å ta med, og hvordan MST-Kruskal med disjunkte mengder og MST-Prim med en prioritetskø bruker det i O(E lg V)."
 importance: core
 tag: "Uke 42"
 part: "Del 4: Grafer og flyt"
-updated: 2026-10-18
+updated: 2026-10-24
 ---
 
-Et strømnett skal koble sammen noen byer. Hver mulig linje mellom to byer har en
-pris, og nettet skal nå alle byene så billig som mulig. Byene er nodene i en
-urettet graf, linjene er kanter med vekter, og du skal velge ut kanter. Ta alltid
-den billigste kanten som ikke lager en sykel sammen med kantene du har valgt, så
-blir nettet billigst mulig. For å sjekke raskt om en kant lager en sykel, trenger
-du en datastruktur for disjunkte mengder.
-
 <LearningGoals>
-- Forklar skog-implementasjonen av <Term name="Disjunkte mengder">disjunkte mengder</Term> med Make-Set, Find-Set, Link og Union, og hvordan <Term name="Union by rank">union by rank</Term> og <Term name="Stikomprimering">stikomprimering</Term> holder trærne lave.
-- Finn sammenhengende komponenter med Connected-Components og Same-Component.
-- Forklar hva et <Term name="Spenntre">spenntre</Term> og et <Term name="Minimalt spenntre">minimalt spenntre</Term> er.
-- Gjør rede for Generic-MST og hva en <Term name="Trygg kant">trygg kant</Term> er.
+- Forklar hva et <Term name="Spenntre">spenntre</Term> og et <Term name="Minimalt spenntre">minimalt spenntre</Term> er, og hvorfor et spenntre har $|V| - 1$ kanter.
+- Gjør rede for Generic-MST og hva det vil si at en kant er <Term name="Trygg kant">trygg</Term>.
 - Forklar når og hvorfor en <Term name="Lett kant">lett kant</Term> over et <Term name="Snitt">snitt</Term> er trygg.
-- Gjør rede for <Term name="MST-Kruskal">MST-Kruskal</Term> og <Term name="MST-Prim">MST-Prim</Term> og kjøretidene deres, også for MST-Prim med Fibonacci-haug.
+- Kjør <Term name="MST-Kruskal">MST-Kruskal</Term> for hånd, og forklar hvorfor kanten den tar med, er trygg.
+- Forklar skog-implementasjonen av <Term name="Disjunkte mengder">disjunkte mengder</Term> med Make-Set, Union, Link og Find-Set, og hvordan <Term name="Union by rank">union by rank</Term> og <Term name="Stikomprimering">stikomprimering</Term> holder trærne lave. Bruk den i Connected-Components og Same-Component.
+- Kjør <Term name="MST-Prim">MST-Prim</Term> for hånd, og forklar kjøretiden med binær haug og med Fibonacci-haug.
 </LearningGoals>
 
-## Disjunkte mengder
+Etter et kraftig snøfall er alle veiene i ei bygd stengt. Bygda har ni gårder og fjorten strekninger
+mellom dem, fra 1 til 14 km lange. Brøytebilen skal åpne nok strekninger til at folk fra hver gård
+kan kjøre til hver av de andre gårdene, og brøytingen koster etter hvor mange kilometer den åpner. Alle
+strekningene er til sammen 93 km.
 
-En graf får kanter én og én, og etter hver kant vil du vite om to noder er i samme
-sammenhengende komponent. DFS finner komponentene i $\Theta(V + E)$, men da må
-hele traverseringen kjøres på nytt for hver ny kant. En datastruktur for
-<Term name="Disjunkte mengder">disjunkte mengder</Term> holder i stedet styr på
-komponentene underveis, som mengder av noder. Mengdene er disjunkte, så ingen node
-er i to av dem, og hver mengde har ett av elementene sine som representant. Datastrukturen har tre operasjoner:
-
-- Make-Set$(x)$ lager mengden $\{x\}$, med $x$ som representant.
-- Union$(x, y)$ slår sammen mengden til $x$ og mengden til $y$.
-- Find-Set$(x)$ returnerer representanten for mengden til $x$.
-
-To elementer er i samme mengde hvis og bare hvis Find-Set gir samme representant
-for begge. Connected-Components gjør hver node til sin egen mengde og går gjennom
-kantene. For hver kant $(u, v)$ der $u$ og $v$ er i ulike mengder, kaller den
-Union$(u, v)$. Union kalles bare langs kanter, så en mengde holder seg innenfor én
-komponent. Etter kanten $(u, v)$ er $u$ og $v$ i samme mengde for godt, så alle
-nodene på en sti havner i samme mengde. Når alle kantene er behandlet, er mengdene
-altså nøyaktig komponentene, og Same-Component$(u, v)$ svarer ved å sammenligne
-Find-Set$(u)$ og Find-Set$(v)$. En ny kant behandles på samme måte, med to kall
-til Find-Set og høyst ett til Union.
-
-<CodeBlock
-  id="sammenhengende-komponenter"
-  title="komponenter.py"
-  lang="python"
-  code={`def connected_components(V, E):  # nodene V og kantene E
-    for v in V:
-        make_set(v)
-    for u, v in E:
-        if find_set(u) != find_set(v):
-            union(u, v)
-
-def same_component(u, v):
-    return find_set(u) == find_set(v)`}
-/>
-
-### Skog-implementasjonen
-
-I en disjunkt-mengde-skog er hver mengde et rotfast tre der hver node bare har en
-peker $x.p$ til forelderen sin. Rota er representanten og er sin egen forelder,
-$x.p = x$. Find-Set følger foreldrepekerne opp til rota. Union finner røttene til
-de to trærne og kaller Link, som henger den ene rota under den andre.
-
-Med bare dette kan trærne bli høye. Henger Link alltid det første treet under det andre,
-gir Union$(x_1, x_2)$, Union$(x_2, x_3)$, …, Union$(x_{n-1}, x_n)$ en sti der
-$x_1$ ligger $n - 1$ kanter under rota, og Find-Set$(x_1)$ tar $\Theta(n)$. To
-heuristikker holder trærne lave.
-
-Med <Term name="Union by rank">union by rank</Term> har hver node en rang
-$x.\mathit{rank}$, en øvre grense for høyden til $x$, altså antall kanter på den
-lengste stien ned til en løvnode. Make-Set gir rang 0. Link henger rota med lavest
-rang under rota med høyest rang. Har den høye rota rang $k$, har den lave rang og
-høyde høyst $k - 1$, så ingen node havner mer enn $k$ kanter under den nye rota,
-og $k$ er fortsatt en øvre grense for høyden. Har røttene samme rang $k$, kan en
-node havne $k + 1$ kanter under den nye rota, så rota som blir forelder, får
-rangen økt med 1.
-
-Rangen til en rot øker bare når to trær med samme rang $k$ slås sammen. Har begge
-minst $2^k$ noder, får det nye treet minst $2^{k+1}$ noder og rang $k + 1$. Når
-rangene er ulike, får rota flere noder og beholder rangen. Et tre med én node har
-rang 0 og $2^0$ noder, så ved induksjon har et tre med rot av rang $k$ minst $2^k$
-noder. Med $n$ elementer er altså ingen rang større enn $\lg n$
-(<FormulaRef id="rang-grense" />). Høyden er høyst rangen, så med union
-by rank alene koster Find-Set $O(\lg n)$.
-
-<Term name="Stikomprimering">Stikomprimering</Term> gjør neste Find-Set raskere.
-Find-Set$(x)$ er rekursiv: er $x$ ikke rota, kaller den seg selv på $x.p$, og på
-vei ut av rekursjonen setter den $x.p$ til rota som kallet returnerte. Etterpå
-peker alle nodene på stien fra $x$ rett på rota. Stikomprimering endrer ikke
-rangene. Høyden kan synke mens rangen står stille, så rangen er bare en øvre
-grense for høyden.
-
-<CodeBlock
-  id="disjunkte-mengder"
-  title="disjunkte_mengder.py"
-  lang="python"
-  code={`p, rank = {}, {}  # x.p og x.rank er p[x] og rank[x]
-
-def make_set(x):
-    p[x] = x
-    rank[x] = 0
-
-def find_set(x):
-    if x != p[x]:
-        p[x] = find_set(p[x])
-    return p[x]
-
-def link(x, y):
-    if rank[x] > rank[y]:
-        p[y] = x
-    else:
-        p[x] = y
-        if rank[x] == rank[y]:
-            rank[y] += 1
-
-def union(x, y):
-    link(find_set(x), find_set(y))`}
-/>
-
-<Stepper
-  src="/steppers/disjunkte-mengder.js"
-  codeId="disjunkte-mengder"
-  title="Connected-Components"
-  caption="Kantene i grafen fra forelesningen står øverst, i rekkefølgen Connected-Components behandler dem. Under står disjunkt-mengde-skogen: hver pil er en foreldrepeker $x.p$, en rot peker på seg selv, og tallet til venstre for en node er rangen. En fylt kant førte til Union, og en blek kant hadde begge endene i samme mengde. De siste stegene er to kall til Same-Component."
-  height={320}
-/>
-
-Med begge heuristikkene tar $m$ operasjoner, der $n$ av dem er Make-Set,
-$O(m\,\alpha(n))$ tid (<FormulaRef id="disjunkte-mengder-kjoretid" />). Funksjonen
-$\alpha(n)$ vokser så sakte at $\alpha(n) \le 4$ for alle $n$ under $10^{80}$, så
-i praksis koster hver operasjon konstant amortisert tid. Med union by rank alene er grensen
-$O(m \lg n)$, ettersom hver Find-Set koster $O(\lg n)$.
-
-<Callout title="Union by rank og stikomprimering">
-Union by rank henger treet med lavest rang under det andre, så ingen rang og ingen
-høyde blir større enn $\lg n$. Stikomprimering lar hver node på stien Find-Set går,
-peke rett på rota. Sammen gir de $O(m\,\alpha(n))$ for $m$ operasjoner.
-</Callout>
-
-<Example label="Eksamensoppgave" title="Find-Set med stikomprimering">
-<ExamRef id="2023-des" task="5" />
-
-<Figure
-  src="/figures/eksamen-2023-12-oppgave-5.svg"
-  alt="To trær av foreldrepekere. I det første er 1 rota og peker på seg selv. 3 peker på 1, 5 og 6 peker på 3, 9 peker på 5, 10 og 11 peker på 6, og 12 peker på 11. I det andre er 2 rota og peker på seg selv, 4 peker på 2, og 7 og 8 peker på 4. Node 11 er markert."
-  number={1}
-  width={380}
-  height={292}
-  caption="Skogen fra oppgavesettet."
-/>
-
-I figur 1 ser du en disjunkt-mengde-skog (*disjoint-set forest*). Vi kan
-representere foreldrepekerne med en tabell $A$, der $A[v] = v.p$:
-
-$$
-A = \langle 1, 2, 1, 2, 3, 3, \allowbreak 4, 4, 5, 6, 6, 11 \rangle
-$$
-
-Utfør Find-Set(11) og oppdater $A$. Hvordan ser $A$ ut etterpå?
-
-Svar ved å liste opp tallene i $A$. Du trenger ikke skrive $A = \langle \ldots \rangle$.
-
-<Solution>
-Find-Set(11) følger foreldrepekerne: $A[11] = 6$, $A[6] = 3$ og $A[3] = 1$, og
-$A[1] = 1$, så 1 er rota. På vei ut av rekursjonen får hver node på stien rota som
-forelder: $A[3]$ er alt 1, og $A[6]$ og $A[11]$ blir 1. Node 12 ligger ikke på
-stien, så $A[12] = 11$ står, og resten av tabellen endres ikke.
-
-<Answer>
-`1, 2, 1, 2, 3, 1, 4, 4, 5, 6, 1, 11`
-</Answer>
-</Solution>
-</Example>
+Mindre er nok. Bygda har 662 måter å brøyte akkurat nok på, der ingen strekning kan tas
+bort uten at bygda blir delt, og de koster fra 37 til 71 km. To av dem koster 37 km. Én regel
+finner en av disse to uten å prøve de andre: brøyt alltid den korteste strekningen som ikke går
+mellom to gårder som alt kan nå hverandre.
 
 ## Spenntrær
 
-Grafen $G = (V, E)$ er nå urettet og sammenhengende, og hver kant har en vekt
-$w(u, v)$. Et <Term name="Spenntre">spenntre</Term> for $G$ er et tre som består
-av kanter fra $E$ og når alle nodene i $V$. Et tre med $|V|$ noder har $|V| - 1$
-kanter, så alle spenntrærne har like mange kanter, og du sammenligner dem bare med
-vektsummen
+Prøv selv i simuleringen. Trykk på en strekning for å brøyte den, og trykk en gang til for å angre.
+Målet er at alle gårdene henger sammen, med så få kilometer som mulig.
+
+<Simulation
+  src="/sims/broyt-bygda.js"
+  host="dom"
+  title="Brøyt bygda"
+  height={260}
+  caption="Ni gårder og strekningene mellom dem, med lengden i kilometer. En brøytet strekning har bredt bånd. Rød betyr at strekningen ligger på en sykel av brøytede strekninger."
+/>
+
+Brøyt 1–2, 2–8 og 1–8. Gård 1 kunne alt nå gård 8 gjennom gård 2, så den siste strekningen gir ingen
+ny forbindelse, og alle tre blir røde. De danner en sykel. Ta bort hvilken som helst av dem, og de
+tre gårdene når fortsatt hverandre langs resten av sykelen. Alle lengdene er positive, så det
+billigste nettet har ingen sykel.
+
+Bygda er en urettet graf $G = (V, E)$. Gårdene er nodene, strekningene er kantene, og lengden av
+strekningen mellom $u$ og $v$ er vekten $w(u, v)$. Et <Term name="Spenntre">spenntre</Term> er en
+mengde kanter $T \subseteq E$ som kobler sammen alle nodene og ikke har noen sykel. Vektsummen er
 
 $$
-w(T) = \sum_{(u, v) \in T} w(u, v) .
+w(T) = \sum_{(u, v) \in T} w(u, v) ,
 $$
 
-Et <Term name="Minimalt spenntre">minimalt spenntre</Term> er et spenntre med
-lavest mulig vektsum. Grafen kan ha flere av dem. Er alle vektene positive, er
-den billigste kantmengden som kobler sammen alle nodene, alltid et tre: har
-mengden en sykel, kan du fjerne en kant i sykelen uten at noen node kobles fra, og
-summen synker. Med negative vekter gjelder ikke det, og derfor krever problemet at
-kantmengden er asyklisk.
+og et <Term name="Minimalt spenntre">minimalt spenntre</Term> har lavest mulig $w(T)$. Bygda har to
+minimale spenntrær, og begge er 37 km.
 
-### Generic-MST
+Et spenntre har alltid $|V| - 1$ kanter. Før noe er brøytet, er hver gård en gruppe for seg, så
+bygda har $|V|$ grupper. En kant i et spenntre går mellom to ulike grupper, ellers ville den lukket en
+sykel. Hver kant slår altså sammen to grupper til én, og fra $|V|$ grupper til én trengs $|V| - 1$
+kanter. I bygda er det 8.
 
-MST-Kruskal og MST-Prim er begge tilfeller av Generic-MST. Den holder en kantmengde
-$A$ og legger til én kant om gangen så lenge $A$ ikke er et spenntre. Invarianten
-er at $A$ er en delmengde av et minimalt spenntre. En kant $(u, v)$ er
-<Term name="Trygg kant">trygg</Term> for $A$ når $A \cup \{(u, v)\}$ også er en
-delmengde av et minimalt spenntre, og Generic-MST legger bare til trygge kanter.
+Vektene kan også være negative, og da kunne en kant mer gjort vektsummen mindre. Problemet krever
+derfor et spenntre: gitt en sammenhengende, urettet graf $G$ med vekter $w$, finn et spenntre med
+lavest mulig $w(T)$.
 
-Den tomme mengden er en delmengde av hvert minimalt spenntre, så invarianten
-holder i starten, og hver trygg kant bevarer den. Så lenge $A$ ikke er et
-spenntre, er $A$ en delmengde av et minimalt spenntre $T$ med flere kanter enn $A$, og
-hver kant i $T$ som ikke er i $A$, er trygg. Det finnes altså alltid en trygg kant.
-Når $A$ er et spenntre, har den $|V| - 1$ kanter og er en delmengde av et minimalt
-spenntre med like mange kanter, så $A$ er selv et minimalt spenntre. Men $T$ er
-ukjent, så du trenger en måte å finne en trygg kant på uten $T$.
+Et minimalt spenntre gjør den samlede brøytingen minst, men ikke hver tur kortest. Den korteste ruten
+fra gård 5 til gård 1 er 21 km, gjennom gård 6, 7 og 8, men den bruker strekningen 5–6 på 10 km,
+som ingen av de to billigste nettene brøyter. Langs strekningene de brøyter, er turen minst 28 km.
 
-<Callout title="Trygge kanter">
-En kant er trygg for $A$ når $A$ med kanten fortsatt er en delmengde av et
-minimalt spenntre. Generic-MST legger bare til trygge kanter, så $A$ ender som et minimalt
-spenntre.
+<Callout title="Det billigste nettet er et tre">
+Med positive vekter blir et nett som har en sykel, billigere når én kant i sykelen tas bort. Det
+billigste nettet som kobler sammen alle nodene, er derfor et spenntre, med $|V| - 1$ kanter.
 </Callout>
+
+<Example label="Eksamensoppgave" title="Kanter i et spenntre">
+<ExamRef id="2018-des" task="1" />
+
+I en sammenhengende graf med ${n \ge 1}$ noder og $m$ kanter, hva er det minste og største antall
+kanter et spenntre kan ha?
+
+<Solution>
+Alle spenntrær i grafen har like mange kanter. Hver kant i et spenntre slår sammen to grupper av
+noder, og det tar $n - 1$ sammenslåinger å gå fra $n$ noder hver for seg til én gruppe. Hvor mange
+kanter grafen har, spiller ingen rolle.
+
+<Answer>Både det minste og det største antallet er $n - 1$.</Answer>
+</Solution>
+</Example>
+
+## Trygge kanter
+
+Regelen om alltid å brøyte den korteste strekningen som ikke går mellom to gårder som alt henger
+sammen, er grådig. Den velger én strekning om gangen og angrer aldri. Den gir det
+billigste nettet hvis hver strekning den velger, er med i et minimalt spenntre sammen med
+strekningene den alt har valgt.
+
+Generic-MST bygger kantmengden $A$ slik. I starten er $A$ tom, og den tomme mengden er en
+delmengde av alle minimale spenntrær. En kant $(u, v)$ er <Term name="Trygg kant">trygg</Term> for $A$ når
+$A \cup \{(u, v)\}$ fortsatt er en delmengde av et minimalt spenntre.
+
+<CodeBlock
+  lang="text"
+  code={`Generic-MST(G, w)
+1  A = ∅
+2  while A does not form a spanning tree
+3      find an edge (u, v) that is safe for A
+4      A = A ∪ {(u, v)}
+5  return A`}
+/>
+
+Med alle nodene danner kantene i $A$ en skog $(V, A)$. Hvert tre i skogen er en gruppe noder som
+henger sammen gjennom kantene i $A$, og i starten er hver node et tre for seg.
+
+Før hver runde i løkka er $A$ en delmengde av et minimalt spenntre, fordi hver kant som legges til,
+er trygg. Så lenge $A$ ikke er et spenntre, har et minimalt spenntre som inneholder $A$, en kant som
+ikke er med i $A$, og den kanten er trygg. En trygg kant lukker aldri en sykel, så hver runde slår
+sammen to trær i skogen, og etter $|V| - 1$ runder er $A$ et spenntre. Da er $A$ et minimalt
+spenntre selv. Linje 3 er det grådige valget. Den sier ikke hvordan du finner en trygg kant.
 
 ### Snitt og lette kanter
 
-Tenk deg at nodene ligger på hver sin side av en elv, og at ingen av kantene i $A$
-går over elva. Et spenntre må ha minst én kant over elva, en bro, ellers henger de
-to sidene ikke sammen. Den billigste broen er trygg.
+Tenk deg ei elv gjennom bygda, slik at noen gårder ligger på hver side og ingen brøytet strekning går
+over elva. Strekningene over elva er broer. Uansett hva som ellers blir brøytet, må minst én bro
+brøytes, ellers kommer ingen fra den ene siden over til den andre. Den korteste broen er alltid trygg
+å brøyte.
 
-Elva er et <Term name="Snitt">snitt</Term> $(S, V - S)$, en deling av nodene i to
-mengder. En kant krysser snittet når den har én ende i $S$ og den andre i
-$V - S$, og snittet respekterer $A$ når ingen kant i $A$ krysser det. En
-<Term name="Lett kant">lett kant</Term> over snittet er en kant med lavest vekt
-blant kantene som krysser det. Er flere like lette, er alle lette kanter. En bro er
-en kant som krysser snittet.
+Elva er et <Term name="Snitt">snitt</Term> $(S, V - S)$, en deling av nodene i mengden $S$ og
+resten. En kant krysser snittet når den har én ende i $S$ og én i $V - S$, slik en bro går over
+elva. Snittet respekterer $A$ når ingen kant i $A$ krysser det. En kant som krysser snittet, er
+<Term name="Lett kant">lett</Term> når ingen kant som krysser det, har lavere vekt, og flere kanter
+kan være like lette. Den korteste broen er en lett kant.
 
-<Statement kind="theorem" name="Lette kanter er trygge">
-La $A$ være en delmengde av et minimalt spenntre for $G$, la $(S, V - S)$ være et
-snitt som respekterer $A$, og la $(u, v)$ være en lett kant over snittet. Da er
-$(u, v)$ trygg for $A$.
-</Statement>
+I simuleringen under ligger gårdene 1, 2 og 8 på den ene siden av elva, og den korteste broen er
+7–8 på 1 km. Trykk «Brøyt den korteste broen». Nå går en brøytet strekning over elva, og knappen
+virker ikke før du flytter elva: trykk på gård 7 for å flytte den over til gård 8. Fortsett til alle
+gårdene henger sammen. Del gårdene som du vil hver gang, så lenge ingen brøytet strekning går over
+elva. En gård eller en gruppe gårder kan godt ligge alene på sin side. Du ender alltid på det
+billigste, 37 km med lengdene simuleringen starter med.
 
-La $T$ være et minimalt spenntre som inneholder $A$. Inneholder $T$ også $(u, v)$,
-er kanten trygg. Ellers finnes det nøyaktig én sti fra $u$ til $v$ i $T$, fordi
-$T$ er et tre. Nodene $u$ og $v$ ligger på hver sin side av snittet, så stien
-krysser snittet langs minst én kant $(x, y)$, som i figur 2. Kanten $(x, y)$ er
-ikke i $A$, fordi snittet respekterer $A$. Den ligger på den eneste stien mellom
-$u$ og $v$, så fjerner du den fra $T$, faller treet i to deler med $u$ i den ene og
-$v$ i den andre. Kanten $(u, v)$ kobler dem sammen igjen, og du får et nytt
-spenntre $T'$ med
-
-$$
-w(T') = w(T) - w(x, y) + w(u, v) \allowbreak \le w(T) ,
-$$
-
-ettersom $w(u, v) \le w(x, y)$: begge kantene krysser snittet, og $(u, v)$ er lett.
-$T$ var minimalt, så $T'$ er også minimalt, og $T'$
-inneholder både $A$ og $(u, v)$.
-
-<Figure
-  src="/figures/trygg-kant.svg"
-  alt="Nodene er delt av en stiplet kurve i S til venstre og V minus S til høyre. Kantene i spenntreet T er tegnet heltrukne, og de tykke av dem er A, som ikke krysser kurven. Et bånd markerer stien i T fra u i S til v i V minus S. Stien krysser kurven langs kanten fra x til y, som er rød. Kanten fra u til v er rød og stiplet."
-  number={2}
-  width={440}
-  height={250}
-  caption="Snittet $(S, V - S)$ og et minimalt spenntre $T$ som inneholder $A$. De heltrukne kantene er $T$, og de tykke av dem er $A$. Båndet er stien fra $u$ til $v$ i $T$, som krysser snittet langs den heltrukne røde kanten $(x, y)$, og den stiplede røde kanten er den lette kanten $(u, v)$."
+<Simulation
+  src="/sims/elva.js"
+  host="dom"
+  title="Elva"
+  height={260}
+  caption="Bygda med ei elv som deler gårdene i to. Strekningene over elva er broer, og den korteste broen er rød. Brøytede strekninger har bredt bånd, og en brøytet strekning over elva er rød."
 />
 
-Med $A = \emptyset$ respekterer hvert snitt $A$. Den letteste kanten i hele grafen
-er derfor trygg, og det samme er den letteste kanten ut av en hvilken som helst
-node. Når $A$ ikke er tom, er $(V, A)$ en skog, og hvert tre $C$ i skogen gir et
-snitt mellom nodene i $C$ og resten. Ingen kant i $A$ går ut av $C$, så snittet
-respekterer $A$, og en lett kant fra $C$ til resten av grafen er trygg. MST-Kruskal
-og MST-Prim velger kanter over slike snitt. Med $A = \emptyset$ er teoremet
-<Term name="Grådighetsegenskapen">grådighetsegenskapen</Term> for minimale
-spenntrær, og med en $A$ som ikke er tom, sier det at også de senere grådige
-valgene er trygge.
+### Hvorfor en lett kant er trygg
 
-<Callout title="Lette kanter er trygge">
-En lett kant over et snitt som respekterer $A$, er trygg for $A$. I beviset bytter
-du kanten der stien fra $u$ til $v$ i $T$ krysser snittet, med den lette kanten, og
-vektsummen øker ikke.
+<Statement kind="theorem" name="Lette kanter er trygge">
+La $A$ være en delmengde av et minimalt spenntre for $G$, og la $(S, V - S)$ være et snitt som
+respekterer $A$. Da er hver lett kant over snittet trygg for $A$.
+</Statement>
+
+Ta et minimalt spenntre $T$ som inneholder $A$, og en lett kant $(u, v)$ over snittet. Hvis
+$(u, v)$ er med i $T$, er kanten trygg. Ellers legger du $(u, v)$ til i $T$. Da får $T$ en sykel:
+kanten $(u, v)$ og stien fra $v$ tilbake til $u$ i $T$. Sykelen går over elva på $(u, v)$, og for å
+komme tilbake til $u$ må stien over elva igjen, på en kant $(x, y)$ i $T$ (figur 1). Ta ut $(x, y)$.
+Da er sykelen brutt, alle nodene henger fortsatt sammen, og resultatet $T'$ er et spenntre.
+
+<Figure
+  src="/figures/byttet.svg"
+  alt="Ei elv deler nodene i S og V minus S. Spenntreet T har kantene med bånd fra A og stien u, a, x, y, c, v, som krysser elva på den stiplede kanten fra x til y. Den røde kanten fra u til v krysser elva og er ikke i T."
+  caption="Et minimalt spenntre $T$ som inneholder $A$, kantene med bånd, men ikke den lette kanten $(u, v)$. Stien fra $u$ til $v$ i $T$ går over elva på den stiplede kanten $(x, y)$, som byttes ut med $(u, v)$."
+  number={1}
+  width={340}
+  height={250}
+/>
+
+Begge kantene krysser snittet, og $(u, v)$ er lett, så $w(u, v) \le w(x, y)$ og
+
+$$
+w(T') = w(T) - w(x, y) + w(u, v) \allowbreak \le w(T) .
+$$
+
+$T$ var et minimalt spenntre, så $T'$ er også et minimalt spenntre. Kanten $(x, y)$ krysser snittet,
+og snittet respekterer $A$, så $(x, y)$ er ikke med i $A$. Derfor inneholder $T'$ både $A$ og
+$(u, v)$, og $(u, v)$ er trygg. Uten kravet om at snittet respekterer $A$ kunne $(x, y)$ vært en kant
+i $A$, og byttet ville tatt den ut.
+
+Beviset er et <Term name="Utvekslingsargument">utvekslingsargument</Term>. Et minimalt spenntre uten
+det grådige valget byttes om til et som har det, uten å bli dyrere.
+
+<Callout title="Den korteste broen er trygg">
+En lett kant over et snitt som respekterer $A$, er trygg for $A$. Et minimalt spenntre som
+inneholder $A$, men ikke kanten, kan bytte den inn for en annen kant over snittet som er minst like
+tung.
 </Callout>
 
 <Example label="Eksamensoppgave" title="Den letteste kanten mellom to deler">
 <ExamRef id="2019-nov" task="15" />
 
-Vurder følgende utsagn om minimale spenntrær (*minimum spanning trees*) i en
-vektet, urettet graf $G = (V, E)$ der alle kantene har forskjellig vekt:
+Vurder følgende utsagn om minimale spenntrær (minimum spanning trees) i en vektet, urettet graf
+$G = (V, E)$ der alle kantene har forskjellig vekt:
 
-> Hvis nodene $V$ kan deles i mengdene $X$ og $Y$ (uten overlapp) så vil det
-> minimale spenntreet nødvendigvis inneholde kanten mellom $X$ og $Y$ med lavest
-> vekt.
+> Hvis nodene $V$ kan deles i mengdene $X$ og $Y$ (uten overlapp) så vil det minimale spenntreet
+> nødvendigvis inneholde kanten mellom $X$ og $Y$ med lavest vekt.
 
 Stemmer dette? Svar ja eller nei og forklar kort.
 (Her holder det ikke nødvendigvis å beskrive hva en pensumalgoritme gjør.)
 
 <Solution>
-$(X, Y)$ er et snitt, og kanten $e = (u, v)$ med lavest vekt mellom $X$ og $Y$ er
-lett over det. Med $A = \emptyset$ respekterer snittet $A$, så $e$ er trygg, og et
-minimalt spenntre inneholder $e$. Utsagnet krever at hvert minimalt spenntre
-inneholder $e$. Anta at et minimalt spenntre $T$ ikke inneholder $e$. Stien
-fra $u$ til $v$ i $T$ krysser snittet langs en kant $(x, y)$, og fordi alle
-vektene er ulike, er $w(x, y) > w(u, v)$. Bytter du $(x, y)$ med $e$, får du et
-spenntre med strengt lavere vektsum, og det motsier at $T$ var minimalt.
+$(X, Y)$ er et snitt, og med $A = \emptyset$ respekterer det $A$. Den letteste kanten $(u, v)$ mellom
+$X$ og $Y$ er lett over snittet, så den er med i et minimalt spenntre. Byttet viser at den er med i
+alle: Anta at et minimalt spenntre $T$ ikke inneholder $(u, v)$. Stien fra $u$ til $v$ i $T$ går
+fra $X$ til $Y$ på en kant $(x, y)$. Alle vektene er forskjellige, så $w(u, v) < w(x, y)$, og byttet
+gir et spenntre som er lettere enn $T$. Det kan ikke skje, så $T$ inneholder $(u, v)$.
 
-<Answer>Ja. I et spenntre uten kanten kan du bytte kanten der stien mellom endene krysser snittet, med den, og få et strengt lettere spenntre.</Answer>
+<Answer>Ja. Kanten er trygg for den tomme kantmengden, og med forskjellige vekter er den med i det minimale spenntreet.</Answer>
 </Solution>
 </Example>
 
-## Kruskals algoritme
+<Quiz
+  question="$A$ er en delmengde av et minimalt spenntre, og $(u, v)$ er den letteste kanten som ikke er med i $A$. Når er $(u, v)$ trygg for $A$?"
+  options={["Alltid, fordi ingen kant utenfor $A$ er lettere", "Bare når $A$ er tom", "Når $u$ og $v$ er i ulike trær i skogen $(V, A)$", "Bare når ingen annen kant har samme vekt"]}
+  answer={2}
+  explanation={"Hvis $u$ og $v$ er i samme tre, lukker kanten en sykel med $A$, og da er den ikke trygg. Hvis de er i ulike trær, legger du elva rundt treet $C$ som $u$ ligger i. Ingen kant i $A$ krysser elva, og alle kanter som er lettere enn $(u, v)$, er med i $A$, så $(u, v)$ er lett over et snitt som respekterer $A$. Like vekter endrer ikke dette, fordi flere kanter kan være lette over samme snitt."}
+/>
 
-<Term name="MST-Kruskal">MST-Kruskal</Term> går gjennom kantene i stigende vekt
-og legger kanten $(u, v)$ til $A$ hvis $u$ og $v$ er i ulike trær i skogen
-$(V, A)$. Ligger de i samme tre, ville kanten lukket en sykel, og den hoppes over.
+## MST-Kruskal
 
-Når MST-Kruskal tar med $(u, v)$, er alle lettere kanter alt behandlet. Hver av dem
-ble lagt i $A$ eller hoppet over fordi begge endene lå i samme tre, og trærne slås
-bare sammen, så endene ligger fortsatt i samme tre. Ingen av dem går altså ut av
-treet $C$ som $u$ ligger i. Snittet rundt $C$ respekterer $A$, og
-$(u, v)$ er en lett kant over det, så kanten er trygg.
+Regelen om å brøyte den korteste strekningen som ikke lukker en sykel, er
+<Term name="MST-Kruskal">MST-Kruskal</Term>. Den går gjennom kantene fra den letteste til den tyngste og tar med en kant når endene ligger i ulike trær i skogen $(V, A)$.
+Kanten den tar med, er trygg. Kall treet som $u$ ligger i, $C$, og legg elva rundt $C$. Ingen kant i
+$A$ krysser elva, fordi $C$ er et helt tre i $A$. Alle kantene som er lettere enn $(u, v)$, er alt
+behandlet. Hver av dem ble tatt med og ligger inni et tre, eller ble hoppet over fordi endene lå i
+samme tre, så ingen av dem krysser elva. Da er $(u, v)$ lett over et snitt som respekterer $A$. En
+kant med begge endene i samme tre ville lukket en sykel med $A$ og kan aldri være med.
 
-MST-Kruskal holder styr på trærne med disjunkte mengder, der hver mengde er nodene
-i ett tre. Find-Set$(u) \ne$ Find-Set$(v)$ betyr at kanten går mellom to trær, og
-Union slår de to trærne sammen. Koden er Connected-Components med kantene sortert
-etter vekt, der kantene som fører til Union, samles i $A$. Da har skogen $(V, A)$
-og disjunkt-mengde-skogen de samme nodene og de samme komponentene. Trærne i $(V, A)$ blir til slutt
-spenntreet. Foreldrepekerne i disjunkt-mengde-skogen er en datastruktur og trenger
-ikke følge noen kant i grafen.
+MST-Kruskal holder styr på trærne med disjunkte mengder: nodene i hvert tre i $(V, A)$ er én
+mengde. Make-Set$(v)$ lager mengden $\{v\}$. Find-Set$(u)$ gir en representant for mengden til $u$,
+så $u$ og $v$ er i samme tre når Find-Set gir det samme for begge. Union$(u, v)$ slår sammen de to
+mengdene når kanten slår sammen de to trærne.
 
 <CodeBlock
-  id="kruskal"
-  title="kruskal.py"
-  lang="python"
-  code={`def mst_kruskal(V, E, w):  # w[u, v] er vekten til kanten (u, v)
-    A = []
-    for v in V:
-        make_set(v)
-    E = sorted(E, key=lambda e: w[e])
-    for u, v in E:
-        if find_set(u) != find_set(v):
-            A.append((u, v))
-            union(u, v)
-    return A`}
+  id="kruskal-kode"
+  lang="text"
+  code={`MST-Kruskal(G, w)
+1  A = ∅
+2  for each vertex v ∈ G.V
+3      Make-Set(v)
+4  create list of edges in G.E
+5  sort list by w
+6  for each edge (u, v) in list
+7      if Find-Set(u) ≠ Find-Set(v)
+8          A = A ∪ {(u, v)}
+9          Union(u, v)
+10 return A`}
 />
 
 <Stepper
   src="/steppers/kruskal.js"
-  codeId="kruskal"
+  codeId="kruskal-kode"
   title="MST-Kruskal"
-  caption="Grafen fra forelesningen, med vekten på hver kant. Kantene i $A$ har et bånd, kanten som behandles, er farget, og en kant som er hoppet over, er stiplet. Hoppes kanten over, er stien i $A$ mellom endene farget på samme måte. Under grafen står kantene sortert etter vekt: en fylt rute er lagt i $A$, og en blek er hoppet over."
-  height={300}
+  height={330}
+  caption="Kantene i $A$ har bånd, og raden under grafen er kantene sortert etter vekt: fylt når kanten er tatt med, overstrøket når den er hoppet over. Kanten MST-Kruskal ser på, er rød. Elva går rundt treet til $u$ når kanten tas med, og en rød sti i $A$ er sykelen en kant ville lukket."
 />
 
-Sorteringen tar $O(E \lg E)$. Løkka gjør $O(E)$ kall til Find-Set og Union, og
-med union by rank koster hvert av dem $O(\lg V)$. Grafen er sammenhengende, så
-$|E| \ge |V| - 1$, og de $|V|$ kallene til Make-Set koster $O(E)$. Til sammen blir
-det $O(E \lg E + E \lg V)$. Siden $|E| < |V|^2$, er $\lg |E| < 2 \lg |V|$, så
-MST-Kruskal tar $O(E \lg E) = O(E \lg V)$.
+Stepperen starter med bygda, og «Stokk om» gir nye vekter. Når en kant tas med, går elva rundt treet
+til $u$, og alle broene over den er minst like lange som kanten. Når en kant hoppes over, er stien
+mellom $u$ og $v$ i $A$ rød. Stien og kanten danner sykelen kanten ville lukket.
 
-<Table
-  rowHeader={false}
-  columns={["Operasjon", "Antall", "Hver"]}
-  rows={[
-    ["Make-Set", "$V$", "$O(1)$"],
-    ["Sortering", "$1$", "$O(E \\lg E)$"],
-    ["Find-Set", "$O(E)$", "$O(\\lg V)$"],
-    ["Union", "$O(E)$", "$O(\\lg V)$"],
-  ]}
-  caption="Kostnadene i MST-Kruskal med union by rank. Med stikomprimering i tillegg koster Find-Set og Union $O(\alpha(V))$ amortisert, og da er det sorteringen som bestemmer kjøretiden."
-/>
-
-<Callout title="MST-Kruskal">
-MST-Kruskal tar kantene i stigende vekt og hopper over hver kant som har begge
-endene i samme tre. Kanten den tar, er lett over snittet rundt et av trærne og
-derfor trygg. Kjøretiden er $O(E \lg V)$.
+<Callout title="Den letteste kanten mellom to trær">
+MST-Kruskal tar kantene i stigende vekt og tar med en kant når endene er i ulike trær i $(V, A)$.
+Snittet rundt treet til $u$ respekterer $A$, og kanten er lett over det, så kanten er trygg.
 </Callout>
 
-<Example label="Eksamensoppgave" title="MST-Kruskal på en vektmatrise">
+<Quiz
+  question="Alle vektene i en graf økes med 5. Hvilket tre finner MST-Kruskal nå?"
+  options={["Et annet tre, fordi en sti med mange kanter øker mer enn en med få", "Det samme treet som før", "Det samme treet, men bare hvis alle vektene er forskjellige", "Et annet tre, fordi de letteste kantene øker mest i forhold til vekten sin"]}
+  answer={1}
+  explanation={"MST-Kruskal bruker vektene bare til å sortere kantene, og når alle øker med like mye, blir rekkefølgen den samme, også mellom like vekter. Testene med Find-Set blir de samme, så treet blir det samme, og vektsummen øker med $5(|V| - 1)$. At de letteste kantene øker mest i forhold til vekten, endrer ikke rekkefølgen, og det er bare den MST-Kruskal ser. En sti med mange kanter øker mer enn en med få, og det betyr noe for korteste vei mellom to noder, men ikke for spenntreet, som alltid har $|V| - 1$ kanter."}
+/>
+
+<Example label="Eksamensoppgave" title="MST-Kruskal fra en vektmatrise">
 <ExamRef id="2019-aug-kont" task="6" />
 
 La $W$, nedenfor, være vektmatrisen til en urettet graf $G$.
 
 $$
 W = \begin{array}{c|ccccc}
- & 1 & 2 & 3 & 4 & 5 \\ \hline
+  & 1 & 2 & 3 & 4 & 5 \\ \hline
 1 & 0 & 4 & 5 & \infty & 1 \\
 2 & 4 & 0 & \infty & 2 & 4 \\
 3 & 5 & \infty & 0 & 7 & 8 \\
@@ -393,157 +291,302 @@ W = \begin{array}{c|ccccc}
 \end{array}
 $$
 
-Utfør Kruskals algoritme (MST-Kruskal) på grafen $G$. List opp kantene i den
-rekkefølgen de legges til i løsningen. (Dersom $i < j$, oppgi kanten mellom $i$
-og $j$ som $(i, j)$. Skriv én kant per linje i svaret.)
+Utfør Kruskals algoritme (MST-Kruskal) på grafen $G$. List opp kantene i den rekkefølgen de legges
+til i løsningen. (Dersom $i < j$, oppgi kanten mellom $i$ og $j$ som $(i, j)$. Skriv én kant per
+linje i svaret.)
 
 <Solution>
-$\infty$ betyr at kanten ikke finnes. Matrisen er symmetrisk, så det holder
-å lese kantene over diagonalen. Sortert etter vekt er de $(1, 5)$ med 1, $(2, 4)$ med 2,
-$(4, 5)$ med 3, $(1, 2)$ og $(2, 5)$ med 4, $(1, 3)$ med 5, $(3, 4)$ med 7 og
-$(3, 5)$ med 8. De tre første kobler sammen ulike trær og legges til, og da er
-$\{1, 2, 4, 5\}$ ett tre. $(1, 2)$ og $(2, 5)$ har begge endene i det treet og
-hoppes over, i hvilken som helst rekkefølge. $(1, 3)$ kobler til node 3 og er
-den fjerde kanten, så spenntreet er ferdig med vektsum 11, og $(3, 4)$ og
-$(3, 5)$ hoppes over.
+$\infty$ betyr at det ikke er noen kant, og diagonalen er 0. Kantene sortert etter vekt er $(1, 5)$
+med 1, $(2, 4)$ med 2, $(4, 5)$ med 3, $(1, 2)$ og $(2, 5)$ med 4, $(1, 3)$ med 5, $(3, 4)$ med 7 og
+$(3, 5)$ med 8. $(1, 5)$, $(2, 4)$ og $(4, 5)$ går mellom ulike trær og tas med, og da er 1, 2, 4 og
+5 i samme tre. $(1, 2)$ og $(2, 5)$ hoppes over. $(1, 3)$ tar med node 3, og resten hoppes over.
 
 <Answer>
-`(1, 5)`, `(2, 4)`, `(4, 5)` og `(1, 3)`, i den rekkefølgen.
+$(1, 5)$<br/>
+$(2, 4)$<br/>
+$(4, 5)$<br/>
+$(1, 3)$
 </Answer>
 </Solution>
 </Example>
 
-## Prims algoritme
+MST-Kruskal spør for hver kant om $u$ og $v$ er i samme tre, $|E|$ ganger i alt. Skogen $(V, A)$ har
+færre enn $|V|$ kanter, så en traversering svarer på ett spørsmål i $O(V)$, og alle spørsmålene
+koster $O(VE)$. Med disjunkte mengder tar hvert spørsmål nesten konstant tid.
 
-<Term name="MST-Prim">MST-Prim</Term> bygger ett tre ut fra en startnode $r$. I
-hvert steg legger den til den letteste kanten mellom treet og en node utenfor.
-Snittet mellom nodene i treet og resten respekterer $A$, så kanten er trygg.
+## Disjunkte mengder
 
-MST-Prim er en traversering der huskelista er en min-prioritetskø $Q$. BFS tar ut
-den eldste noden og DFS den nyeste, mens MST-Prim tar ut noden med den letteste
-kanten til treet. Nøkkelen $v.\mathit{key}$ er vekten av den letteste kanten fra
-$v$ til en node i treet, og $v.\pi$ er noden i treet som kanten går til. Alle
-nodene settes i $Q$ fra starten med $v.\mathit{key} = \infty$ og
-$v.\pi = \mathrm{nil}$, bortsett fra $r$, som får $r.\mathit{key} = 0$ og derfor
-tas ut først.
+Mens brøytebilen jobber, ringer folk og spør om de kan kjøre fra gården sin til en annen gård.
+Gårdene som kan nå hverandre langs brøytede strekninger, er en gruppe. En ny strekning slår sammen to
+grupper, eller den går inni én gruppe og endrer ingenting. En gruppe blir aldri delt.
 
-I hver runde tar Extract-Min ut noden $u$ med lavest nøkkel. For $u \ne r$ blir
-$u$ og kanten $(u, u.\pi)$ med i treet. Så går MST-Prim gjennom naboene til $u$.
-En nabo $v$ som fortsatt er i $Q$, og som har $w(u, v) < v.\mathit{key}$, får
-$v.\pi = u$ og $v.\mathit{key} = w(u, v)$, og Decrease-Key flytter den frem i
-køen. En ny kant mellom treet og $v$ kan bare gå fra $u$, så etter løkka er
-$v.\mathit{key}$ igjen vekten av den letteste kanten fra $v$ til treet. Når $Q$
-er tom, er kantene $(v, v.\pi)$ for alle $v \ne r$ et minimalt spenntre.
+En datastruktur for <Term name="Disjunkte mengder">disjunkte mengder</Term> holder styr på slike
+grupper. Mengdene har ingen felles elementer, og hver mengde har ett av elementene som representant.
+Datastrukturen har tre operasjoner:
+
+- Make-Set$(x)$ lager mengden $\{x\}$.
+- Union$(x, y)$ slår sammen mengden til $x$ og mengden til $y$.
+- Find-Set$(x)$ gir representanten for mengden til $x$.
+
+To elementer er i samme mengde når Find-Set gir den samme representanten for begge, og
+Same-Component gjør denne testen. Connected-Components lager gruppene ved å kalle Union langs hver kant:
 
 <CodeBlock
-  id="prim"
-  title="prim.py"
-  lang="python"
-  code={`def mst_prim(G, w, r):  # w[u, v] = w[v, u] er vekten til kanten
-    key = {u: float("inf") for u in G}
-    pi = {u: None for u in G}
-    key[r] = 0
-    Q = set(G)
-    while Q:
-        u = min(Q, key=key.get)  # Extract-Min
-        Q.remove(u)
-        for v in G[u]:
-            if v in Q and w[u, v] < key[v]:
-                pi[v] = u
-                key[v] = w[u, v]  # Decrease-Key
-    return pi`}
+  lang="text"
+  code={`Connected-Components(G)
+1  for each vertex v ∈ G.V
+2      Make-Set(v)
+3  for each edge (u, v) ∈ G.E
+4      if Find-Set(u) ≠ Find-Set(v)
+5          Union(u, v)
+
+Same-Component(u, v)
+1  if Find-Set(u) == Find-Set(v)
+2      return true
+3  else return false`}
+/>
+
+En traversering finner de samme gruppene. Connected-Components kan i tillegg ta imot nye kanter etter
+at den er ferdig: hver ny kant er én runde til i løkka. MST-Kruskal er den samme løkka med kantene
+sortert etter vekt, der $A$ husker kantene som førte til Union.
+
+### Skog-implementasjonen
+
+Hver mengde er et tre der hver node har en peker $x.p$ til forelderen sin. Rota er representanten,
+og den peker på seg selv, så Find-Set følger pekerne oppover til den kommer til en node som peker på
+seg selv. Union kaller Link på de to røttene, og Link henger den ene rota under den andre.
+
+Uten en regel for hvilken rot som henges under, kan et tre bli en lang kjede. Hvis Link alltid
+henger $x$ under $y$, gir Union$(1, 2)$, Union$(2, 3)$, …, Union$(n - 1, n)$ kjeden
+$1 \to 2 \to \cdots \to n$, og Find-Set$(1)$ følger $n - 1$ pekere.
+
+<Term name="Union by rank">Union by rank</Term> gir hver node en rang, $x.\mathit{rank}$, en øvre
+grense for høyden til $x$. Make-Set gir rang 0. Link henger rota med lavest rang under rota med
+høyest rang. Da blir ikke treet høyere enn den høyeste rangen, og rangene endres ikke. Når rangene er like,
+kan treet bli én høyere, og rangen til den nye rota øker med 1.
+
+<Term name="Stikomprimering">Stikomprimering</Term> gjør neste Find-Set raskere. På vei tilbake fra
+rota setter Find-Set forelderen til hver node på stien rett til rota, i linje 2 i Find-Set under, så neste Find-Set
+fra noen av dem går rett dit. Rangene endres ikke, og derfor er de bare øvre grenser for høyden.
+
+<CodeBlock
+  id="disjunkte-mengder"
+  lang="text"
+  code={`Make-Set(x)
+1  x.p = x
+2  x.rank = 0
+
+Union(x, y)
+1  Link(Find-Set(x), Find-Set(y))
+
+Link(x, y)
+1  if x.rank > y.rank
+2      y.p = x
+3  else x.p = y
+4      if x.rank == y.rank
+5          y.rank = y.rank + 1
+
+Find-Set(x)
+1  if x ≠ x.p
+2      x.p = Find-Set(x.p)
+3  return x.p`}
+/>
+
+<Stepper
+  src="/steppers/disjunkte-mengder.js"
+  codeId="disjunkte-mengder"
+  title="Disjunkte mengder"
+  height={380}
+  caption="Øverst bygda med de brøytede strekningene, nederst skogen av foreldrepekere. En pil går fra en node til forelderen, en rot peker på seg selv, og tallet til venstre for en rot er rangen. Ringene er stien Find-Set følger, og en rød peker er endret i steget."
+/>
+
+Stepperen kjører Connected-Components på strekningene i den rekkefølgen de ble brøytet, og spør til
+slutt Same-Component$(1, 4)$. «Stokk om» gir et nytt utvalg av strekninger i ny rekkefølge. De to
+tegningene viser de samme gruppene, men ikke de samme linjene. En peker kan gå mellom to gårder som
+ingen strekning går mellom. Når to røtter med samme rang slås sammen, øker rangen til den nye rota,
+og ellers endres den ikke. Når Find-Set går mer enn ett steg opp, blir pekerne på stien røde idet de
+settes rett på rota.
+
+En rot med rang $k$ har minst $2^k$ noder i treet sitt. En rot med rang 0 har minst ${2^0 = 1}$ node, seg selv. En rot får
+rang $k + 1$ bare når to røtter med rang $k$ slås sammen, og da har hvert av de to trærne minst $2^k$
+noder, til sammen minst $2^{k + 1}$. Når en rot får flere noder uten å få høyere rang, holder
+grensen fortsatt. Med $n$ elementer er derfor ingen rang større enn $\lg n$, og Find-Set følger høyst $\lg n$ pekere.
+
+Med union by rank og stikomprimering tar $m$ operasjoner tid $O(m\,\alpha(n))$, der
+$n$ av dem er Make-Set. Funksjonen $\alpha(n)$ vokser så sakte at $\alpha(n) \le 4$ for alle $n$ opp til $16^{512}$, et tall med 617 sifre. I praksis tar
+hver operasjon altså konstant tid. Med union by rank alene er grensen $O(m \lg n)$.
+
+<Callout title="Lave trær gir raske oppslag">
+Union by rank henger rota med lavest rang under rota med høyest rang, så ingen rang blir større enn
+$\lg n$.
+Stikomprimering lar Find-Set sette hver node på stien rett under rota. Sammen tar $m$ operasjoner
+$O(m\,\alpha(n))$, nesten konstant tid per operasjon.
+</Callout>
+
+<Quiz
+  question="En disjunkt-mengde-skog har 1000 elementer og bruker union by rank, men ikke stikomprimering. Hvor høyt kan et tre bli?"
+  options={["9", "10", "999"]}
+  answer={0}
+  explanation={"En rot med rang $k$ har minst $2^k$ noder. $2^{10} = 1024$ er mer enn 1000, så ingen rang er større enn 9, og høyden er høyst rangen. Høyden 9 nås: slå sammen to trær med 1 node, så to med 2, og så videre, til to trær med 256 noder blir ett med 512 noder og høyde 9. 10 er $\\lg 1000$ rundet opp, men rangen må være et heltall som er høyst $\\lg 1000 \\approx 9{,}97$. 999 er kjeden uten union by rank."}
+/>
+
+<Example label="Eksamensoppgave" title="Find-Set med stikomprimering">
+<ExamRef id="2023-des" task="5" />
+
+<Figure
+  src="/figures/eksamen-2023-12-oppgave-5.svg"
+  alt="En disjunkt-mengde-skog med to trær. Rota 1 har barnet 3, som har barna 5 og 6. 5 har barnet 9, 6 har barna 10 og 11, og 11 har barnet 12. Rota 2 har barnet 4, som har barna 7 og 8. Node 11 er markert."
+  caption="Figur 1 i oppgavesettet."
+  number={2}
+  width={380}
+  height={292}
+/>
+
+I figur 1 ser du en disjunkt-mengde-skog (disjoint-set forest). Vi kan representere foreldrepekerne
+med en tabell $A$, der $A[v] = v.p$:
+
+$$
+A = \langle 1, 2, 1, 2, 3, 3, 4, 4, 5, 6, 6, 11 \rangle
+$$
+
+Utfør Find-Set(11) og oppdater $A$. Hvordan ser $A$ ut etterpå?
+Svar ved å liste opp tallene i $A$. Du trenger ikke skrive $A = \langle \ldots \rangle$.
+
+<Solution>
+Find-Set$(11)$ følger pekerne ${11 \to 6 \to 3 \to 1}$, og 1 er rota. På vei tilbake setter den
+forelderen til 3, 6 og 11 til 1. $A[3]$ er alt 1, så bare $A[6]$ og $A[11]$ endres. Node 12 er ikke
+på stien og peker fortsatt på 11.
+
+<Answer>1, 2, 1, 2, 3, 1, 4, 4, 5, 6, 1, 11</Answer>
+</Solution>
+</Example>
+
+## Kjøretiden til MST-Kruskal
+
+MST-Kruskal kaller Make-Set $|V|$ ganger, sorterer $|E|$ kanter og gjør $O(E)$ kall til Find-Set og
+Union. Sorteringen tar $O(E \lg E)$, og mengdeoperasjonene tar $O(E\,\alpha(V))$, som er mindre.
+Grafen har færre enn $|V|^2$ kanter, så $\lg |E| < 2 \lg |V|$, og
+
+$$
+O(E \lg E) = O(E \lg V) .
+$$
+
+Det er kjøretiden til MST-Kruskal, og sorteringen bestemmer den.
+
+## MST-Prim
+
+MST-Kruskal lar mange trær vokse og slår dem sammen. <Term name="MST-Prim">MST-Prim</Term> lar ett
+tre vokse fra en startnode $r$, og legger elva rundt treet hver gang. Alle kantene i $A$ ligger inni
+treet, så snittet respekterer $A$, og den korteste broen ut av treet er trygg.
+
+For å finne den korteste broen raskt husker MST-Prim den letteste kanten fra hver node $v$ utenfor
+treet til treet. Vekten av kanten er nøkkelen $v.\mathit{key}$, og noden i treet i den andre enden er
+$v.\pi$. En node uten kant til treet har $v.\mathit{key} = \infty$. Nodene utenfor treet står i en
+min-prioritetskø $Q$ med nøkkelen som prioritet, så Extract-Min gir noden med den korteste broen.
+
+Når $u$ kommer inn i treet, kan bare naboene til $u$ få en kortere bro. For hver nabo $v$ som
+fortsatt står i $Q$, sjekker MST-Prim om $w(u, v)$ er mindre enn $v.\mathit{key}$. I så fall blir
+$v.\pi = u$, og Decrease-Key gir $v$ nøkkelen $w(u, v)$. MST-Prim er altså en traversering der
+<Term name="Huskeliste">huskelista</Term> er en min-prioritetskø med nøkkelen som prioritet. For
+enkelhets skyld står alle nodene i $Q$ fra starten, med nøkkel $\infty$ for alle unntatt $r$.
+
+<CodeBlock
+  id="prim-kode"
+  lang="text"
+  code={`MST-Prim(G, w, r)
+1  for each u ∈ G.V
+2      u.key = ∞
+3      u.π = nil
+4  r.key = 0
+5  Q = ∅
+6  for each u ∈ G.V
+7      Insert(Q, u)
+8  while Q ≠ ∅
+9      u = Extract-Min(Q)
+10     for each v ∈ G.Adj[u]
+11         if v ∈ Q and w(u, v) < v.key
+12             v.π = u
+13             v.key = w(u, v)
+14             Decrease-Key(Q, v, w(u, v))`}
 />
 
 <Stepper
   src="/steppers/prim.js"
-  codeId="prim"
+  codeId="prim-kode"
   title="MST-Prim"
-  caption="Den samme grafen som for MST-Kruskal, med $r = 1$. Fylte noder er i treet, halvfylte står i $Q$ med en endelig nøkkel, og tomme har nøkkel $\infty$. Tallet ved hver node er $v.\mathit{key}$. Kantene i treet har et bånd, og for en halvfylt node er kanten til $v.\pi$ stiplet. Under grafen står $Q$ sortert etter nøkkel."
-  height={320}
+  height={340}
+  caption="En fylt node er tatt ut av $Q$ og er i treet, en halvfylt node står i $Q$ med en nøkkel, og en tom node har nøkkel $\infty$. En stiplet kant er den letteste kanten fra en node i $Q$ til treet, og raden under grafen er $Q$ sortert etter nøkkel. Elva går rundt treet, og ringen markerer noden $u$."
 />
 
-Fra node 1 kan MST-Prim finne et annet spenntre enn MST-Kruskal. Når 2 er tatt ut,
-har nodene 3 og 8 begge nøkkel 8, og tar MST-Prim ut 3 først, som i stepperen,
-får treet kanten $(2, 3)$ der MST-Kruskal tok $(1, 8)$. Begge kantene har vekt 8,
-og begge spenntrærne har vektsum 37.
+Stepperen starter i node 1 i bygda. Når Extract-Min tar ut en annen node enn $r$, går elva rundt treet,
+og kanten fra noden til treet er rød: den korteste broen over elva. I bygda har både 3 og 8 nøkkel 8
+etter at node 2 er tatt ut. Stepperen tar ut 3 først og tar derfor med strekningen 2–3. Stepperen for
+MST-Kruskal så på 1–8 før 2–3 og tok med 1–8. En kø som tar ut 8 først, gir det samme treet som
+MST-Kruskal. Med like vekter avgjør slike valg hvilket minimalt spenntre du får, og bygda har to,
+begge 37 km.
 
-Koden finner minimum ved å gå gjennom hele $Q$, så hver Extract-Min tar
-$\Theta(V)$, og hele koden tar $\Theta(V^2)$. Med en binær haug som $Q$ koster
-Insert, Extract-Min og Decrease-Key $O(\lg V)$ hver. Alle de $|V|$ nodene settes
-inn og tas ut én gang. Løkka over naboene går gjennom hver naboliste én gang, til
-sammen $2|E|$ elementer, så Decrease-Key kalles $O(E)$ ganger. Det gir
-$O(V \lg V + E \lg V)$, og fordi grafen er sammenhengende, er $|V| = O(E)$, så
-MST-Prim tar $O(E \lg V)$ (<FormulaRef id="prim-kjoretid" />), det samme som
-MST-Kruskal.
-
-Med en Fibonacci-haug koster Insert og Decrease-Key $O(1)$ amortisert, og
-Extract-Min $O(\lg V)$ amortisert. Da tar MST-Prim $O(E + V \lg V)$, som er bedre
-enn $O(E \lg V)$ når $|E|$ vokser raskere enn $|V|$.
+Hver node settes inn i $Q$ og tas ut én gang. Decrease-Key kalles høyst én gang per kant, fordi
+kanten $(u, v)$ bare kan senke nøkkelen til $v$ når $u$ tas ut og $v$ fortsatt står i $Q$. Testen
+$v \in Q$ i linje 11 tar konstant tid med et merke på hver node.
 
 <Table
-  rowHeader={false}
   columns={["Operasjon", "Antall", "Binær", "Fibonacci"]}
   rows={[
-    ["Insert", "$V$", "$O(\\lg V)$", "$O(1)$"],
-    ["Extract-Min", "$V$", "$O(\\lg V)$", "$O(\\lg V)$"],
+    ["Insert", "$|V|$", "$O(\\lg V)$", "$O(1)$"],
+    ["Extract-Min", "$|V|$", "$O(\\lg V)$", "$O(\\lg V)$"],
     ["Decrease-Key", "$O(E)$", "$O(\\lg V)$", "$O(1)$"],
   ]}
-  caption="Køoperasjonene i MST-Prim med en binær haug og med en Fibonacci-haug. Tidene for Fibonacci-haugen er amortiserte."
+  rowHeader={false}
+  caption="Operasjonene på $Q$ i MST-Prim, med binær haug og med Fibonacci-haug. Kostnadene for Fibonacci-haugen er amortiserte."
 />
 
-<Callout title="MST-Prim">
-MST-Prim tar ut noden med lavest $v.\mathit{key}$, vekten av den letteste kanten
-til treet. Den kanten er lett over snittet rundt treet og derfor trygg.
-Kjøretiden er $O(E \lg V)$ med binær haug og $O(E + V \lg V)$ med Fibonacci-haug.
+Med en binær haug koster hver operasjon $O(\lg V)$. Grafen er sammenhengende, så $|V| - 1 \le |E|$,
+og kjøretiden blir
+
+$$
+O(V \lg V + E \lg V) = O(E \lg V) .
+$$
+
+Med en Fibonacci-haug koster Decrease-Key $O(1)$ amortisert, og
+MST-Prim tar ${O(E + V \lg V)}$. Det er bedre når grafen har mange kanter: med
+$|E| = \Theta(V^2)$ blir det $O(V^2)$ mot $O(V^2 \lg V)$.
+
+<Callout title="Ett tre og en prioritetskø">
+MST-Prim lar ett tre vokse fra $r$ og tar alltid den korteste kanten ut av treet. Nøklene i
+min-prioritetskøen er vekten av den letteste kanten fra hver node til treet, og kjøretiden er
+$O(E \lg V)$ med binær haug og ${O(E + V \lg V)}$ med Fibonacci-haug.
 </Callout>
 
-<Example label="Eksamensoppgave" title="Å bygge køen">
+<Quiz
+  question="MST-Prim kjøres på en sammenhengende graf. Kan Extract-Min gi en node med nøkkel $\infty$?"
+  options={["Ja, når den siste noden tas ut", "Nei, fordi nøklene bare blir mindre", "Nei, fordi minst én node i $Q$ har en kant til treet", "Ja, hvis startnoden har bare én nabo"]}
+  answer={2}
+  explanation={"Så lenge $Q$ ikke er tom, ligger noen noder utenfor treet. Grafen er sammenhengende, så minst én kant går fra treet til en node i $Q$, og den noden fikk en endelig nøkkel da enden i treet ble tatt ut. Minimum i $Q$ er derfor endelig. Nøklene blir bare mindre, men det hindrer ikke at en nøkkel blir stående på $\\infty$, og det skjer i en graf som ikke henger sammen."}
+/>
+
+<Example label="Eksamensoppgave" title="Insert eller Build-Min-Heap">
 <ExamRef id="2022-aug-kont" task="4" />
 
-Dine venner Lurvik og Smartnes vil implementere Prims algoritme med en binærhaug
-(*binary heap*) som prioritetskø $Q$. Lurvik bygger $Q$ ved å legge inn én og én
-node, med Min-Heap-Insert, mens Smartnes mener det gir bedre asymptotisk kjøretid
-totalt sett å bruke Build-Min-Heap. Hva mener du? Forklar kort.
+Dine venner Lurvik og Smartnes vil implementere Prims algoritme med en binærhaug (binary heap) som
+prioritetskø $Q$. Lurvik bygger $Q$ ved å legge inn én og én node, med Min-Heap-Insert, mens
+Smartnes mener det gir bedre asymptotisk kjøretid totalt sett å bruke Build-Min-Heap. Hva mener du?
+Forklar kort.
 
 <Solution>
-$|V|$ kall til Min-Heap-Insert koster $O(V \lg V)$ i verste fall, og
-Build-Min-Heap koster $\Theta(V)$. Resten av MST-Prim tar likevel
-$O(E \lg V)$, og fordi grafen er sammenhengende, er $V \lg V = O(E \lg V)$, så
-totalen blir den samme. Innsettingene er dessuten billige her: alle nodene
-unntatt $r$ har nøkkel $\infty$, og en ny node med nøkkel $\infty$ stiger aldri,
-fordi ingen forelder har større nøkkel. Bare $r$ kan stige, så Lurviks
-innsettinger tar også $O(V)$ til sammen.
+Build-Min-Heap bygger køen i $O(V)$, og $|V|$ kall til Min-Heap-Insert tar $O(V \lg V)$ i verste
+tilfelle. Men resten av MST-Prim tar $O(E \lg V)$, og det er minst like mye, siden
+$|V| - 1 \le |E|$. Kjøretiden totalt blir den samme. Nøklene som settes inn, er dessuten $\infty$ for
+alle nodene unntatt $r$, så bare $r$ kan stige i haugen, og de andre innsettingene tar konstant tid.
 
-<Answer>Smartnes tar feil. Begge gir $O(E \lg V)$ totalt, og med nøklene $\infty$ tar Lurviks innsettinger bare $O(V)$.</Answer>
+<Answer>Lurvik og Smartnes får samme asymptotiske kjøretid, $O(E \lg V)$: byggingen er ikke det som koster.</Answer>
 </Solution>
 </Example>
 
-## Sjekk deg selv
-
-<Quiz
-  question="Etter Make-Set på $a$, $b$, $c$ og $d$ kalles Union$(a, b)$, Union$(c, d)$ og Union$(a, c)$, med Link og Find-Set som i koden over. Hvilken node blir rota, og hvilken rang får den?"
-  options={["$d$, med rang 2", "$a$, med rang 2", "$d$, med rang 1", "$b$, med rang 2"]}
-  answer={0}
-  explanation="Union$(a, b)$ kaller Link$(a, b)$ med like ranger, så $a.p = b$, og $b$ får rang 1. På samme måte får $c.p = d$, og $d$ får rang 1. Union$(a, c)$ kaller Link på røttene, Link$(b, d)$, og ikke på $a$ og $c$. Rangene er igjen like, så $b.p = d$, og $d$ får rang 2. Rota er altså ikke det første argumentet til Union, og like ranger gir alltid en økning."
-/>
-
-<Quiz
-  question="Alle kantene i en sammenhengende, urettet graf har ulik vekt, og kanten $e$ er den tyngste kanten i en sykel. Hva kan du si om $e$?"
-  options={[
-    "$e$ er ikke med i noe minimalt spenntre",
-    "$e$ er med i spenntreet MST-Prim finner når $r$ er en ende av $e$",
-    "$e$ er med i et minimalt spenntre hvis sykelen er den eneste i grafen",
-    "$e$ er med i et minimalt spenntre hvis den er lettere enn alle kantene utenfor sykelen",
-  ]}
-  answer={0}
-  explanation={"Anta at et minimalt spenntre $T$ inneholder $e = (u, v)$. Fjerner du $e$, faller $T$ i to deler med $u$ og $v$ i hver sin. Resten av sykelen er en sti fra $u$ til $v$, så den har en kant $f$ mellom de to delene, og $f$ er lettere enn $e$. Bytter du $e$ med $f$, blir spenntreet lettere, så $T$ var ikke minimalt. Byttet bruker bare sykelen, så verken startnoden, kantene utenfor sykelen eller andre sykler endrer svaret."}
-/>
-
 <KeyTakeaways>
-- En disjunkt-mengde-skog lagrer hver mengde som et tre av foreldrepekere med representanten i rota. Union by rank holder høyden på høyst $\lg n$, og med stikomprimering i tillegg tar $m$ operasjoner $O(m\,\alpha(n))$.
-- Connected-Components kaller Union for hver kant mellom to mengder. Etterpå er mengdene de sammenhengende komponentene.
-- Et minimalt spenntre er et spenntre med lavest mulig vektsum $w(T)$. Generic-MST legger til én trygg kant om gangen, så $A$ hele tiden er en delmengde av et minimalt spenntre.
-- En lett kant over et snitt som respekterer $A$, er trygg: i et minimalt spenntre uten den kan du bytte kanten der stien mellom endene krysser snittet, med den lette kanten, uten at vektsummen øker.
-- MST-Kruskal tar kantene i stigende vekt og hopper over dem som har begge endene i samme tre. Trærne holdes i disjunkte mengder, og kjøretiden er $O(E \lg V)$.
-- MST-Prim bygger ett tre fra $r$ og tar ut noden med den letteste kanten til treet fra en min-prioritetskø. Det tar $O(E \lg V)$ med binær haug og $O(E + V \lg V)$ med Fibonacci-haug.
+- Med positive vekter er det billigste nettet som kobler sammen alle nodene, et spenntre: ingen sykel og $|V| - 1$ kanter. Et minimalt spenntre har lavest mulig $w(T)$.
+- Generic-MST legger til én trygg kant om gangen, så $A$ hele tiden er en delmengde av et minimalt spenntre.
+- En lett kant over et snitt som respekterer $A$, er trygg: et minimalt spenntre uten kanten kan bytte den inn for en annen kant over snittet som er minst like tung.
+- MST-Kruskal tar kantene i stigende vekt og tar med en kant når endene er i ulike trær. Snittet rundt treet til $u$ gjør kanten trygg, og sorteringen gir $O(E \lg V)$.
+- Disjunkte mengder er trær av foreldrepekere med representanten i rota. Union by rank holder rangene på høyst $\lg n$, stikomprimering flater ut stiene, og $m$ operasjoner tar $O(m\,\alpha(n))$.
+- MST-Prim lar ett tre vokse fra $r$ og tar ut noden med lavest nøkkel fra en min-prioritetskø: $O(E \lg V)$ med binær haug og ${O(E + V \lg V)}$ med Fibonacci-haug.
 </KeyTakeaways>
