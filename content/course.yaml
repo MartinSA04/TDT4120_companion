@@ -315,6 +315,42 @@ formulas:
       section: "Minimale spenntrær",
       id: prim-kjoretid,
     }
+  - {
+      tex: "w(p) = \\sum_{i=1}^{k} w(v_{i-1}, v_i)",
+      label: "Vekten til stien $p = \\langle v_0, v_1, \\ldots, v_k \\rangle$. En korteste vei fra $u$ til $v$ har lavest mulig vekt, og avstanden $\\delta(u, v)$ er vekten til den.",
+      section: "Korteste vei fra én til alle",
+      id: sti-vekt,
+    }
+  - {
+      tex: "\\delta(s, v) = \\min_{(u, v) \\in E} \\bigl( \\delta(s, u) + w(u, v) \\bigr)",
+      label: "Avstanden til en node $v \\ne s$ når ingen negativ sykel kan nås fra $s$. En korteste vei består av korteste veier, så en korteste vei til $v$ er en korteste vei til en inn-nabo $u$ med kanten $(u, v)$ etter. Dag-Shortest-Paths regner ut avstandene i topologisk rekkefølge.",
+      section: "Korteste vei fra én til alle",
+      id: siste-strekning,
+    }
+  - {
+      tex: "\\delta(s, v) \\le \\delta(s, u) + w(u, v)",
+      label: "Trekantulikheten, for hver kant $(u, v)$: en korteste vei til $u$ med $(u, v)$ etter er en sti til $v$. Når estimater satt av Initialize-Single-Source og Relax oppfyller den samme ulikheten for hver kant, er alle riktige.",
+      section: "Korteste vei fra én til alle",
+      id: trekantulikheten,
+    }
+  - {
+      tex: "\\Theta(V + E)",
+      label: "Dag-Shortest-Paths: topologisk sortering $\\Theta(V + E)$, initialisering $\\Theta(V)$ og én slakking per kant.",
+      section: "Korteste vei fra én til alle",
+      id: dag-kjoretid,
+    }
+  - {
+      tex: "\\Theta(VE)",
+      label: "Bellman-Ford: $|V| - 1$ runder, der hver runde slakker alle $|E|$ kantene, og én runde til for å sjekke om en negativ sykel kan nås fra $s$.",
+      section: "Korteste vei fra én til alle",
+      id: bellman-ford-kjoretid,
+    }
+  - {
+      tex: "O((V + E) \\lg V)",
+      label: "Dijkstra med binær haug: $|V|$ kall til Extract-Min og $O(E)$ kall til Decrease-Key, hvert $O(\\lg V)$. Det er $O(E \\lg V)$ når alle nodene kan nås fra $s$. Med Fibonacci-haug blir det $O(V \\lg V + E)$, og med en tabell $O(V^2)$.",
+      section: "Korteste vei fra én til alle",
+      id: dijkstra-kjoretid,
+    }
 
 # ── Symbols → Symboler page ──────────────────────────────────────────────────
 # Bokstavene modulene bruker, gruppert som modulene. En bokstav med flere
@@ -429,6 +465,13 @@ symbols:
   - { tex: "v.\\mathit{key}", meaning: "I MST-Prim: vekten av den letteste kanten fra $v$ til treet", section: "Minimale spenntrær", term: "MST-Prim", formula: prim-kjoretid, id: key, note: "$\\infty$ før noen slik kant er funnet. Prioriteten til $v$ i $Q$." }
   - { tex: "v.\\pi", meaning: "I MST-Prim: noden i treet som den letteste kanten fra $v$ går til", section: "Minimale spenntrær", term: "MST-Prim", id: prim-pi, note: "Kantene $(v, v.\\pi)$ er spenntreet til slutt. I traverseringene er $v.\\pi$ forgjengeren." }
   - { tex: "Q", meaning: "Min-prioritetskøen i MST-Prim, med nøklene $v.\\mathit{key}$", section: "Minimale spenntrær", term: "MST-Prim", note: "I BFS er $Q$ en FIFO-kø." }
+  # ── Korteste vei fra én til alle ──
+  - { tex: "w(p)", meaning: "Vekten til stien $p$: summen av vektene på kantene", section: "Korteste vei fra én til alle", formula: sti-vekt, id: sti-vekt }
+  - { tex: "\\delta(s, v)", meaning: "Avstanden fra $s$ til $v$ i en vektet graf: vekten til en korteste vei", section: "Korteste vei fra én til alle", term: "Korteste vei", formula: siste-strekning, id: delta-vektet, note: "$\\infty$ når ingen sti går fra $s$ til $v$, og $-\\infty$ når en negativ sykel kan nås fra $s$ og $v$ kan nås fra den. I BFS er $\\delta(s, v)$ antall kanter." }
+  - { tex: "v.d", meaning: "Estimatet: den laveste vekten på en sti fra $s$ til $v$ som er funnet så langt", section: "Korteste vei fra én til alle", term: "Slakking", formula: trekantulikheten, id: estimat, note: "Synker bare og er aldri lavere enn $\\delta(s, v)$. Ikke starttiden $u.d$ i DFS." }
+  - { tex: "v.\\pi", meaning: "I korteste vei: noden foran $v$ på stien som ga $v.d$", section: "Korteste vei fra én til alle", term: "Korteste-vei-tre", id: sp-pi, note: "Kantene $(v.\\pi, v)$ er et korteste-vei-tre når estimatene er riktige. I MST-Prim er $(v, v.\\pi)$ en kant i spenntreet." }
+  - { tex: "S", meaning: "I Dijkstra: nodene som er ferdige, med riktig estimat", section: "Korteste vei fra én til alle", term: "Dijkstra", id: dijkstra-s, note: "Ikke snittet $(S, V - S)$." }
+  - { tex: "Q", meaning: "Min-prioritetskøen i Dijkstra, med estimatene $v.d$ som prioritet", section: "Korteste vei fra én til alle", term: "Dijkstra", formula: dijkstra-kjoretid, id: dijkstra-q, note: "Samme kø som i MST-Prim, men med $v.d$ som prioritet. I BFS er $Q$ en FIFO-kø." }
 
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
@@ -915,6 +958,51 @@ glossary:
       term: "MST-Prim",
       definition: "Prims algoritme. Bygger ett tre fra en startnode $r$. Nodene utenfor treet står i en min-prioritetskø med nøkkelen $v.\\mathit{key}$, vekten av den letteste kanten til treet, og Extract-Min gir neste node. $O(E \\lg V)$ med binær haug og $O(E + V \\lg V)$ med Fibonacci-haug.",
       section: "Minimale spenntrær",
+    }
+  - {
+      term: "Korteste vei",
+      definition: "En sti fra $u$ til $v$ med lavest mulig vekt $w(p)$, summen av vektene på kantene. Avstanden $\\delta(u, v)$ er vekten til en korteste vei. Uten negative sykler finnes det alltid en korteste vei som er en enkel sti, når $v$ kan nås fra $u$. Fra alle til én er det samme problemet som fra én til alle i grafen med kantene snudd.",
+      section: "Korteste vei fra én til alle",
+    }
+  - {
+      term: "Slakking",
+      definition: "Å slakke kanten $(u, v)$ med Relax, også kalt å oppdatere estimatet langs kanten (edge relaxation): hvis $u.d + w(u, v) < v.d$, settes $v.d = u.d + w(u, v)$ og $v.\\pi = u$. Estimatet $v.d$ er alltid vekten til en sti fra $s$, så det synker bare og blir aldri lavere enn $\\delta(s, v)$. Når ingen kant kan senke et estimat, er alle estimatene riktige.",
+      section: "Korteste vei fra én til alle",
+    }
+  - {
+      term: "Sti-slakkingsegenskapen",
+      definition: "Hvis kantene på en korteste vei fra $s$ til $v$ slakkes i rekkefølge, er $v.d = \\delta(s, v)$ etterpå, uansett hvilke andre kanter som slakkes innimellom. Læreboka kaller den path-relaxation property. Dag-Shortest-Paths, Bellman-Ford og Dijkstra sørger hver på sin måte for at kantene på hver korteste vei slakkes i rekkefølge.",
+      section: "Korteste vei fra én til alle",
+    }
+  - {
+      term: "Korteste-vei-tre",
+      definition: "Et tre med rot $s$ der stien fra $s$ til hver node som kan nås, er en korteste vei. Kantene $(v.\\pi, v)$ danner et slikt tre når alle estimatene er riktige. Treet gjør avstanden til hver node minst, ikke vektsummen, så det er ikke nødvendigvis et minimalt spenntre.",
+      section: "Korteste vei fra én til alle",
+    }
+  - {
+      term: "Negativ sykel",
+      definition: "En sykel der vektene til sammen er negative. Hvis sykelen kan nås fra $s$, finnes det ingen korteste vei til nodene den når fram til, fordi én gang til rundt sykelen gjør stien billigere. Da er $\\delta(s, v) = -\\infty$, og Bellman-Ford returnerer false.",
+      section: "Korteste vei fra én til alle",
+    }
+  - {
+      term: "Enkel sti",
+      definition: "En sti som ikke besøker noen node to ganger, og som derfor har høyst $|V| - 1$ kanter. En korteste enkel sti finnes også når en negativ sykel gjør at det ikke finnes noen korteste vei, men den er like vanskelig å finne som den lengste enkle stien. Å bytte fortegn på vektene er en reduksjon i begge retninger mellom de to problemene, og ingen kjent algoritme løser noen av dem i polynomisk tid.",
+      section: "Korteste vei fra én til alle",
+    }
+  - {
+      term: "Dag-Shortest-Paths",
+      definition: "Korteste vei fra én til alle i en DAG: sorter nodene topologisk og slakk ut-kantene fra hver node i den rekkefølgen. Hver kant slakkes én gang, negative vekter går fint, og kjøretiden er $\\Theta(V + E)$. Den er dynamisk programmering, der grafen er sin egen delinstansgraf.",
+      section: "Korteste vei fra én til alle",
+    }
+  - {
+      term: "Bellman-Ford",
+      definition: "Korteste vei fra én til alle i en rettet graf med vilkårlige vekter: slakk alle kantene $|V| - 1$ ganger, og sjekk så om en kant fortsatt kan senke et estimat. Returnerer false når en negativ sykel kan nås fra $s$, og ellers true med riktige estimater. $\\Theta(VE)$.",
+      section: "Korteste vei fra én til alle",
+    }
+  - {
+      term: "Dijkstra",
+      definition: "Dijkstras algoritme. Korteste vei fra én til alle når ingen vekter er negative: tar hver gang ut noden med lavest estimat fra en min-prioritetskø, og slakker ut-kantene fra den. Med negative vekter kan svaret bli feil. $O((V + E) \\lg V)$ med binær haug og $O(V \\lg V + E)$ med Fibonacci-haug.",
+      section: "Korteste vei fra én til alle",
     }
 
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──

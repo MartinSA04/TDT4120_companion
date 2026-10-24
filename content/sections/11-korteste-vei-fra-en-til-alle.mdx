@@ -2,11 +2,705 @@
 order: 11
 num: "10"
 title: Korteste vei fra én til alle
-summary: "Kantoppdatering som felles byggekloss, og Bellman-Ford, DAG-korteste-vei og Dijkstra bygget på den. Modulen er under arbeid."
+summary: "Hvordan du finner de korteste veiene fra én node til alle de andre i en vektet, rettet graf: slakking med Relax som felles byggekloss, og Dag-Shortest-Paths, Bellman-Ford og Dijkstra, som slakker kantene i en rekkefølge som gjør svaret riktig."
 importance: core
+tag: "Uke 43"
 part: "Del 4: Grafer og flyt"
+updated: 2026-10-24
 ---
 
-<Callout type="note" title="Under arbeid">
-Denne modulen er ikke skrevet ennå.
+<LearningGoals>
+- Forklar korteste-vei-problemet fra én til alle, og hvordan variantene fra alle til én, fra én til én og fra alle til alle henger sammen med det.
+- Forklar hva det vil si å <Term name="Slakking">slakke</Term> en kant med Relax, og hvordan estimatene $v.d$ og forgjengerne $v.\pi$ gir et <Term name="Korteste-vei-tre">korteste-vei-tre</Term>.
+- Forklar strukturen til problemet, at en korteste vei består av korteste veier, og hvilke egenskaper slakking har, blant dem <Term name="Sti-slakkingsegenskapen">sti-slakkingsegenskapen</Term>.
+- Kjør <Term name="Dag-Shortest-Paths">Dag-Shortest-Paths</Term> for hånd, og forklar hvorfor den er dynamisk programmering.
+- Kjør <Term name="Bellman-Ford">Bellman-Ford</Term> for hånd, og forklar hvorfor ${|V| - 1}$ runder er nok, og hvordan den oppdager en <Term name="Negativ sykel">negativ sykel</Term>.
+- Forklar hvorfor en korteste <Term name="Enkel sti">enkel sti</Term> finnes også når en negativ sykel gjør at det ikke finnes noen korteste vei, og reduksjonene mellom korteste og lengste enkle sti.
+- Kjør <Term name="Dijkstra">Dijkstra</Term> for hånd, forklar hvorfor den krever at ingen vekter er negative, og gi kjøretiden med binær haug og med Fibonacci-haug.
+</LearningGoals>
+
+En elbil står ved ei hytte 700 meter over havet. Bilen bruker strøm på flat vei og i motbakke, men i
+en bratt nedoverbakke bremser motoren bilen og lader batteriet. Fra hytta ned til kaia ved fjorden
+bruker bilen minst strøm på en tur som først går 200 meter opp til et skar. Nede ved kaia har bilen
+1 kWh mer i batteriet enn da den forlot hytta.
+
+Dijkstras algoritme finner den korteste veien i km fra hytta til hvert sted. Hvis du bruker den på
+strømforbruket, sier den at bilen bruker 0 kWh fra hytta til kaia. Bellman-Ford finner det riktige
+svaret, −1 kWh, fordi den tåler at noen strekninger har negativ vekt.
+
+## Korteste vei
+
+Prøv selv i simuleringen. Tallet i hvert sted er det minste strømforbruket fra hytta dit som du har
+funnet så langt, og et sted du ennå ikke har kjørt til, står på $\infty$. Trykk på en pil for å kjøre
+strekningen. Hvis tallet der du kjører fra, pluss strømforbruket på strekningen, er mindre enn tallet
+der du kommer fram, får stedet det nye tallet.
+
+<Simulation
+  src="/sims/strom-fra-hytta.js"
+  host="dom"
+  title="Strøm fra hytta"
+  height={320}
+  caption="Hytta (1), skaret (2), setra (3), bygda (4), kaia (5) og butikken (6), med høyden over havet oppover. Hver strekning kan kjøres i begge retninger, og tallet ved hver pil er strømforbruket i kWh i den retningen. Strekningen du kjørte sist, er rød, ringen markerer stedet som fikk et lavere tall, og hvert sted har fått tallet sitt fra strekningen med bredt bånd. Tallene er laget for eksempelet."
+/>
+
+Kjør fra 1 til 3 og fra 3 til 5, og kaia får 0. Kjør så fra 1 til 2 og fra 2 til 3. Setra faller til 0,
+fordi turen over skaret bruker mindre strøm. Kaia står på 0 til du kjører fra 3 til 5 én gang til. Med
+riktig rekkefølge er fem trykk nok. Trykk «Start på nytt», og kjør fra 1 til 2, 2 til 3, 2 til 4, 3 til
+5 og 4 til 6.
+
+Trykk så «Feil på kartet». Knappen starter simuleringen på nytt, og strømforbruket fra butikken til kaia
+blir −2 kWh, så en rundtur mellom kaia og butikken gir 1 kWh. Kjør ned til kaia, fra 1 til 3 og fra 3
+til 5, og kjør så fram og tilbake mellom 5 og 6. Tallene i kaia og butikken synker for hver rundtur.
+Trykk «Feil på kartet» igjen før du går videre.
+
+Kartet er en rettet graf $G = (V, E)$ med en vektfunksjon $w$. Stedene er nodene, hver strekning i én
+retning er en kant, og strømforbruket fra $u$ til $v$ er vekten $w(u, v)$. Vekten til en sti
+${p = \langle v_0, v_1, \ldots, v_k \rangle}$ er summen av vektene langs den:
+
+$$
+w(p) = \sum_{i=1}^{k} w(v_{i-1}, v_i) .
+$$
+
+En <Term name="Korteste vei">korteste vei</Term> fra $u$ til $v$ er en sti med lavest mulig vekt, og
+avstanden $\delta(u, v)$ er vekten til en korteste vei. Hvis ingen sti går fra $u$ til $v$, er
+$\delta(u, v) = \infty$. Korteste-vei-problemet fra én til alle er å finne en korteste vei fra en
+startnode $s$ til hver node i grafen. Bredde-først-søk løser det når hver kant teller 1, men med vekter
+kan en sti med flere kanter være billigere.
+
+En sykel med positiv vekt gjør bare en sti dyrere, så sykelen er aldri med på en korteste vei. I kartet
+har hver rundtur positiv vekt, fordi bilen bruker strøm på flat vei og får tilbake mindre i
+nedoverbakken enn den brukte i motbakken. En sti som går rundt en sykel med negativ vekt, en
+<Term name="Negativ sykel">negativ sykel</Term>, én gang til, blir billigere. Hvis sykelen kan nås fra
+$s$, finnes det derfor ingen korteste vei til en node $v$ som kan nås fra sykelen, og
+$\delta(s, v) = -\infty$. Uten en negativ sykel som kan nås fra $s$, finnes det en korteste vei til hver
+node som kan nås, og den kan velges som en <Term name="Enkel sti">enkel sti</Term>, en sti som ikke
+besøker noen node to ganger. En enkel sti har høyst $|V|$ noder og derfor høyst ${|V| - 1}$ kanter.
+
+<Quiz
+  question="Den eneste negative sykelen i en rettet graf er $C$, og ingen sti fra $s$ når fram til noen node på $C$. Fra $C$ går det en kant til noden $v$, og det går en sti fra $s$ til $v$. Hva er $\delta(s, v)$?"
+  options={["$-\\infty$, fordi $v$ kan nås fra den negative sykelen", "Vekten til en korteste vei fra $s$ til $v$, et endelig tall", "$\\infty$, fordi grafen har en negativ sykel", "Udefinert, fordi en negativ sykel gjør at ingen vei er kortest"]}
+  answer={1}
+  explanation={"En sti fra $s$ kan aldri komme inn på $C$, så ingen sti fra $s$ til $v$ kan gå rundt sykelen. Den korteste stien fra $s$ til $v$ har derfor endelig vekt. $-\\infty$ gjelder bare for noder som kan nås fra en negativ sykel som selv kan nås fra $s$."}
+/>
+
+Problemet fra alle til én, de korteste veiene fra hver node til én node $t$, er problemet fra én til
+alle fra $t$ i grafen med alle kantene snudd. En sti fra $v$ til $t$ i $G$ er nemlig en sti fra $t$ til
+$v$ i den snudde grafen, med de samme vektene. For problemet fra én til én finnes det ingen kjent
+algoritme som i verste fall er raskere enn å løse problemet fra én til alle. Problemet fra alle til
+alle kan løses ved å løse problemet fra én til alle fra hver node.
+
+<Callout title="Avstand med vekter">
+$\delta(s, v)$ er den lavest mulige vekten til en sti fra $s$ til $v$. Vektene kan være negative. En
+sykel med positiv vekt er aldri med på en korteste vei, og en negativ sykel som kan nås fra $s$, gjør
+at det ikke finnes noen korteste vei.
 </Callout>
+
+## Slakking
+
+Hvert trykk i simuleringen «Strøm fra hytta» <Term name="Slakking">slakker</Term> en kant. Å slakke en
+kant kalles også å oppdatere estimatet langs kanten, på engelsk edge relaxation. Algoritmene for
+korteste vei holder et estimat $v.d$ for hver node, den laveste vekten på en sti fra $s$ til $v$ som er
+funnet så langt, og en forgjenger $v.\pi$, noden foran $v$ på den stien. Tallet i hvert sted i
+simuleringen er estimatet. Initialize-Single-Source setter $s.d = 0$ og $v.d = \infty$ for de andre
+nodene, og Relax slakker kanten $(u, v)$.
+
+<CodeBlock
+  lang="text"
+  code={`Initialize-Single-Source(G, s)
+1  for each vertex v ∈ G.V
+2      v.d = ∞
+3      v.π = nil
+4  s.d = 0
+
+Relax(u, v, w)
+1  if v.d > u.d + w(u, v)
+2      v.d = u.d + w(u, v)
+3      v.π = u`}
+/>
+
+Relax sjekker om stien til $u$, med kanten $(u, v)$ til slutt, er bedre enn den beste stien til $v$ så
+langt. I så fall får $v$ det nye estimatet, og $u$ blir forgjengeren.
+
+Estimatet synker bare, og det blir aldri lavere enn avstanden. Et endelig $u.d$ er vekten til en sti
+fra $s$ til $u$, og $u.d + w(u, v)$ er vekten til den samme stien med $(u, v)$ etter, så hvert
+estimat er vekten til en sti som finnes. Derfor er $v.d \ge \delta(s, v)$ hele tiden. En node som
+ingen sti fra $s$ når fram til, beholder $\infty$, fordi Relax bare gir $v$ et endelig estimat fra en
+$u$ som alt har et.
+
+<Quiz
+  question="Midt i en kjøring er $u.d = 4$ og $v.d = 9$, og kanten $(u, v)$ har vekt 3. Relax$(u, v, w)$ kalles. Hva vet du om avstanden $\delta(s, v)$ etterpå?"
+  options={["$\\delta(s, v) = 7$", "$\\delta(s, v) \\le 7$", "$\\delta(s, v) \\ge 7$", "$\\delta(s, v) \\le 9$, men ikke nødvendigvis $\\le 7$"]}
+  answer={1}
+  explanation={"Relax setter $v.d = 4 + 3 = 7$, og 7 er vekten til en sti som finnes: stien som ga $u.d = 4$, med $(u, v)$ etter. Avstanden er derfor høyst 7. Den kan være mindre, fordi $u.d$ bare er et estimat og en annen sti til $v$ kan ha lavere vekt, så $\\delta(s, v) = 7$ følger ikke."}
+/>
+
+Når ingen kant kan senke et estimat og ingen negativ sykel kan nås fra $s$, er hvert estimat riktig.
+Da er ${v.d \le u.d + w(u, v)}$ for hver kant. Ta en korteste vei ${p = \langle s, v_1, v_2, v \rangle}$
+med tre kanter. Hvert estimat langs veien er høyst estimatet foran pluss vekten til kanten imellom:
+
+$$
+v.d \le v_2.d + w(v_2, v) \allowbreak \le v_1.d + w(v_1, v_2) + w(v_2, v) \allowbreak \le s.d + w(p) .
+$$
+
+Det samme gjelder en korteste vei med hvor mange kanter som helst. $s.d$ er fortsatt 0, fordi
+estimatet startet på 0 og ikke kan gå under $\delta(s, s) = 0$. Derfor er ${v.d \le w(p) = \delta(s, v)}$. Sammen
+med ${v.d \ge \delta(s, v)}$ gir det ${v.d = \delta(s, v)}$. Simuleringen skriver «Ingen strekning gir et
+lavere tall» nettopp når ingen kant kan senke et estimat, og da er alle tallene riktige.
+
+Kantene $(v.\pi, v)$ har bredt bånd i simuleringen. Når alle estimatene er riktige, er
+$v.d = v.\pi.d + w(v.\pi, v)$ for hver node $v \ne s$ som kan nås, så vektene langs båndene fra $s$ til
+$v$ summeres til $v.d$. Kantene danner da et <Term name="Korteste-vei-tre">korteste-vei-tre</Term> med
+$s$ som rot, der stien i treet fra $s$ til hver node som kan nås, er en korteste vei.
+
+<Callout title="Relax senker et estimat">
+Relax setter ${v.d = u.d + w(u, v)}$ og ${v.\pi = u}$ når stien gjennom $u$ er bedre. Et estimat er alltid
+vekten til en sti som finnes, så det er aldri lavere enn $\delta(s, v)$, og når ingen kant kan senke et
+estimat, er alle riktige.
+</Callout>
+
+## Den siste strekningen
+
+En korteste vei til setra ender med én av de tre strekningene inn til setra: fra hytta, fra skaret
+eller fra kaia. Delen fram til den siste strekningen er selv en korteste vei. Hvis det fantes en
+billigere sti til skaret, kunne du byttet den inn og fått en billigere sti til setra. Figur 1 viser de
+tre summene: $0 + 1$ fra hytta, $2 - 2$ fra skaret og $-1 + 3$ fra kaia. Den minste summen, 0, er
+avstanden til setra.
+
+<Figure
+  src="/figures/siste-strekning.svg"
+  alt="Kartet fra simuleringen med de tre strekningene inn til setra uthevet. Hytta har avstand 0, skaret 2 og kaia −1. Strekningen fra skaret, med vekt −2, er rød."
+  caption="De tre strekningene inn til setra, 3, med avstanden til stedet hver av dem kommer fra. Den røde strekningen gir den minste summen."
+  number={1}
+  width={340}
+  height={300}
+/>
+
+Når ingen negativ sykel kan nås fra $s$, er avstanden til en node $v \ne s$ derfor den minste av
+summene av avstanden til en inn-nabo $u$ og vekten til kanten fra $u$:
+
+$$
+\delta(s, v) = \min_{(u, v) \in E} \bigl( \delta(s, u) + w(u, v) \bigr) .
+$$
+
+<Quiz
+  question="Noden $v \ne s$ har tre inn-naboer med avstand 4, 7 og $-1$ fra $s$. Kantene derfra til $v$ har vekt 2, $-5$ og 6, i samme rekkefølge. Hva er $\delta(s, v)$?"
+  options={["2", "5", "$-5$", "6"]}
+  answer={0}
+  explanation={"Summene er $4 + 2 = 6$, $7 - 5 = 2$ og $-1 + 6 = 5$, og den minste er 2. Den nærmeste inn-naboen, med avstand $-1$, gir 5, og den letteste kanten alene, $-5$, er ingen sti fra $s$."}
+/>
+
+Hver sum i minimumet er vekten til en sti til $v$, så ingen av dem er mindre enn $\delta(s, v)$. For
+hver kant $(u, v)$ er derfor ${\delta(s, v) \le \delta(s, u) + w(u, v)}$. Det er trekantulikheten.
+
+Formelen sier hva avstandene er, men ikke i hvilken rekkefølge de kan regnes ut. Når grafen har en
+sykel, kan avstandene til nodene på sykelen avhenge av hverandre i ring. Da kan ingen av dem regnes ut
+først.
+
+Relax er én sammenligning i minimumet. Hvis du slakker kantene på en korteste vei i rekkefølge,
+fra $s$, får hver node på veien riktig estimat. $s.d = 0$ er riktig fra starten. Når ${u.d = \delta(s, u)}$
+og $(u, v)$ er den siste kanten på en korteste vei til $v$, setter Relax $v.d$ til høyst
+${\delta(s, u) + w(u, v) = \delta(s, v)}$, og estimatet kan ikke bli lavere. Andre slakkinger
+innimellom kan ikke ødelegge noe, fordi estimatene bare synker og aldri går under avstanden. Dette er
+<Term name="Sti-slakkingsegenskapen">sti-slakkingsegenskapen</Term>. Derfor var fem trykk nok i
+simuleringen «Strøm fra hytta», ett for hver kant i korteste-vei-treet, tatt i rekkefølge langs veiene.
+Men for å velge den rekkefølgen må du kjenne veiene. Dag-Shortest-Paths, Bellman-Ford og Dijkstra er tre måter å slakke kantene på hver korteste vei
+i rekkefølge uten å kjenne veiene på forhånd.
+
+<Callout title="Slakk kantene på veien i rekkefølge">
+En korteste vei består av korteste veier. Når kantene på en korteste vei fra $s$ til $v$ slakkes i
+rekkefølge, blir ${v.d = \delta(s, v)}$, uansett hvilke andre kanter som slakkes innimellom.
+</Callout>
+
+Læreboka gir egenskapene ved slakking navn. Alle forutsetter at estimatene er satt av
+Initialize-Single-Source og bare endret av Relax.
+
+<Table
+  columns={["Egenskap", "Hva den sier"]}
+  rows={[
+    ["Triangle inequality", "Trekantulikheten: ${\\delta(s, v) \\le \\delta(s, u) + w(u, v)}$ for hver kant $(u, v)$."],
+    ["Upper-bound", "${v.d \\ge \\delta(s, v)}$ hele tiden, og når ${v.d = \\delta(s, v)}$, endres den ikke mer."],
+    ["No-path", "Hvis ingen sti går fra $s$ til $v$, er ${v.d = \\infty}$ hele tiden."],
+    ["Convergence", "Hvis $(u, v)$ er den siste kanten på en korteste vei til $v$, og ${u.d = \\delta(s, u)}$ før Relax$(u, v, w)$, er ${v.d = \\delta(s, v)}$ etterpå."],
+    ["Path-relaxation", "Sti-slakkingsegenskapen: hvis kantene på en korteste vei fra $s$ til $v$ slakkes i rekkefølge, er ${v.d = \\delta(s, v)}$ etterpå, uansett hva som slakkes innimellom."],
+    ["Predecessor-subgraph", "Når ${v.d = \\delta(s, v)}$ for alle $v$, er kantene $(v.\\pi, v)$ et korteste-vei-tre med rot $s$."],
+  ]}
+  rowHeader={false}
+  caption="Egenskapene ved korteste veier og slakking. Læreboka skriver «property» etter alle navnene unntatt det første."
+/>
+
+<Example label="Eksamensoppgave" title="Hver kant én gang">
+<ExamRef id="2024-aug-kont" task="13" />
+
+På tilsvarende måte som i Bellman-Ford, skal du utføre Relax på alle kantene i den følgende grafen én
+gang. Rekkefølgen er ikke gitt.
+
+<Figure
+  src="/figures/eksamen-2024-08-oppgave-13.svg"
+  alt="En sti med fem noder, 1 til 5, og kantene 1 til 2 med vekt 4, 2 til 3 med vekt 3, 3 til 4 med vekt 2 og 4 til 5 med vekt 1. Estimatene i nodene er 0, 1, 3, 6 og 9."
+  caption="Grafen i oppgavesettet."
+  number={2}
+  width={340}
+  height={86}
+/>
+
+Når du er ferdig, hva er den minste og største verdien $5.d$ kan ha (altså $v.d$ for node 5, uthevet)?
+Oppgi svaret som to tall, adskilt med komma.
+
+Hver nodes $d$-verdi før du starter er angitt i noden i figuren, så f.eks. ${4.d = 6}$.
+
+Du skal altså ikke utføre hele Bellman-Ford, men oppdatere estimatet én gang langs hver kant, i en
+eller annen rekkefølge.
+
+<Solution>
+Estimatet til 5 kan bare synke langs kanten $(4, 5)$, så det blir $\min(9,\ 4.d + 1)$ med verdien
+$4.d$ har når $(4, 5)$ slakkes. Estimatet til 3 kan ikke synke, fordi ${1 + 3}$ ikke er mindre enn 3.
+Derfor blir $4.d$ minst ${3 + 2 = 5}$, og $5.d$ minst ${5 + 1 = 6}$. Du får 6 når $(3, 4)$ slakkes før
+$(4, 5)$. Du får den største verdien når $(4, 5)$ slakkes før $(3, 4)$, mens ${4.d = 6}$. Da blir
+${5.d = 7}$, og ingen kant etterpå kan senke det.
+
+<Answer>6, 7</Answer>
+</Solution>
+</Example>
+
+## Grafer uten sykler
+
+I en rettet graf uten sykler, en <Term name="DAG">DAG</Term>, kan nodene sorteres topologisk, så hver
+kant går fra en node tidligere i rekkefølgen til en senere. Da går hver sti framover i rekkefølgen.
+Hvis du tar nodene i topologisk rekkefølge og slakker alle ut-kantene fra hver node, slakkes kantene på
+hver sti i rekkefølge, også kantene på hver korteste vei.
+<Term name="Dag-Shortest-Paths">Dag-Shortest-Paths</Term> gjør det.
+
+<CodeBlock
+  id="dag-kode"
+  lang="text"
+  code={`Dag-Shortest-Paths(G, w, s)
+1  topologically sort G
+2  Initialize-Single-Source(G, s)
+3  for each vertex u, in topsort order
+4      for each vertex v ∈ G.Adj[u]
+5          Relax(u, v, w)`}
+/>
+
+<Stepper
+  src="/steppers/dag-shortest-paths.js"
+  codeId="dag-kode"
+  title="Dag-Shortest-Paths"
+  height={200}
+  caption="Nodene står i topologisk rekkefølge fra venstre, så hver kant peker mot høyre. Tallet i noden er estimatet og tallet under er noden. En tom node har estimat $\infty$, en halvfylt node har et endelig estimat, og en fylt node har fått ut-kantene sine slakket. Ringen markerer $u$, den røde kanten slakkes nå, og kantene $(v.\pi, v)$ har bredt bånd."
+/>
+
+Stepperen starter med en graf med seks noder og startnode 2. Node 1 kommer før 2 i rekkefølgen, så
+ingen sti fra 2 når fram til 1. Node 1 beholder $\infty$, og kantene ut fra den endrer ingenting. Når
+en node er neste i rekkefølgen, er alle kantene inn til den slakket, fordi de kommer fra noder
+tidligere i rekkefølgen. Estimatet er da riktig, og hver kant slakkes én gang. Argumentet bruker bare
+rekkefølgen, så negative vekter går fint. Topologisk sortering tar ${\Theta(V + E)}$, initialiseringen
+$\Theta(V)$, og hver kant slakkes én gang, så Dag-Shortest-Paths tar ${\Theta(V + E)}$.
+
+Dag-Shortest-Paths er dynamisk programmering. Formelen for den siste strekningen beskriver løsningen
+rekursivt, med avstandene til inn-naboene som delinstanser. Da har
+<Term name="Delinstansgraf">delinstansgrafen</Term> en pil for hver kant, og grafen er sin egen
+delinstansgraf. En delinstansgraf uten sykler kan løses bunn-opp i topologisk rekkefølge. Du kunne
+regnet ut $v.d$ bunn-opp ved å hente estimatene fra alle inn-naboene når du kommer til $v$, og ta den
+minste summen. Dag-Shortest-Paths sender i stedet estimatet til $u$ videre langs ut-kantene når den
+kommer til $u$. Det gir de samme sammenligningene, fordi hver kant $(u, v)$ slakkes etter at $u.d$ er
+riktig og før $v$ er neste.
+
+<Quiz
+  question="Du vil finne den lengste stien fra $s$ til hver node i en DAG med vekter. Hva gjør du?"
+  options={["Bytter fortegn på alle vektene og kjører Dag-Shortest-Paths", "Bytter fortegn på alle vektene og kjører Dijkstra", "Kjører Dag-Shortest-Paths med nodene i omvendt topologisk rekkefølge", "Ingenting raskt: ingen kjent algoritme finner lengste sti i polynomisk tid"]}
+  answer={0}
+  explanation={"Med motsatt fortegn blir den lengste stien den korteste. En DAG har ingen sykler, så den nye grafen har heller ingen negativ sykel, og Dag-Shortest-Paths tåler negative vekter. Dijkstra tåler dem ikke. Omvendt rekkefølge slakker kantene på en sti i feil rekkefølge. Det er den lengste enkle stien i en graf med sykler som ingen kjent algoritme finner i polynomisk tid, og i en DAG er hver sti enkel."}
+/>
+
+<Callout title="Topologisk rekkefølge er nok">
+I en DAG slakker Dag-Shortest-Paths ut-kantene fra hver node i topologisk rekkefølge, så hver kant
+slakkes én gang og hver sti i rekkefølge. Det er dynamisk programmering på grafen som sin egen
+delinstansgraf, og tar ${\Theta(V + E)}$.
+</Callout>
+
+<Example label="Eksamensoppgave" title="Dag-Shortest-Paths fra en vektmatrise">
+<ExamRef id="2018-des" task="14" />
+
+La G være en vektet graf, definert av vektmatrisen i figur 3. Utfør DAG-Shortest-Path på grafen, med 1
+som startnode.
+
+<Table
+  columns={["$W$", "1", "2", "3", "4"]}
+  rows={[
+    ["1", "0", "1", "5", "6"],
+    ["2", "$\\infty$", "0", "$-3$", "4"],
+    ["3", "$\\infty$", "$\\infty$", "0", "2"],
+    ["4", "$\\infty$", "$\\infty$", "$\\infty$", "0"],
+  ]}
+  caption="Figur 3 i oppgavesettet: vektmatrisen $W$."
+/>
+
+Fyll ut avstandene til hver node etter hver iterasjon i hver rad i tabellen nedenfor.
+
+<Table
+  columns={["", "1", "2", "3", "4"]}
+  rows={[
+    ["0", "0", "$\\infty$", "$\\infty$", "$\\infty$"],
+    ["1", "", "", "", ""],
+    ["2", "", "", "", ""],
+    ["3", "", "", "", ""],
+    ["4", "", "", "", ""],
+  ]}
+  rowHeader={false}
+/>
+
+<Solution>
+Rad $i$ i matrisen gir kantene ut fra node $i$, og $\infty$ betyr ingen kant. Hver kant går fra lavere
+til høyere nummer, så 1, 2, 3, 4 er en topologisk rekkefølge, og iterasjon $i$ slakker ut-kantene fra
+node $i$. Iterasjon 1 gir $2.d = 1$, $3.d = 5$ og $4.d = 6$. Iterasjon 2 gir ${3.d = 1 - 3 = -2}$ og
+${4.d = 1 + 4 = 5}$. Iterasjon 3 gir ${4.d = -2 + 2 = 0}$, og node 4 har ingen ut-kanter.
+
+<Table
+  columns={["", "1", "2", "3", "4"]}
+  rows={[
+    ["0", "0", "$\\infty$", "$\\infty$", "$\\infty$"],
+    ["1", "0", "1", "5", "6"],
+    ["2", "0", "1", "$-2$", "5"],
+    ["3", "0", "1", "$-2$", "0"],
+    ["4", "0", "1", "$-2$", "0"],
+  ]}
+  rowHeader={false}
+/>
+
+<Answer>Etter siste iterasjon er avstandene 0, 1, $-2$ og 0.</Answer>
+</Solution>
+</Example>
+
+## Bellman-Ford
+
+Kartet har sykler, så det har ingen topologisk rekkefølge. <Term name="Bellman-Ford">Bellman-Ford</Term>
+slakker i stedet alle kantene, i en hvilken som helst rekkefølge, ${|V| - 1}$ ganger. Det er nok. Hvis
+grafen ikke har en negativ sykel som kan nås fra $s$, har hver node som kan nås fra $s$, en korteste
+vei som er en enkel sti. En enkel sti har høyst ${|V| - 1}$ kanter. Første runde slakker blant annet den
+første kanten på hver av disse veiene, andre runde den andre kanten, og så videre.
+Sti-slakkingsegenskapen gir at hver node med en korteste vei på høyst $i$ kanter er riktig etter
+runde $i$.
+
+<CodeBlock
+  id="bellman-ford-kode"
+  lang="text"
+  code={`Bellman-Ford(G, w, s)
+1  Initialize-Single-Source(G, s)
+2  for i = 1 to |G.V| − 1
+3      for each edge (u, v) ∈ G.E
+4          Relax(u, v, w)
+5  for each edge (u, v) ∈ G.E
+6      if v.d > u.d + w(u, v)
+7          return false
+8  return true`}
+/>
+
+<Stepper
+  src="/steppers/bellman-ford.js"
+  codeId="bellman-ford-kode"
+  title="Bellman-Ford"
+  height={380}
+  caption="Kartet fra simuleringen «Strøm fra hytta», med estimatet i hver node. En tom node har estimat $\infty$, og en halvfylt node har et endelig estimat. Boksene under kartet er kantene i den rekkefølgen de slakkes i hver runde. Den røde kanten og den røde boksen slakkes nå, og ringen markerer $u$. En halvfylt boks har senket et estimat i runden. Kantene $(v.\pi, v)$ har bredt bånd."
+/>
+
+Stepperen kjører Bellman-Ford fra hytta. Med rekkefølgen den starter med, kommer kantene ut fra 6 først
+og kantene ut fra 1 sist, så første runde gir bare skaret og setra et estimat. Uansett rekkefølge er
+alle estimatene riktige etter tredje runde, fordi ingen korteste vei i kartet har mer enn tre kanter.
+Stokk om rekkefølgen, og runde 4 og 5 endrer fortsatt ingenting. Linje 5–7 sjekker etterpå om en kant
+fortsatt kan senke et estimat. Ingen kan det, og Bellman-Ford returnerer true.
+
+Initialiseringen tar $\Theta(V)$, og hver av de ${|V| - 1}$ rundene slakker alle $|E|$ kantene, så
+Bellman-Ford tar $\Theta(VE)$. Du kan stoppe når en runde ikke endrer noe estimat, fordi neste runde
+ser de samme estimatene og slakker de samme kantene. Det gjør beste tilfelle raskere, men i verste
+fall trengs alle rundene.
+
+<Callout title="Alle kantene, ${|V| - 1}$ ganger">
+Bellman-Ford slakker alle kantene i ${|V| - 1}$ runder. En korteste vei uten sykel har høyst ${|V| - 1}$
+kanter, og runde $i$ slakker den $i$-te kanten på hver av dem. Negative vekter går fint så lenge ingen
+negativ sykel kan nås fra $s$, og kjøretiden er $\Theta(VE)$.
+</Callout>
+
+<Quiz
+  question="Bellman-Ford kjøres på en graf uten negative sykler. Kantene står i en rekkefølge der kantene på hver korteste vei fra $s$ kommer i samme rekkefølge som langs veien. Etter hvilken runde er alle estimatene sikkert riktige?"
+  options={["Etter runde 1", "Først etter runde 2", "Først etter like mange runder som den lengste korteste veien har kanter", "Først etter runde $|V| - 1$"]}
+  answer={0}
+  explanation={"Første runde slakker kantene på hver korteste vei i rekkefølge, så sti-slakkingsegenskapen gir riktige estimater alt i runde 1. Antall kanter på den lengste korteste veien er grensen for en hvilken som helst rekkefølge, og $|V| - 1$ er grensen for alle grafer. Med rekkefølgen stepperen starter med, står kantene fra 6 ned til 1, mot retningen på veiene, så hver runde kommer bare én kant lenger, og det trengs tre runder."}
+/>
+
+<Example label="Eksamensoppgave" title="Første runde av Bellman-Ford">
+<ExamRef id="2025-des" task="16" />
+
+<Figure
+  src="/figures/eksamen-2025-12-oppgave-16.svg"
+  alt="En graf med fem noder. Kantene er 1 til 2 med vekt 3, 1 til 3 med vekt 5, 2 til 3 med vekt 4, 2 til 4 med vekt 2, 3 til 4 med vekt 7, 3 til 5 med vekt 1 og 4 til 5 med vekt 6."
+  caption="Figur 1 i oppgavesettet."
+  number={3}
+  width={340}
+  height={150}
+/>
+
+Utfør den første av de ${|V| - 1}$ iterasjonene til Bellman-Ford på grafen i figur 1, under følgende
+betingelser:
+
+1. Bruk node 1 som startnode.
+2. Anta at 8 er brukt i stedet for $\infty$ under initialiseringen.
+3. Der du kan velge mellom kanter, velg den med lavest vekt.
+
+Hva blir $v.d$ for hver node $v = 1, \ldots, 5$ etterpå? Forklar kort.
+
+Oppgi verdien for hver node, i rekkefølge.
+
+<Solution>
+Med lavest vekt først slakkes kantene i rekkefølgen $(3, 5)$, $(2, 4)$, $(1, 2)$, $(2, 3)$, $(1, 3)$,
+$(4, 5)$ og $(3, 4)$. Når $(3, 5)$ og $(2, 4)$ slakkes, er $3.d = 2.d = 8$, og $8 + 1$ og $8 + 2$ er
+ikke mindre enn 8, så de endrer ingenting. $(1, 2)$ gir ${2.d = 0 + 3 = 3}$, $(2, 3)$ gir
+${3.d = 3 + 4 = 7}$, og $(1, 3)$ senker den til ${0 + 5 = 5}$. $(4, 5)$ gir $8 + 6$, som ikke er mindre
+enn 8, og $(3, 4)$ gir ${5 + 7 = 12}$, som heller ikke er mindre enn 8. Med $\infty$ i stedet for 8
+hadde $4.d$ blitt 12, men her står 4 og 5 på 8 etter første runde.
+
+<Answer>0, 3, 5, 8, 8</Answer>
+</Solution>
+</Example>
+
+## Negative sykler
+
+Bellman-Ford oppdager en negativ sykel som kan nås fra $s$. Etter ${|V| - 1}$ runder kan en kant på
+sykelen fortsatt senke et estimat, og da returnerer linje 7 false. Tallene i simuleringen «Strøm fra
+hytta» sank på samme måte med «Feil på kartet». Uten en negativ sykel som kan nås fra $s$, er alle estimatene riktige etter ${|V| - 1}$ runder, ingen kant kan senke noe, og Bellman-Ford
+returnerer true. En negativ sykel som ingen sti fra $s$ når fram til, gjør ingen skade, fordi nodene på
+den beholder $\infty$.
+
+<Derivation title="Hvorfor sjekken finner en negativ sykel">
+La $c = \langle v_0, v_1, \ldots, v_k \rangle$ med $v_k = v_0$ være en sykel med negativ vekt som kan nås
+fra $s$. Etter de ${|V| - 1}$ rundene har nodene på sykelen endelige estimater. Hver av dem har en enkel
+sti fra $s$ med høyst ${|V| - 1}$ kanter, og runde $i$ gir den $i$-te noden på den stien et endelig
+estimat. Anta at ingen kant på sykelen kan senke et estimat. Da er, for $i = 1, \ldots, k$,
+
+$$
+v_i.d \le v_{i-1}.d + w(v_{i-1}, v_i) .
+$$
+
+Summer over hele sykelen. Vektene summeres til $w(c)$:
+
+$$
+\sum_{i=1}^{k} v_i.d \le \sum_{i=1}^{k} v_{i-1}.d + w(c) .
+$$
+
+De to summene av estimater er like, fordi hver node på sykelen står én gang i hver av dem når
+$v_k = v_0$. Altså er ${0 \le w(c)}$. Det motsier at $w(c) < 0$, så en kant på sykelen kan senke et
+estimat, og linje 7 returnerer false.
+</Derivation>
+
+Med en negativ sykel finnes det fortsatt en <Term name="Enkel sti">enkel sti</Term> fra $s$ til $v$
+som er kortest blant de enkle stiene, fordi det bare finnes endelig mange enkle stier. Men ingen kjent
+algoritme finner den i polynomisk tid. Å bytte fortegn på alle vektene er en
+<Term name="Reduksjon">reduksjon</Term> i begge retninger. En lengste enkel sti med de gamle vektene
+er en korteste enkel sti med de nye, og omvendt. Derfor er de to problemene like vanskelige, og ingen
+kjent algoritme løser noen av dem i polynomisk tid. Uten negative sykler finnes det en korteste vei som
+er enkel, så der løser Bellman-Ford også problemet med enkle stier. En DAG har ingen sykler, så der er
+hver sti enkel, og Dag-Shortest-Paths på vektene med motsatt fortegn finner den lengste stien.
+
+<Callout title="Ingen korteste vei">
+En negativ sykel som kan nås fra $s$, gjør at det ikke finnes noen korteste vei, og Bellman-Ford
+returnerer da false. Den korteste enkle stien finnes alltid, men den er like vanskelig å finne som den
+lengste enkle stien, og ingen kjent algoritme finner den i polynomisk tid.
+</Callout>
+
+<Example label="Eksamensoppgave" title="Lengste enkle vei">
+<ExamRef id="2024-aug-kont" task="8" />
+
+Du ønsker å finne lengste enkle vei fra node $s$ til node $t$ i en vektet graf. Hvordan kan du gjøre
+det? Er det tilfeller der metoden ikke vil fungere? Forklar kort.
+
+<Solution>
+Bytt fortegn på alle vektene. Den lengste enkle stien med de gamle vektene er den korteste enkle stien
+med de nye, så du kan finne en korteste vei fra $s$ til $t$ med Bellman-Ford. Metoden virker når ingen
+sti fra $s$ til $t$ kan gå innom en sykel med positiv vekt. Da har den nye grafen ingen negativ sykel
+der, og en korteste vei er en enkel sti. En slik positiv sykel blir en negativ sykel, og da finnes det
+ingen korteste vei. Bellman-Ford returnerer false, og ingen kjent algoritme finner den lengste enkle
+stien i polynomisk tid i det tilfellet.
+
+<Answer>Bytt fortegn på alle vektene og finn en korteste vei med Bellman-Ford. Det virker ikke når en
+sti fra $s$ til $t$ kan gå innom en sykel med positiv vekt, fordi den blir en negativ sykel.</Answer>
+</Solution>
+</Example>
+
+## Dijkstra
+
+Bellman-Ford slakker hver kant ${|V| - 1}$ ganger. I stepperen for Bellman-Ford er det
+$5 \cdot 14 = 70$ slakkinger, mens fem riktige trykk i simuleringen «Strøm fra hytta» var nok. Hvis
+hver node har riktig estimat når ut-kantene fra den
+slakkes, er det nok å slakke dem én gang. Den siste kanten $(u, v)$ på en korteste vei til $v$ gir da $v$
+riktig estimat.
+Når ingen vekter er negative, sørger <Term name="Dijkstra">Dijkstra</Term> for det. Den velger hver gang
+noden med lavest estimat blant dem som ikke er ferdige, slakker ut-kantene fra den, og regner den som
+ferdig.
+
+Nodene som ikke er ferdige, står i en min-prioritetskø $Q$ med estimatet som prioritet, som i MST-Prim.
+Extract-Min gir den neste noden, $S$ er mengden av ferdige noder, og når Relax senker $v.d$, flytter
+Decrease-Key $v$ fram i køen.
+
+<CodeBlock
+  id="dijkstra-kode"
+  lang="text"
+  code={`Dijkstra(G, w, s)
+1  Initialize-Single-Source(G, s)
+2  S = ∅
+3  Q = ∅
+4  for each vertex u ∈ G.V
+5      Insert(Q, u)
+6  while Q ≠ ∅
+7      u = Extract-Min(Q)
+8      S = S ∪ {u}
+9      for each vertex v ∈ G.Adj[u]
+10         Relax(u, v, w)
+11         if Relax decreased v.d
+12             Decrease-Key(Q, v, v.d)`}
+/>
+
+<Stepper
+  src="/steppers/dijkstra.js"
+  codeId="dijkstra-kode"
+  title="Dijkstra"
+  height={360}
+  caption="Kartet med lengden til hver strekning i km. Avstandene på tegningen er ikke i skala. En tom node har estimat $\infty$, en halvfylt node har et endelig estimat, og en fylt node er ferdig: den er i $S$, og ut-kantene fra den er slakket. Raden under kartet er $Q$ sortert etter estimat. Ringen markerer $u$, den røde strekningen slakkes nå, og kantene $(v.\pi, v)$ har bredt bånd."
+/>
+
+Stepperen kjører Dijkstra fra hytta på kartet med lengdene i km. Hver strekning er like lang i begge
+retninger, så kartet er tegnet uten piler, og hver strekning er to kanter med samme vekt. Med lengdene
+stepperen starter med, tas nodene ut i rekkefølgen 1, 2, 3, 4, 6 og 5, i stigende avstand, og hver av
+de 14 kantene slakkes én gang.
+
+<Figure
+  src="/figures/dijkstra-bevis.svg"
+  alt="De ferdige nodene S med s og x inni. En korteste vei fra s til u går fra x over kanten til y utenfor S, og videre fra y til u."
+  caption="En korteste vei fra $s$ til $u$, der $u$ har lavest estimat blant nodene som ikke er i $S$. Kanten $(x, y)$ er der veien forlater $S$ for første gang."
+  number={4}
+  width={340}
+  height={210}
+/>
+
+Figur 4 viser hvorfor noden $u$ med lavest estimat blant dem som ikke er ferdige, har riktig estimat.
+Ta en korteste vei fra $s$ til $u$. Den starter i $S$, mengden av ferdige noder. La $y$ være den første
+noden på veien som ikke er i $S$, og $x$ noden foran. $y$ kan være $u$ selv. $x$ er ferdig, og det samme
+argumentet ga $x$ riktig estimat da den ble ferdig. Kanten fra $x$ til $y$ ble slakket da, så
+${y.d = \delta(s, y)}$. Resten av veien, fra $y$ til $u$, har ikke negativ vekt, så
+${\delta(s, y) \le \delta(s, u)}$. Dijkstra valgte $u$ fordi ${u.d \le y.d}$. Til sammen er
+
+$$
+u.d \le y.d = \delta(s, y) \le \delta(s, u) ,
+$$
+
+og estimatet kan ikke være lavere enn avstanden, så ${u.d = \delta(s, u)}$.
+
+Med negative vekter gjelder ikke argumentet, fordi resten av veien fra $y$ til $u$ kan ha negativ vekt.
+Stepperen under kjører Dijkstra fra hytta på strømforbruket. Extract-Min tar ut setra med 1 kWh før
+skaret med 2 kWh, og kaia får 0 gjennom setra. Når skaret tas ut, senker kanten fra skaret til setra
+estimatet til setra til 0, men setra er alt ferdig, og kaia blir stående på 0.
+
+<Stepper
+  src="/steppers/dijkstra-strom.js"
+  title="Dijkstra på strømkartet"
+  height={360}
+  caption="Den samme koden på kartet med strømforbruket i kWh, der noen vekter er negative. Merkene er de samme som i stepperen over."
+/>
+
+<Quiz
+  question="Du legger 2 til vekten på hver strekning i strømkartet, så ingen vekt er negativ, og kjører Dijkstra fra hytta. Hvilken sti til setra havner i korteste-vei-treet?"
+  options={["Den direkte strekningen, $1 \\to 3$", "Stien over skaret, $1 \\to 2 \\to 3$", "Begge, fordi de får samme vekt", "Ingen, fordi Dijkstra ikke tåler vekt 0"]}
+  answer={0}
+  explanation={"En sti med $k$ kanter får $2k$ mer i vekt, så stier med mange kanter får mer lagt til enn stier med få. Den direkte strekningen får $1 + 2 = 3$, og stien over skaret $(2 + 2) + (-2 + 2) = 4$. Dijkstra velger den direkte, som bruker 1 kWh, mot 0 over skaret. Vekt 0 er ikke negativ, så Dijkstra regner riktig på de nye vektene. Det er de nye vektene som gir feil svar på det opprinnelige problemet."}
+/>
+
+Hver node settes inn i og tas ut av $Q$ én gang, og Decrease-Key kalles høyst én gang per kant, fordi
+hver kant slakkes én gang. Alle nodene unntatt $s$ settes inn med estimat $\infty$, så i en binær haug
+stiger ingen av dem, og Insert koster $O(1)$. Med en tabell indeksert etter node må Extract-Min lete
+gjennom alle nodene i $Q$, så den koster $O(V)$.
+
+<Table
+  columns={["Operasjon", "Tabell", "Binær", "Fib."]}
+  rows={[
+    ["Insert", "$O(1)$", "$O(1)$", "$O(1)$"],
+    ["Extract-Min", "$O(V)$", "$O(\\lg V)$", "$O(\\lg V)$"],
+    ["Decrease-Key", "$O(1)$", "$O(\\lg V)$", "$O(1)$"],
+  ]}
+  rowHeader={false}
+  caption="Kostnaden for hver operasjon på $Q$ i Dijkstra med en tabell, en binær haug og en Fibonacci-haug (Fib.). Kostnadene for Fibonacci-haugen er amortiserte."
+/>
+
+Med en binær haug tar Dijkstra ${O((V + E) \lg V)}$, som er $O(E \lg V)$ når alle nodene kan nås fra $s$.
+Med en Fibonacci-haug koster Decrease-Key $O(1)$ amortisert, og Dijkstra tar $O(V \lg V + E)$. Med en
+tabell tar Dijkstra ${O(V^2 + E) = O(V^2)}$. Den binære haugen er bedre enn tabellen når
+${|E| = o(V^2 / \lg V)}$, og Fibonacci-haugen er minst like god som begge.
+
+<Callout title="Lavest estimat er ferdig">
+Når ingen vekter er negative, har noden med lavest estimat blant dem som ikke er ferdige, riktig
+estimat. Dijkstra tar den ut av en min-prioritetskø og slakker ut-kantene fra den: $O(E \lg V)$ med
+binær haug og $O(V \lg V + E)$ med Fibonacci-haug. Med negative vekter kan svaret bli feil.
+</Callout>
+
+<Example label="Eksamensoppgave" title="Verdiene til c.d">
+<ExamRef id="2026-aug-kont" task="8" />
+
+Om du utfører Dijkstra på grafen i figur 1, med startnode $s$, hvilke ulike verdier får $c.d$ under
+utførelsen?
+
+<Figure
+  src="/figures/eksamen-2026-08-oppgave-8.svg"
+  alt="En rettet graf med nodene s, a, b og c. Kantene er s til a med vekt 8, s til b med vekt 1, b til a med vekt 2, a til c med vekt 4 og b til c med vekt 16."
+  caption="Figur 1 i oppgavesettet."
+  number={5}
+  width={340}
+  height={190}
+/>
+
+Her skal du altså liste opp alle verdiene feltet $c.d$ får, i rekkefølge, etter hvert som algoritmen
+utføres. Oppgi hvilken verdi feltet initialiseres til, og verdien det får hver gang det endres etter
+det.
+
+<Solution>
+Initialize-Single-Source gir ${c.d = \infty}$. Extract-Min tar ut $s$, og slakkingen gir $a.d = 8$ og
+$b.d = 1$. Så tas $b$ ut, med estimat 1. Kanten $(b, a)$ senker $a.d$ til $1 + 2 = 3$, og $(b, c)$ gir
+${c.d = 1 + 16 = 17}$. Så tas $a$ ut, med estimat 3, og $(a, c)$ senker $c.d$ til $3 + 4 = 7$. Til slutt
+tas $c$ ut, og $c$ har ingen ut-kanter.
+
+<Answer>$\infty$, 17, 7</Answer>
+</Solution>
+</Example>
+
+Dijkstra og MST-Prim har samme form: en min-prioritetskø med alle nodene, Extract-Min og
+Decrease-Key. Forskjellen er prioriteten. MST-Prim bruker vekten av den letteste kanten fra noden til
+treet, og Dijkstra bruker vekten av hele stien fra $s$.
+
+<Example label="Eksamensoppgave" title="Prim med $u.\mathit{key} + w(u, v)$">
+<ExamRef id="2026-aug-kont" task="16" />
+
+Visdal vil finne spenntrær i en sammenhengende, urettet graf med positive kantvekter. Han prøver å
+implementere Prims algoritme (MST-Prim), men der algoritmen sammenligner eller tilordner $w(u, v)$,
+skriver han $u.\mathit{key} + w(u, v)$ i stedet. Beskriv hva denne modifiserte algoritmen produserer.
+Utgjør mengden av kanter på formen $(v, v.\pi)$ fortsatt et spenntre? Er det i så fall alltid et
+minimalt spenntre? Forklar kort.
+
+<Solution>
+Med $u.\mathit{key} + w(u, v)$ blir nøkkelen til $v$ vekten av den beste stien fra startnoden $r$ til
+$v$ som er funnet, og testen og oppdateringen av $v.\mathit{key}$ gjør det samme som Relax med
+Decrease-Key. Det er Dijkstra fra $r$, med $v.\mathit{key}$ i stedet for $v.d$. Kantene $(v, v.\pi)$ er
+et korteste-vei-tre. Grafen er sammenhengende, så treet når alle nodene og har ${|V| - 1}$ kanter, og det
+er et spenntre. Men det gjør avstanden fra $r$ til hver node minst, ikke vektsummen. I en trekant med
+$w(r, a) = w(r, b) = 2$ og $w(a, b) = 1$ gir den modifiserte algoritmen kantene $(r, a)$ og $(r, b)$, med
+vektsum 4, mens det minimale spenntreet har vektsum 3.
+
+<Answer>Den modifiserte algoritmen er Dijkstra. Kantene $(v, v.\pi)$ er et korteste-vei-tre, som er et
+spenntre, men ikke alltid et minimalt spenntre.</Answer>
+</Solution>
+</Example>
+
+<KeyTakeaways>
+- $\delta(s, v)$ er den lavest mulige vekten på en sti fra $s$ til $v$. Vektene kan være negative, men en negativ sykel som kan nås fra $s$, gjør at det ikke finnes noen korteste vei. Fra alle til én er det samme problemet i grafen med kantene snudd.
+- Relax$(u, v, w)$ senker $v.d$ til ${u.d + w(u, v)}$ og setter ${v.\pi = u}$ når stien gjennom $u$ er bedre. Et estimat er alltid vekten til en sti som finnes, så det er aldri lavere enn $\delta(s, v)$. Når alle estimatene er riktige, er kantene $(v.\pi, v)$ et korteste-vei-tre.
+- En korteste vei består av korteste veier, så $\delta(s, v)$ er den minste av summene $\delta(s, u) + w(u, v)$ over inn-naboene $u$. Når kantene på en korteste vei slakkes i rekkefølge, blir estimatet riktig.
+- Dag-Shortest-Paths slakker ut-kantene fra hver node i topologisk rekkefølge, på ${\Theta(V + E)}$. Det er dynamisk programmering der grafen er sin egen delinstansgraf.
+- Bellman-Ford slakker alle kantene ${|V| - 1}$ ganger, på $\Theta(VE)$, tåler negative vekter og returnerer false når en negativ sykel kan nås fra $s$.
+- Den korteste enkle stien finnes også når en negativ sykel kan nås, men den er like vanskelig å finne som den lengste, og ingen kjent algoritme finner den i polynomisk tid.
+- Dijkstra krever at ingen vekter er negative, og tar hver gang ut noden med lavest estimat, som da er riktig: $O(E \lg V)$ med binær haug og $O(V \lg V + E)$ med Fibonacci-haug.
+</KeyTakeaways>
