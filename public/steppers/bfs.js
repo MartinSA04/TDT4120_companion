@@ -1,214 +1,216 @@
 /**
- * BFS trace for <Stepper>, driving the Python block `bfs` in modul 08, on
- * the same graph as the DFS stepper. Each node shows its distance d from the
- * start node (∞ until it is discovered), the edges to the predecessors get a
- * band and form the breadth-first tree, and the queue Q is drawn underneath
- * as every node that has been in it, in order: the ones already taken out
- * are faded. The last two steps run print_path to the node farthest away.
+ * BFS and Print-Path, for <Stepper>, driving the block `bfs-kode` in modul 09
+ * «Traversering av grafer». The one idea: the FIFO queue holds the nodes at
+ * distance k ahead of those at k + 1, so BFS finishes one distance before it
+ * starts the next, and the first edge that reaches a node comes from a node
+ * one step closer to s. Print-Path then follows π back from v to s.
  *
- * Line numbers refer to that <CodeBlock>:
- *    1 from collections import deque
- *    2
- *    3 def bfs(G, s):
- *    4     color = {u: "white" for u in G}
- *    5     d = {u: float("inf") for u in G}
- *    6     pi = {u: None for u in G}
- *    7     color[s] = "gray"
- *    8     d[s] = 0
- *    9     Q = deque([s])
- *   10     while Q:
- *   11         u = Q.popleft()
- *   12         for v in G[u]:
- *   13             if color[v] == "white":
- *   14                 color[v] = "gray"
- *   15                 d[v] = d[u] + 1
- *   16                 pi[v] = u
- *   17                 Q.append(v)
- *   18         color[u] = "black"
- *   19     return d, pi
- *   20
- *   21 def print_path(pi, s, v):
- *   22     if v == s:
- *   23         print(s)
- *   24     elif pi[v] is None:
- *   25         print("ingen sti fra", s, "til", v)
- *   26     else:
- *   27         print_path(pi, s, pi[v])
- *   28         print(v)
+ * Block line numbers count the header as line 1. BFS's line k is block line
+ * k + 1, block line 20 is empty, Print-Path's header is block line 21 and its
+ * line k is block line k + 21:
+ *    1 BFS(G, s)                          21 Print-Path(G, s, v)
+ *    2 1  for each vertex u ∈ G.V − {s}   22 1  if v == s
+ *   …                                     23 2      print s
+ *   11 10 while Q ≠ ∅                     24 3  elseif v.π == nil
+ *   12 11     u = Dequeue(Q)              25 4      print "no path from" s "to" v
+ *   13 12     for each vertex v ∈ G.Adj[u]  26 5  else Print-Path(G, s, v.π)
+ *   14 13         if v.color == white     27 6      print v
+ *   15–18 14–17   gray, d, π, Enqueue
+ *   19 18     u.color = black
  *
- * Colours are framework tokens only, so frames re-theme on the light/dark
- * toggle without the module knowing which theme is active.
+ * Frames: the start [2–10]; per Dequeue [11, 12]; per edge (u, v) [13, 14]
+ * when v is not white and [13–18] when it is; u turning black [19]; the empty
+ * queue [11]. Then Print-Path(G, s, t) for t = the node farthest from s (the
+ * highest id among ties): one frame per call on the way down [22, 24, 26] and
+ * one per print on the way back [23] or [27].
+ *
+ * The first graph is the lecture's (lecture 8, slides 754–944; _graf.js
+ * FORELESNING, laid on its side), from s = 1. Queue order 1 2 3 4 7 5 8 6;
+ * d = 1:0 2:1 3:2 4:2 5:3 6:4 7:3 8:4 9:∞; π = 2←1 3←2 4←2 5←3 6←5 7←3 8←7.
+ * Print-Path(G, 1, 8) prints 1 2 3 7 8, as in the lecture. Later graphs (the
+ * shuffle button): random edges on the same nine places, from s = 1, drawn
+ * again until 1 reaches at least six nodes.
+ *
+ * Drawing (_graf.js): node fill = colour (empty, half, full); u ringed in the
+ * accent; v.d stamped beside each node (∞ until it is found); tree edges with
+ * a band; the edge looked at in the accent. Under the graph: the queue Q as a
+ * row of cells, head on the left, and during Print-Path the printed nodes.
  */
+import { EDGE, FONT, FORELESNING, NODE, candidates, cellsSvg, esc, graphSvg, place, randomGraph, stamp, stampSides, wrapSvg } from "./_graf.js";
+import { firstView } from "./_dp.js";
 
-import {
-  EDGE, FONT, FORELESNING, NODE, adjacency, candidates, cellsSvg, graphSvg, place, randomGraph, stamp,
-  stampSides, wrapSvg,
-} from "./_graf.js";
-
-const FIRST = FORELESNING;
-const PAIRS = candidates(FIRST.nodes, 0.6, 3.1);
-const S = 1;
-
-let calls = 0;
+const view = firstView(import.meta.url);
+const PAIRS = candidates(FORELESNING.nodes, 0.45, 2.3);
+const R = 14;
+const SHAPE = { r: R };
 
 export default {
-  // The first graph is the lecture's; after that, random graphs on the same nodes.
   defaultData() {
-    if (calls++ === 0) return FIRST;
-    // Keep drawing until most of the graph can be reached from the start node.
+    if (view.isFirst()) return FORELESNING;
+    // Random edges on the same places, drawn again until 1 reaches at least six of the nine nodes.
     for (;;) {
-      const g = randomGraph(FIRST.nodes, PAIRS, { one: 0.42, both: 0.06 });
-      const adj = adjacency(g);
-      const seen = new Set([S]);
-      const todo = [S];
-      while (todo.length) for (const v of adj.get(todo.pop())) if (!seen.has(v)) seen.add(v), todo.push(v);
-      if (seen.size >= 7) return g;
+      const g = randomGraph(FORELESNING.nodes, PAIRS, { one: 0.38, both: 0.05, min: 11, max: 15 });
+      const seen = new Set([1]);
+      const todo = [1];
+      while (todo.length) {
+        const u = todo.pop();
+        for (const e of g.edges) if (e.from === u && !seen.has(e.to)) seen.add(e.to), todo.push(e.to);
+      }
+      if (seen.size >= 6) return g;
     }
   },
 
   run(graph) {
-    const adj = adjacency(graph);
-    const ids = graph.nodes.map((n) => n.id);
+    const s = 1;
+    const ids = graph.nodes.map((n) => n.id).sort((a, b) => a - b);
+    const adj = new Map(ids.map((u) => [u, []]));
+    for (const e of graph.edges) adj.get(e.from).push(e.to);
     const color = Object.fromEntries(ids.map((u) => [u, "white"]));
     const d = Object.fromEntries(ids.map((u) => [u, Infinity]));
-    const pi = Object.fromEntries(ids.map((u) => [u, null]));
-    const queued = [];
-    let head = 0;
+    const pi = {};
+    const tree = new Set();
+    let Q = [];
     const frames = [];
-    const snap = (line, desc, vars, extra = {}) =>
+    const V = { u: "–", v: "–" };
+    const snap = (line, desc, extra = {}) =>
       frames.push({
-        line, desc, vars, graph,
-        color: { ...color }, d: { ...d }, pi: { ...pi }, queued: [...queued], head, ...extra,
+        line,
+        desc,
+        vars: { ...V },
+        act: { graph, s, color: { ...color }, d: { ...d }, tree: [...tree], Q: [...Q], ...extra },
       });
-    const show = (x) => (x === Infinity ? "∞" : x);
+    const og = (xs) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} og ${xs.at(-1)}`);
+    const dd = (x) => (x === Infinity ? "∞" : x);
 
-    color[S] = "gray";
-    d[S] = 0;
-    queued.push(S);
-    snap(
-      [4, 5, 6, 7, 8, 9],
-      `Alle nodene er hvite med d = ∞. Startnoden ${S} blir grå med d = 0 og er det eneste i køen.`,
-      { s: S },
-    );
-
-    while (head < queued.length) {
-      const u = queued[head++];
-      snap([10, 11], `${u} tas ut av køen. d[${u}] = ${d[u]}.`, { u, "d[u]": d[u] }, { cur: u });
+    color[s] = "gray";
+    d[s] = 0;
+    Q.push(s);
+    snap([2, 3, 4, 5, 6, 7, 8, 9, 10], `Alle nodene unntatt ${s} er hvite med d = ∞. ${s} er grå, ${s}.d = 0, og ${s} er den eneste noden i køen.`);
+    while (Q.length) {
+      const u = Q.shift();
+      V.u = u;
+      V.v = "–";
+      snap([11, 12, 13], `u = Dequeue(Q) = ${u}, med ${u}.d = ${d[u]}. ` + (adj.get(u).length ? `Naboene til ${u} er ${og(adj.get(u))}.` : `${u} har ingen naboer.`), { u });
       for (const v of adj.get(u)) {
-        const key = `${u}>${v}`;
+        V.v = v;
+        const k = `${u}>${v}`;
         if (color[v] === "white") {
           color[v] = "gray";
           d[v] = d[u] + 1;
           pi[v] = u;
-          queued.push(v);
+          tree.add(k);
+          Q.push(v);
           snap(
-            [12, 13, 14, 15, 16, 17],
-            `Kanten (${u}, ${v}): ${v} er hvit. Den blir grå med d = ${d[u]} + 1 = ${d[v]} og π = ${u}, og settes bakerst i køen.`,
-            { u, v, "d[v]": d[v] },
-            { cur: u, edge: key },
+            [13, 14, 15, 16, 17, 18],
+            `${v} er hvit: ${v} blir grå, ${v}.d = ${u}.d + 1 = ${d[v]}, ${v}.π = ${u}, og ${v} settes inn bakerst i køen.`,
+            { u, cur: k },
           );
         } else {
-          snap(
-            [12, 13],
-            `Kanten (${u}, ${v}): ${v} er ${color[v] === "gray" ? "grå" : "svart"} og har alt fått d = ${d[v]}. Ingenting endres.`,
-            { u, v, "d[v]": d[v] },
-            { cur: u, edge: key },
-          );
+          snap([13, 14], `${v} er ${color[v] === "gray" ? "grå" : "svart"}, så den er funnet før, og ${v}.d = ${d[v]} står.`, { u, cur: k });
         }
       }
       color[u] = "black";
-      snap(18, `Alle naboene til ${u} er sett, og ${u} blir svart.`, { u }, { cur: u });
+      V.v = "–";
+      snap(19, `Alle naboene til ${u} er sett, og ${u} blir svart.`, { u });
     }
-
-    const unreached = ids.filter((u) => d[u] === Infinity);
+    V.u = "–";
+    const lost = ids.filter((x) => d[x] === Infinity);
     snap(
-      19,
-      unreached.length
-        ? `Køen er tom. ${unreached.join(", ")} kan ikke nås fra ${S} og har d = ∞. For de andre er d lengden av en korteste vei fra ${S}.`
-        : `Køen er tom. Hver d er lengden av en korteste vei fra ${S}, og π-kantene utgjør bredde-først-treet.`,
-      {},
+      11,
+      "Køen er tom, og BFS er ferdig. " +
+        (lost.length
+          ? `${og(lost)} ${lost.length === 1 ? "er" : "er alle"} fortsatt hvit${lost.length === 1 ? "" : "e"} med d = ∞: ingen sti fra ${s} når ${lost.length === 1 ? "den" : "dem"}.`
+          : `Alle nodene kan nås fra ${s}.`),
     );
 
-    // print_path to the farthest node that can be reached.
-    let t = S;
-    for (const u of ids) if (d[u] !== Infinity && d[u] >= d[t]) t = u;
-    if (t !== S) {
-      const path = [t];
-      while (path[0] !== S) path.unshift(pi[path[0]]);
-      const edges = path.slice(1).map((v, i) => `${path[i]}>${v}`);
-      const back = path.slice(1).reverse().map((v) => `${v}.π = ${pi[v]}`).join(", ");
-      snap(
-        [21, 22, 24, 26, 27],
-        `print_path(pi, ${S}, ${t}) følger forgjengerne bakover: ${back}.`,
-        { s: S, v: t },
-        { path: edges, pathNodes: path },
-      );
-      snap(
-        [22, 23, 28],
-        `På vei ut av rekursjonen skrives ${path.join(", ")}. Stien har ${path.length - 1} kanter, og d[${t}] = ${d[t]}.`,
-        { s: S, v: t },
-        { path: edges, pathNodes: path },
-      );
+    // Print-Path to the farthest node.
+    const far = ids.filter((x) => d[x] !== Infinity).reduce((a, b) => (d[b] >= d[a] ? b : a), s);
+    const path = [];
+    for (let v = far; v != null; v = pi[v]) path.unshift(v);
+    const printed = [];
+    const onPath = new Set(path);
+    const pe = new Set(path.slice(1).map((v, i) => `${path[i]}>${v}`));
+    const calls = [];
+    for (let i = path.length - 1; i >= 0; i--) {
+      const v = path[i];
+      calls.push(v);
+      V.u = "–";
+      V.v = v;
+      if (v === s) {
+        printed.push(s);
+        snap([22, 23], `Print-Path(G, ${s}, ${s}): v = s, så ${s} skrives ut.`, { pv: v, calls: [...calls], printed: [...printed], pe: [...pe], onPath: [...onPath] });
+      } else {
+        snap([22, 24, 26], `Print-Path(G, ${s}, ${v}): ${v} ≠ ${s} og ${v}.π = ${pi[v]}, så stien til ${pi[v]} skrives ut først.`, {
+          pv: v,
+          calls: [...calls],
+          printed: [...printed],
+          pe: [...pe],
+          onPath: [...onPath],
+        });
+      }
     }
-    for (const fr of frames) fr.show = Object.fromEntries(ids.map((u) => [u, show(fr.d[u])]));
+    for (let i = 1; i < path.length; i++) {
+      const v = path[i];
+      printed.push(v);
+      calls.pop();
+      V.v = v;
+      snap(27, `Kallet for ${path[i - 1]} er ferdig, og Print-Path(G, ${s}, ${v}) skriver ut ${v}.` + (i === path.length - 1 ? ` Stien har ${d[v]} ${d[v] === 1 ? "kant" : "kanter"}, like mange som ${v}.d.` : ""), {
+        pv: v,
+        calls: [...calls],
+        printed: [...printed],
+        pe: [...pe],
+        onPath: [...onPath],
+      });
+    }
     return frames;
   },
 
-  render(stage, frame, api) {
+  render(stage, fr, api) {
+    view.drawn.add(stage);
     const { w, h } = api.getSize();
-    const { graph } = frame;
-    if (!graph || w <= 0 || h <= 0) {
+    if (w <= 0 || h <= 0) {
       stage.innerHTML = "";
       return;
     }
-    const n = graph.nodes.length;
-    const CELL_H = 24;
-    const graphH = h - CELL_H - 14;
-    const r = Math.max(10, Math.min(14, w / 30));
-    const shape = { r };
-    const pos = place(graph.nodes, { x: 0, y: 0, w, h: graphH }, { l: r + 40, r: r + 16, t: r + 18, b: r + 18 });
-
-    const onPath = new Set(frame.path ?? []);
-    const nodeStyle = (nd) => ({
-      st: NODE[frame.color[nd.id]],
-      ring: frame.cur === nd.id || (frame.pathNodes ?? []).includes(nd.id),
-    });
+    const a = fr.act;
+    const g = a.graph;
+    const rowH = 54;
+    const pos = place(g.nodes, { x: 0, y: 0, w, h: h - rowH }, { l: R + 6, r: R + 6, t: R + 22, b: R + 22 });
+    const tree = new Set(a.tree);
+    const pe = new Set(a.pe ?? []);
+    const nodeStyle = (n) => ({ st: NODE[a.color[n.id]], ring: (a.u === n.id && a.pv == null) || a.pv === n.id });
     const edgeStyle = (e) => {
-      const key = `${e.from}>${e.to}`;
-      if (frame.edge === key || onPath.has(key)) return { st: EDGE.cur };
-      if (frame.pi[e.to] === e.from) return { st: EDGE.tree };
+      const k = `${e.from}>${e.to}`;
+      if (k === a.cur) return { st: EDGE.cur };
+      if (pe.has(k)) return { st: { ...EDGE.tree, stroke: "var(--accent)" } };
+      if (tree.has(k)) return { st: EDGE.tree };
       return { st: EDGE.plain };
     };
-    let svg = graphSvg(graph, pos, () => shape, nodeStyle, edgeStyle);
-
-    // d beside every node; ∞ is faint until the node is discovered.
-    const maxGy = Math.max(...graph.nodes.map((nd) => nd.gy));
-    const sides = stampSides(
-      graph, pos, () => shape, () => 1,
-      (nd) => (nd.gy === 0 ? ["n", "w", "e", "s"] : nd.gy === maxGy ? ["s", "w", "e", "n"] : ["w", "e", "n", "s"]),
-      { w, h: graphH + 8 },
-    );
-    for (const nd of graph.nodes) {
-      const u = nd.id;
-      const inf = frame.d[u] === Infinity;
-      svg += stamp(pos.get(u), shape, sides.get(u), frame.show[u], inf ? "var(--faint)" : "var(--accent-ink)");
+    let svg = graphSvg(g, pos, () => SHAPE, nodeStyle, edgeStyle);
+    const sides = stampSides(g, pos, () => SHAPE, () => 1, () => ["n", "s", "e", "w"], { w, h: h - rowH });
+    for (const n of g.nodes) {
+      const x = a.d[n.id];
+      svg += stamp(pos.get(n.id), SHAPE, sides.get(n.id), x === Infinity ? "∞" : String(x), x === Infinity ? "var(--muted)" : "var(--fg)");
     }
-
-    // Q: every node that has been in the queue; the ones taken out are faded.
-    const LABEL_W = 22;
-    const cellW = Math.min(34, (w - LABEL_W - 4) / n);
-    const x0 = LABEL_W;
-    const y = h - CELL_H - 2;
-    svg +=
-      `<text x="${x0 - 8}" y="${(y + CELL_H / 2 + 4).toFixed(1)}" text-anchor="end" ` +
-      `style="fill:var(--muted);${FONT};font-weight:600">Q</text>`;
-    svg += cellsSvg(x0, y, cellW, CELL_H, frame.queued, (i) => {
-      const u = frame.queued[i];
-      if (frame.cur === u && i < frame.head) return { fill: "var(--accent-weak)", stroke: "var(--accent)", text: "var(--accent-ink)", wdt: 2 };
-      if (i < frame.head) return { fill: "none", stroke: "var(--border)", text: "var(--faint)" };
-      return { fill: NODE.gray.fill, stroke: "var(--fg)", text: "var(--fg)" };
-    });
-
+    // The queue, or the printed path.
+    const y = h - rowH + 14;
+    const cellW = Math.min(30, (w - 40) / 9);
+    if (a.printed) {
+      svg += `<text x="0" y="${y + 18}" style="fill:var(--muted);${FONT}">ut</text>`;
+      svg += cellsSvg(28, y, cellW, 26, a.printed.map(String), () => ({ fill: "var(--bg)", stroke: "var(--accent)", text: "var(--fg)" }));
+    } else {
+      svg += `<text x="0" y="${y + 18}" style="fill:var(--muted);${FONT}">Q</text>`;
+      if (a.Q.length) {
+        svg += cellsSvg(28, y, cellW, 26, a.Q.map(String), (i) => ({ fill: NODE.gray.fill, stroke: NODE.gray.stroke, text: NODE.gray.text }));
+      } else {
+        svg += `<text x="28" y="${y + 18}" style="fill:var(--muted);${FONT}">tom</text>`;
+      }
+    }
     stage.innerHTML = wrapSvg(w, h, svg);
+    stage.setAttribute(
+      "aria-label",
+      `Avstandene: ${g.nodes.map((n) => `${n.id}: ${a.d[n.id] === Infinity ? "uendelig" : a.d[n.id]}`).join(", ")}. ` +
+        (a.printed ? `Skrevet ut: ${a.printed.join(" ") || "ingenting ennå"}.` : `Køen: ${a.Q.join(", ") || "tom"}.`),
+    );
   },
 };

@@ -2,237 +2,272 @@
 order: 9
 num: "08"
 title: Traversering av grafer
-summary: "En graf lagres som nabolister eller nabomatrise. Dybde-først-søk gir start- og sluttider som klassifiserer kantene, sorterer en rettet asyklisk graf topologisk og finner sterke komponenter, og bredde-først-søk finner korteste vei når kantene ikke har vekt. Alle bruker Θ(V + E)."
+summary: "En traversering besøker alle nodene en startnode kan nå, én gang hver, i tid O(V + E). Dybde-først-søk gir start- og sluttider som finner sykler, sorterer en DAG topologisk og finner sterke komponenter, og bredde-først-søk finner korteste vei når kantene ikke har vekt."
 importance: core
 tag: "Uke 41"
 part: "Del 4: Grafer og flyt"
-updated: 2026-10-10
+updated: 2026-10-24
 ---
 
-Å traversere en graf er å besøke nodene du har oppdaget. I starten har du bare
-oppdaget startnoden, men hver gang du besøker en node, oppdager du naboene dens.
-Slik når du alle nodene som kan nås fra startnoden. Traversering er nyttig i seg
-selv, og mange grafalgoritmer bygger på den. Læreboka kaller traversering søk
-(search), og derfor heter de to algoritmene bredde-først-søk og dybde-først-søk.
-
 <LearningGoals>
-- Forklar hvordan en graf lagres som <Term name="Nabolister">nabolister</Term> og som <Term name="Nabomatrise">nabomatrise</Term>, og hva hver av dem koster i plass og tid.
-- Gjør rede for <Term name="Dybde-først-søk">dybde-først-søk</Term> (DFS) med start- og sluttider, <Term name="Parentesteoremet">parentesteoremet</Term> og <Term name="Hvit-sti-teoremet">hvit-sti-teoremet</Term>.
-- Klassifiser kantene DFS møter som tre-, bakover-, forover- og krysskanter (<Term name="Kantklassifisering">kantklassifisering</Term>).
-- Sorter en rettet asyklisk graf med Topological-Sort, og forklar hvorfor synkende sluttid gir en <Term name="Topologisk sortering">topologisk sortering</Term>.
-- Finn de <Term name="Sterke komponenter">sterke komponentene</Term> i en rettet graf med Strongly-Connected-Components.
-- Gjør rede for <Term name="Bredde-først-søk">bredde-først-søk</Term> (BFS), og hvorfor det finner korteste vei når kantene ikke har vekt. Skriv ut stien med Print-Path.
-- Forklar hva et <Term name="Traverseringstre">traverseringstre</Term> er, som bredde-først-treet og dybde-først-skogen.
-- Implementer DFS med en stakk, og forklar hvordan huskelista bestemmer hvilken traversering du får.
+- Lagre en graf som <Term name="Nabolister">nabolister</Term> og som <Term name="Nabomatrise">nabomatrise</Term>, og forklar hva hver av dem koster i plass og tid.
+- Forklar hvorfor en traversering merker nodene den har besøkt, og hvorfor den da bruker $O(V + E)$.
+- Kjør <Term name="Dybde-først-søk">dybde-først-søk</Term> for hånd med starttider og sluttider, og bruk parentesteoremet og hvit-sti-teoremet.
+- Klassifiser kantene med DFS, og avgjør om en rettet graf har en sykel.
+- Sorter en <Term name="DAG">DAG</Term> topologisk med Topological-Sort, og forklar hvorfor synkende sluttid virker.
+- Finn <Term name="Sterke komponenter">sterke komponenter</Term> med Strongly-Connected-Components, og forklar hvorfor den andre runden går på $G^{\mathrm T}$.
+- Skriv DFS med en stakk, og forklar hva en traversering med en vilkårlig prioritetskø gir.
+- Kjør <Term name="Bredde-først-søk">bredde-først-søk</Term> for hånd, forklar hvorfor det finner korteste vei uten vekter, og skriv ut stien med Print-Path.
 </LearningGoals>
 
-## Grafrepresentasjoner
+Et gatenett har 11 gater på langs og 11 på tvers, og 121 kryss. Du står i krysset øverst til
+venstre og skal innom hvert kryss. Fremgangsmåten du kjenner fra trær, er å besøke krysset du står i
+og så fortsette rekursivt fra hvert nabokryss etter tur. I et tre virker den, fordi det går bare én
+sti ned til hver node. I gatenettet går den fra et kryss til nabokrysset og derfra tilbake igjen, i
+det uendelige.
 
-En graf $G = (V, E)$ har nodene $V$ og kantene $E$. I en rettet graf går kanten
-$(u, v)$ fra $u$ til $v$, og $v$ er en ut-nabo av $u$. I en urettet graf går
-kanten begge veier. Kjøretiden til en grafalgoritme har to parametre, og inne i
-asymptotisk notasjon står $V$ for $|V|$ og $E$ for $|E|$, så $O(V + E)$ betyr
-$O(|V| + |E|)$.
+Du kan forby kryssene du har gått gjennom fra starten og hit. Da går rekursjonen aldri i ring, men
+den besøker et kryss én gang for hver vei dit som ikke går gjennom samme kryss to ganger. Til
+hjørnet nederst til høyre finnes det 1 568 758 030 464 750 013 214 100 slike veier, omtrent
+${1{,}6 \cdot 10^{24}}$. Med en milliard besøk i sekundet tar besøkene i dette ene hjørnet 50
+millioner år.
 
-Med <Term name="Nabolister">nabolister</Term> har hver node sin egen liste:
-$G.\mathit{Adj}[u]$ inneholder ut-naboene til $u$. Grafen er altså en tabell
-med én liste per node, og ikke én liste. I en rettet graf står kanten $(u, v)$
-bare i lista til $u$, så listene har til sammen $|E|$ elementer
-(<FormulaRef id="nabolister-lengde" />). I en urettet graf står den i begge
-listene, og summen blir $2|E|$. Plassen er $\Theta(V + E)$. En
-<Term name="Nabomatrise">nabomatrise</Term> er en $|V| \times |V|$-tabell $A$
-der $a_{uv} = 1$ når $(u, v)$ er en kant, og 0 ellers. Den tar $\Theta(V^2)$
-plass uansett hvor mange kanter grafen har, og for en urettet graf er den
-symmetrisk.
+Med et merke i hvert kryss du har besøkt, og en regel om aldri å gå inn i et merket kryss, blir det
+121 besøk. Hvert av de 220 gatestykkene mellom to nabokryss blir sett fra begge ender, så det er 440
+oppslag i alt. Å traversere en graf er å besøke alle nodene du kan nå fra en startnode, og merket
+gjør at hver av dem besøkes én gang.
+
+## Grafen i minnet
+
+I pseudokoden er en graf ${G = (V, E)}$, med nodene $V$ og kantene $E$. Inne i $O$, $\Theta$ og
+$\Omega$ står $V$ og $E$ for antall noder og antall kanter. En traversering trenger bare naboene til
+noden den står i. Figur 1 viser de to vanlige måtene å lagre dem på, for en rettet graf med seks
+noder.
 
 <Figure
-  src="/figures/grafrepresentasjoner.svg"
-  alt="En rettet graf med nodene 1 til 6 og kantene 1 til 2, 1 til 3, 3 til 6, 4 til 6, 5 til 3 og 5 til 4. Ved siden av står nabolistene: 1 har 2 og 3, 2 har ingen, 3 har 6, 4 har 6, 5 har 3 og 4, og 6 har ingen. Til høyre er nabomatrisen, en tabell med seks rader og seks kolonner der de seks kantene er enere."
+  src="/figures/grafen-i-minnet.svg"
+  alt="En rettet graf med seks noder og ni kanter: 1 til 3, 2 til 1, 2 til 4, 3 til 5, 3 til 4, 3 til 6, 4 til 1, 4 til 6 og 5 til 6. Under står nabolistene: 1: 3. 2: 1, 4. 3: 5, 4, 6. 4: 1, 6. 5: 6. 6: tom. Nederst nabomatrisen med 1 der raden har en kant til kolonnen. Kanten fra 3 til 4 er rød i alle tre."
+  caption="En rettet graf med seks noder, nabolistene og nabomatrisen. Kanten $(3, 4)$ er rød i alle tre."
   number={1}
-  width={560}
-  height={250}
-  caption="Den samme grafen som nabolister og som nabomatrise. Rad $u$, kolonne $v$ i matrisen er 1 når $(u, v)$ er en kant."
+  width={340}
+  height={432}
 />
 
-En vektet graf lagrer vekten $w(u, v)$ sammen med $v$ i lista til $u$, eller som
-$a_{uv}$ i matrisen. Tabellen viser hva de vanligste operasjonene koster.
+<Term name="Nabolister">Nabolistene</Term> er én liste per node. Lista $G.\mathit{Adj}[u]$ har
+ut-naboene til $u$, nodene en kant fra $u$ går til. Kanten $(3, 4)$ er 4-tallet i lista til 3. En
+<Term name="Nabomatrise">nabomatrise</Term> er en ${|V| \times |V|}$-tabell med 1 i rad $u$ og
+kolonne $v$ når $(u, v)$ er en kant, og 0 ellers.
+
+Nabolistene har én plass per node og én per kant, så de tar ${\Theta(V + E)}$ plass. Matrisen har
+${|V|^2}$ plasser uansett hvor mange kanter grafen har. I matrisen ser du om $(u, v)$ er en kant ved
+å lese rad $u$, kolonne $v$, og oppslaget tar konstant tid. Med nabolister må du lete gjennom lista
+til $u$. Alle naboene til $u$ står i lista til $u$, så du leser dem i tid proporsjonal med antallet.
+I matrisen må du lese hele rad $u$, $|V|$ plasser, også når $u$ har én nabo.
+
+En traversering leser naboene til hver node den besøker. Med nabolister er det til sammen like mange
+oppslag som elementer i listene, $|E|$, og med matrise blir det ${|V|^2}$. Derfor bruker
+traverseringene nabolister. Nabolistene tar bare mindre plass når grafen har få kanter. Hvis grafen
+har nær ${|V|^2}$ kanter, tar begge ${\Theta(V^2)}$.
+
+I en urettet graf går kanten ${\{u, v\}}$ begge veier. Da står $v$ i lista til $u$ og $u$ i lista til
+$v$, så listene har ${2|E|}$ elementer i alt, og matrisen er symmetrisk om diagonalen.
+
+<Formula
+  tex="\sum_{u \in V} |G.\mathit{Adj}[u]| = |E|"
+  caption="Lengden av nabolistene i en rettet graf. I en urettet graf er summen $2|E|$."
+/>
+
+<Callout title="Nabolister for traversering">
+Nabolistene tar ${\Theta(V + E)}$ plass, og naboene til $u$ leses i tid proporsjonal med antallet.
+Nabomatrisen tar ${\Theta(V^2)}$ plass og svarer på om $(u, v)$ er en kant i konstant tid.
+</Callout>
+
+<Quiz
+  question="En rettet graf er lagret som nabolister. Hvor lang tid tar det å finne alle kantene inn til en node $v$?"
+  options={["$\\Theta(1 + |G.\\mathit{Adj}[v]|)$, fordi du leser lista til $v$", "$\\Theta(V)$, fordi du leser kolonne $v$", "$\\Theta(V + E)$, fordi du må lete i alle listene"]}
+  answer={2}
+  explanation={"Lista til $v$ har bare kantene ut av $v$. En kant $(u, v)$ inn til $v$ står i lista til $u$, og $u$ kan være hvilken som helst node, så du må gå gjennom alle listene, $\\Theta(V + E)$. $\\Theta(V)$ er svaret med nabomatrise, der kantene inn til $v$ er 1-tallene i kolonne $v$."}
+/>
+
+<Example label="Eksamensoppgave" title="Femkanten som nabomatrise">
+<ExamRef id="2024-aug-kont" task="10" />
+
+<Figure
+  src="/figures/eksamen-2024-08-oppgave-10.svg"
+  alt="En urettet graf med fem noder i en femkant, 1 øverst og så 2, 3, 4 og 5 med klokka. Kantene er 1–2, 2–3, 3–4, 4–5, 5–1, 1–3 og 1–4."
+  caption="Figur 1 i oppgavesettet."
+  number={2}
+  width={340}
+  height={172}
+/>
+
+Du skal representere grafen i figur 1 som en nabomatrise. Fyll inn 0 og 1 i tabellen under.
 
 <Table
-  rowHeader={false}
-  columns={["Operasjon", "Nabolister", "Nabomatrise"]}
+  columns={["", "1", "2", "3", "4", "5"]}
   rows={[
-    ["Plass", "$\\Theta(V + E)$", "$\\Theta(V^2)$"],
-    ["Er $(u, v)$ en kant?", "Søk i $G.\\mathit{Adj}[u]$", "$\\Theta(1)$"],
-    ["Alle ut-naboene til $u$", "$\\Theta(\\text{antall})$", "$\\Theta(V)$"],
-    ["Alle kantene", "$\\Theta(V + E)$", "$\\Theta(V^2)$"],
+    ["1", "", "", "", "", ""],
+    ["2", "", "", "", "", ""],
+    ["3", "", "", "", "", ""],
+    ["4", "", "", "", "", ""],
+    ["5", "", "", "", "", ""],
   ]}
+  rowHeader={false}
 />
 
-Nabomatrisen egner seg til direkte oppslag, og nabolistene til traversering. Det
-sies ofte at matrisen er raskere og listene tar mindre plass, men det stemmer bare
-delvis. Listene tar mindre plass når grafen har få kanter. Har den nær $|V|^2$
-kanter, tar begge $\Theta(V^2)$. Algoritmene i læreboka bruker nabolister med
-mindre de trenger raske oppslag, og listene kan gjerne byttes ut med hashtabeller.
+<Solution>
+Grafen er urettet, så hver kant gir to 1-tall: ${\{1, 3\}}$ gir 1 i rad 1, kolonne 3 og i rad 3,
+kolonne 1. Kantene er ${\{1, 2\}}$, ${\{2, 3\}}$, ${\{3, 4\}}$, ${\{4, 5\}}$, ${\{5, 1\}}$,
+${\{1, 3\}}$ og ${\{1, 4\}}$. Ingen node har kant til seg selv, så diagonalen er 0.
+
+<Table
+  columns={["", "1", "2", "3", "4", "5"]}
+  rows={[
+    ["1", "0", "1", "1", "1", "1"],
+    ["2", "1", "0", "1", "0", "0"],
+    ["3", "1", "1", "0", "1", "0"],
+    ["4", "1", "0", "1", "0", "1"],
+    ["5", "1", "0", "0", "1", "0"],
+  ]}
+  rowHeader={false}
+/>
+
+<Answer>Matrisen over. Den er symmetrisk, og summen av 1-tallene er ${2 \cdot 7 = 14}$.</Answer>
+</Solution>
+</Example>
 
 ## Traversering
 
-Start i node 5 i figur 1, med 5 alene på en liste. Du tar 5 av lista, besøker
-den og fører opp naboene 3 og 4. Du besøker 3 og fører opp 6.
-Når du besøker 4, står 6 alt på lista. Du besøker 6, og lista er tom. Nodene 5, 3,
-4 og 6 er besøkt, og 1 og 2 kan ikke nås fra 5.
+En traversering får en rettet graf $G$ og en startnode $u$, og skal besøke alle nodene som kan nås
+fra $u$ langs kanter. I starten kjenner du bare $u$, og du oppdager naboene til hver node du besøker.
+Gatenettet er en slik graf. Kryssene er nodene, gatestykket mellom to nabokryss er en kant hver vei,
+og en vei gjennom byen er en sti i grafen.
 
-Lista er en huskeliste med noder som er oppdaget, men ikke besøkt. Å besøke en
-node er å ta den av lista og føre opp naboene den har. Når lista er tom, er alle
-nodene som kan nås fra startnoden, besøkt. En node på en sti fra startnoden føres
-nemlig opp senest når noden foran den på stien besøkes, og alt som føres opp, tas
-av lista før den er tom. Hvilken node som tas av lista først, bestemmer hvilken
-traversering det blir.
+Rekursjonen fra starten ser slik ut:
 
-Algoritmene i læreboka holder styr på hvilke noder som er oppdaget og besøkt,
-med farger. En node er hvit før den
-er oppdaget, grå når den er oppdaget, men ikke ferdig, og svart når den er
-ferdig. Uten fargene ville en sykel sendt traverseringen rundt og rundt. Med dem
-behandles hver node én gang, på samme måte som memoisering løser hver delinstans
-én gang. Når $v$ oppdages langs kanten $(u, v)$, får den forgjengeren
-$v.\pi = u$. Kantene $(v.\pi, v)$ danner et
-<Term name="Traverseringstre">traverseringstre</Term> med startnoden som rot.
+<CodeBlock
+  lang="text"
+  code={`Traverse(G, u)
+1  print u
+2  adj = G.Adj[u]
+3  delete u from G
+4  for each v ∈ adj
+5      Traverse(G, v)
+6  add u back to G`}
+/>
+
+Linje 3 tar $u$ ut av grafen mens kallene fra $u$ pågår, så ingen av dem kan gå tilbake til $u$.
+Uten den linjen går kallene fram og tilbake mellom to naboer. Linje 6 setter $u$ inn igjen når
+kallet er ferdig, så et senere kall kan nå $u$ langs en annen sti. Derfor kalles Traverse på en node
+én gang for hver enkel sti fra startnoden til den, en sti som ikke går gjennom samme node to ganger.
+Det er tallet ${1{,}6 \cdot 10^{24}}$ fra gatenettet.
+
+En node trenger bare ett kall, fordi et nytt kall på den ville gått videre til de samme naboene.
+Neste versjon setter derfor ikke noden inn igjen, men gir den en farge:
+
+<CodeBlock
+  lang="text"
+  code={`Traverse′(G, u)
+1  print u
+2  u.color = gray
+3  for each v ∈ G.Adj[u]
+4      if v.color == white
+5          Traverse′(G, v)
+6  u.color = black`}
+/>
+
+Alle nodene er hvite før det første kallet. En hvit node er ikke oppdaget ennå, en grå node er
+oppdaget, men ikke ferdig, og en svart node er ferdig: alle naboene er sett. Testen på linje 4 gjør
+det samme som tabellen i memoisering. En node som er besøkt, besøkes ikke igjen.
+
+Hver node får høyst ett kall, fordi den er hvit bare fram til sitt eget kall. Hvert kall leser
+nabolista til noden én gang. Løkka går derfor like mange runder til sammen som det er elementer i
+listene, høyst $|E|$, og arbeidet er ${O(V + E)}$. I gatenettet er det 121 kall og 440 runder.
+
+Traverse′ besøker akkurat nodene som kan nås fra $u$. Den når ingen andre, fordi hvert kall går langs
+en kant. Og den når alle: ta en node $w$ som kan nås fra $u$, og en sti fra $u$ til $w$. Hvis $w$
+aldri blir besøkt, finnes det en første node $y$ på stien som ikke blir besøkt, og noden $x$ foran
+den på stien blir besøkt. Kallet på $x$ leser hele nabolista, også $y$. Hvis $y$ er hvit da, kalles
+Traverse′ på $y$, og ellers er $y$ allerede besøkt. Begge deler motsier at $y$ aldri blir besøkt.
+
+<Callout title="Merk nodene du har besøkt">
+En traversering besøker alle nodene som kan nås fra startnoden. Når hver node får en farge og bare
+hvite noder besøkes, blir hver node besøkt én gang, og arbeidet er ${O(V + E)}$.
+</Callout>
 
 ## Dybde-først-søk
 
-<Term name="Dybde-først-søk">Dybde-først-søk</Term> (DFS) går alltid videre fra
-den nyeste noden den har oppdaget. DFS-Visit$(G, u)$ gjør $u$ grå og går gjennom
-naboene. Møter den en hvit nabo $v$, setter den $v.\pi = u$ og kaller seg selv på
-$v$ med en gang. Først når alle naboene er sett, blir $u$ svart. Kallstakken er
-huskelista. DFS$(G)$ farger alle nodene hvite og kaller DFS-Visit fra hver node
-som fortsatt er hvit, i rekkefølge. Den når dermed hele grafen, og hvert kall fra
-hovedløkka gir et nytt tre. Til sammen blir trærne en dybde-først-skog.
+Traverse′ går alltid videre fra den nyeste noden den har oppdaget, og snur først når den står fast.
+Slik går du gjennom en labyrint med et stykke kritt. Du merker hvert kryss du kommer til. Fra krysset
+du står i, går du inn i en gang som fører til et umerket kryss. Når ingen gang herfra fører til et
+umerket kryss, går du tilbake samme vei som du kom. Krysset er noden, gangen er kanten og
+krittmerket er fargen. Å gå tilbake er at kallet returnerer, og de grå nodene er kryssene på veien
+tilbake til inngangen. Bildet stopper ved retningen. I en rettet graf er gangene enveiskjørte, men
+kallet returnerer likevel til noden som kalte det, uansett hvilken vei kanten peker.
 
-DFS gir hver node to tider fra en felles teller `time`: starttiden $u.d$ når $u$
-oppdages og blir grå, og sluttiden $u.f$ når $u$ er ferdig og blir svart.
-Telleren øker med 1 hver gang, så tidene er heltallene fra 1 til $2|V|$, og
-$u.d < u.f$.
+<Term name="Dybde-først-søk">Dybde-først-søk</Term>, DFS, er Traverse′ med tider, forgjengere og en
+hovedløkke. Hver node får to tider fra en klokke, $\mathit{time}$, som går ett hakk hver gang en node
+blir grå eller svart. Starttiden $u.d$ er tiden da $u$ blir oppdaget og grå, og sluttiden $u.f$ er
+tiden da $u$ blir svart. Hovedløkka i DFS starter et nytt kall fra hver node som fortsatt er hvit, så
+hele grafen blir besøkt, også nodene som ikke kan nås fra den første. Forgjengeren $v.\pi = u$ husker
+hvilken node $v$ ble oppdaget fra.
 
 <CodeBlock
-  id="dfs"
-  title="dfs.py"
-  lang="python"
-  code={`def dfs(G):  # G[u] er lista med ut-naboene til u
-    color = {u: "white" for u in G}
-    pi = {u: None for u in G}
-    d, f = {}, {}  # u.d og u.f er d[u] og f[u]
-    time = 0
+  id="dfs-kode"
+  lang="text"
+  code={`DFS(G)
+1  for each vertex u ∈ G.V
+2      u.color = white
+3      u.π = nil
+4  time = 0
+5  for each vertex u ∈ G.V
+6      if u.color == white
+7          DFS-Visit(G, u)
 
-    def dfs_visit(u):
-        nonlocal time
-        time += 1
-        d[u] = time
-        color[u] = "gray"
-        for v in G[u]:
-            if color[v] == "white":
-                pi[v] = u
-                dfs_visit(v)
-        time += 1
-        f[u] = time
-        color[u] = "black"
-
-    for u in G:
-        if color[u] == "white":
-            dfs_visit(u)
-    return d, f, pi`}
+DFS-Visit(G, u)
+1  time = time + 1
+2  u.d = time
+3  u.color = gray
+4  for each vertex v ∈ G.Adj[u]
+5      if v.color == white
+6          v.π = u
+7          DFS-Visit(G, v)
+8  time = time + 1
+9  u.f = time
+10 u.color = black`}
 />
 
 <Stepper
   src="/steppers/dfs.js"
-  codeId="dfs"
+  codeId="dfs-kode"
   title="DFS"
-  caption="Grafen fra forelesningen. Hver node har fargen DFS har gitt den og tidene d/f. Tre-kantene har et bånd, og en annen undersøkt kant har en bokstav: B for bakoverkant, F for foroverkant og K for krysskant. Under grafen er hver node en stolpe fra $u.d$ til $u.f$, med én rad per dybde i treet, og de grå stolpene er nodene på kallstakken."
-  height={360}
+  height={300}
+  caption="En tom node er hvit, en halvfylt grå og en fylt svart, og ved hver node står $u.d/u.f$. Ringen markerer kallet som pågår, den røde kanten er den DFS ser på, tre-kantene har bredt bånd, og en stiplet kant er sett på uten å bli tre-kant. Raden under grafen er tiden fra 1 til 12, med «(u» ved $u.d$ og «u)» ved $u.f$."
 />
 
-DFS-Visit kalles én gang per node, for den kalles bare på hvite noder, og noden
-blir grå med en gang. Hvert kall går gjennom nabolista én gang, så alle kallene
-undersøker til sammen $|E|$ kanter i en rettet graf. Med initialiseringen blir
-kjøretiden $\Theta(V + E)$ (<FormulaRef id="dfs-kjoretid" />).
+Stepperen starter med grafen fra figur 1, med nabolistene i figurens rekkefølge, og rekkefølgen i
+listene bestemmer hvor DFS går. Fra 3 går DFS til 5 og videre til 6 før 4, fordi 5 står først i lista
+til 3. Når hovedløkka kommer til 2, er 2 fortsatt hvit, fordi ingen kant går inn til 2, og 2 blir
+rota i et nytt tre.
 
-### Parentesteoremet og hvit-sti-teoremet
+Kantene ${(v.\pi, v)}$ er tre-kantene. Et tre av forgjengerkanter med startnoden som rot heter et
+<Term name="Traverseringstre">traverseringstre</Term>, og DFS gir ett per kall fra hovedløkka, en
+dybde-først-skog. Med grafen fra figur 1 er det treet med rot 1 og treet med bare 2. DFS bruker
+${\Theta(V + E)}$: hovedløkka går gjennom alle nodene, og hver naboliste leses én gang.
 
-Skriv «(u» når $u$ oppdages og «u)» når $u$ er ferdig. Da blir parentesene
-riktig nøstet. Kallet på en node ligger inni kallene på forfedrene, så noden
-oppdages etter dem og blir ferdig før dem.
-
-<Statement kind="theorem" name="Parentesteoremet">
-For to noder $u$ og $v$ i en dybde-først-skog gjelder nøyaktig én av disse:
-
-- Intervallene $[u.d, u.f]$ og $[v.d, v.f]$ er disjunkte, og ingen av nodene er en etterkommer av den andre.
-- $[u.d, u.f]$ ligger helt inni $[v.d, v.f]$, og $u$ er en etterkommer av $v$.
-- $[v.d, v.f]$ ligger helt inni $[u.d, u.f]$, og $v$ er en etterkommer av $u$.
-</Statement>
-
-I DFS-stepperen er hver node en stolpe fra $u.d$ til $u.f$, og to stolper
-overlapper bare når den ene ligger inni den andre. $v$ er altså en ekte etterkommer av $u$ hvis og bare hvis
-$u.d < v.d < v.f < u.f$ (<FormulaRef id="parentes" />).
-
-<Statement kind="theorem" name="Hvit-sti-teoremet">
-$v$ er en etterkommer av $u$ i en dybde-først-skog hvis og bare hvis det, ved
-tiden $u.d$ da $u$ oppdages, finnes en sti fra $u$ til $v$ der alle nodene er
-hvite.
-</Statement>
-
-Er $v$ en etterkommer, oppdages den etter $u$, og det gjør alle nodene på
-trestien mellom dem, så de er hvite ved $u.d$. Omvendt, la $v$ være den første
-noden på en hvit sti fra $u$ som ikke blir en etterkommer. Noden før $v$ på
-stien er $u$ eller en etterkommer av $u$, og den blir ikke ferdig før den har
-undersøkt kanten til $v$. Da oppdages $v$ mens $u$ er grå, og etter
-parentesteoremet er den en etterkommer likevel.
-
-### Kantklassifisering
-
-DFS deler kantene i fire typer etter dybde-først-skogen. Fargen til $v$ når
-kanten $(u, v)$ undersøkes, avgjør typen.
-
-<Table
-  columns={["Kant", "Går til", "$v$ er"]}
-  rows={[
-    ["Tre-kant", "et barn i dybde-først-skogen", "hvit"],
-    ["Bakoverkant", "en forfader, eller $u$ selv", "grå"],
-    ["Foroverkant", "en etterkommer, uten å være en tre-kant", "svart, ${u.d < v.d}$"],
-    ["Krysskant", "en node som verken er forfader eller etterkommer", "svart, ${v.d < u.d}$"],
-  ]}
-/>
-
-En grå node ligger på kallstakken, så den er en forfader til $u$, og kanten
-lukker en sykel. Omvendt, har grafen en sykel, la $v$ være den første noden i
-sykelen som DFS oppdager, og $u$ noden foran $v$ i sykelen. Ved $v.d$ er resten
-av sykelen en hvit sti fra $v$ til $u$, så $u$ blir en etterkommer av $v$ etter
-hvit-sti-teoremet, og kanten $(u, v)$ blir en bakoverkant. En rettet graf har
-altså en sykel hvis og bare hvis DFS finner en bakoverkant.
-
-<Callout title="Sykler og bakoverkanter">
-Kanten $(u, v)$ er en bakoverkant når $v$ er grå idet kanten undersøkes. En rettet
-graf har en sykel hvis og bare hvis DFS finner en bakoverkant.
-</Callout>
-
-I en urettet graf er hver kant en tre-kant eller en bakoverkant. Er
-$u.d < v.d$, er $v$ hvit ved $u.d$, og kanten er en hvit sti fra $u$ til $v$.
-Etter hvit-sti-teoremet blir $v$ da en etterkommer av $u$ og ferdig mens $u$ er
-grå. Undersøkes kanten første gang
-fra $u$, er $v$ hvit, og kanten blir en tre-kant. Undersøkes den første gang fra
-$v$, er $u$ fortsatt grå, og kanten blir en bakoverkant.
-
-<Example label="Eksamensoppgave" title="Start- og sluttider på en sti">
+<Example label="Eksamensoppgave" title="DFS fra y">
 <ExamRef id="2024-des" task="6" />
 
-Utfør DFS på grafen nedenfor, slik at første kall til DFS-Visit starter i node
-$y$. Hva blir $v.d$ og $v.f$ (*discovery time* og *finish time*) for hver node
-$v$?
+Utfør DFS på grafen nedenfor, slik at første kall til DFS-Visit starter i node $y$. Hva blir $v.d$ og
+$v.f$ (discovery time og finish time) for hver node $v$?
 
 <Figure
   src="/figures/eksamen-2024-12-oppgave-6.svg"
   alt="En rettet sti med fire noder: kanter fra x til y, fra y til z og fra z til w."
-  number={2}
+  caption="Grafen fra oppgavesettet."
+  number={3}
   width={380}
   height={60}
-  caption="Grafen fra oppgavesettet."
 />
 
 Oppgi svaret som to lister med 4 tall på hver sin linje, som f.eks.:
@@ -242,436 +277,523 @@ Oppgi svaret som to lister med 4 tall på hver sin linje, som f.eks.:
 5, 6, 3, 8
 ```
 
-Første linje er $x.d$, $y.d$, $z.d$, $w.d$, i rekkefølge, og andre linje er
-$x.f$, $y.f$, $z.f$, $w.f$.
+Første linje er $x.d$, $y.d$, $z.d$, $w.d$, i rekkefølge, og andre linje er $x.f$, $y.f$, $z.f$, $w.f$.
 
-Hint: Husk at DFS starter en ny dybde-først-traversering med DFS-Visit fra hver
-eneste node som ikke allerede er besøkt.
+Hint: Husk at DFS starter en ny dybde-først-traversering med DFS-Visit fra hver eneste node som ikke
+allerede er besøkt.
 
 <Solution>
-$y$ oppdages først, med $y.d = 1$. Kanten $(y, z)$ gir $z.d = 2$, og $(z, w)$
-gir $w.d = 3$. $w$ har ingen kanter ut og blir ferdig med $w.f = 4$, og så blir
-$z.f = 5$ og $y.f = 6$. Hovedløkka i DFS fortsetter med nodene som er hvite, og
-det er bare $x$. Den får $x.d = 7$, kanten $(x, y)$ går til en svart node, og
-$x.f = 8$.
+DFS-Visit på $y$ går langs stien: ${y.d = 1}$, ${z.d = 2}$ og ${w.d = 3}$. $w$ har ingen naboer og blir
+ferdig med ${w.f = 4}$, så ${z.f = 5}$ og ${y.f = 6}$. Hovedløkka finner så $x$ hvit og kaller
+DFS-Visit på $x$: ${x.d = 7}$. Den eneste naboen, $y$, er svart, så ${x.f = 8}$.
 
-<Answer>
-`7, 1, 2, 3` og `8, 6, 5, 4`.
-</Answer>
+<Answer>7, 1, 2, 3 og 8, 6, 5, 4.</Answer>
 </Solution>
 </Example>
 
-## Topologisk sortering
+### Parentesteoremet og hvit-sti-teoremet
 
-En rettet asyklisk graf, en <Term name="DAG">DAG</Term>, er en rettet graf uten
-sykler. En <Term name="Topologisk sortering">topologisk sortering</Term> av en
-DAG er en rekkefølge av nodene der alle kantene peker fremover: for hver kant
-$(u, v)$ kommer $u$ før $v$. Kantene kan være avhengigheter, som at buksa må på
-før skoene. Har grafen en sykel, finnes ingen slik rekkefølge, for en av kantene i
-sykelen må peke bakover.
+Med grafen fra figur 1 ender raden under grafen i stepperen som
+(1 (3 (5 (6 6) 5) (4 4) 3) 1) (2 2), og parentesene står riktig nøstet. Det følger av rekursjonen.
+DFS-Visit på $v$ kalles inne i kallet på $u$ når $v$ blir en etterkommer av $u$. Av to kall starter
+det siste enten inne i det første og blir ferdig før det, eller etter at det første er ferdig.
+Parentesene som står åpne, er de grå nodene.
 
-En klassisk metode tar ut en node uten inn-kanter, fjerner den fra grafen og
-gjentar. Topological-Sort bruker i stedet DFS. Hver gang en node blir ferdig,
-settes den først i en lenket liste, så lista ender opp sortert etter synkende
-sluttid. Innsettingen tar konstant tid, og alt tar $\Theta(V + E)$.
+<Statement kind="theorem" name="Parentesteoremet">
+For to noder $u$ og $v$ i en dybde-først-skog gjelder nøyaktig én av disse: intervallene
+${[u.d, u.f]}$ og ${[v.d, v.f]}$ er disjunkte, og ingen av nodene er etterkommer av den andre;
+${[v.d, v.f]}$ ligger inni ${[u.d, u.f]}$, og $v$ er en etterkommer av $u$; eller ${[u.d, u.f]}$
+ligger inni ${[v.d, v.f]}$, og $u$ er en etterkommer av $v$.
+</Statement>
 
-Synkende sluttid er riktig fordi $v.f < u.f$ for hver kant $(u, v)$
-(<FormulaRef id="topologisk-sluttid" />). Når DFS undersøker kanten, er $v$ hvit,
-svart eller grå. Er $v$ hvit, blir den en etterkommer av $u$ og ferdig før $u$.
-Er $v$ svart, er den alt ferdig. Er $v$ grå, er kanten en bakoverkant, og grafen
-har en sykel, så i en DAG er $v$ aldri grå. Argumentet bruker ingenting om
-rekkefølgen i hovedløkka og nabolistene. En annen rekkefølge kan gi en annen
-sortering, men den er like riktig.
+<Formula
+  tex="u.d < v.d < v.f < u.f"
+  caption="$v$ er en ekte etterkommer av $u$ i dybde-først-skogen hvis og bare hvis tidene ligger slik."
+/>
 
-<Callout title="Synkende sluttid">
-I en DAG er $v.f < u.f$ for hver kant $(u, v)$, så nodene etter synkende sluttid
-er en topologisk sortering.
+To intervaller kan altså aldri overlappe bare delvis.
+
+Det andre teoremet sier hvilke noder som havner under $u$ i treet. Det avgjøres i det øyeblikket $u$
+oppdages.
+
+<Statement kind="theorem" name="Hvit-sti-teoremet">
+$v$ er en etterkommer av $u$ i dybde-først-skogen hvis og bare hvis det ved tiden $u.d$ finnes en sti
+fra $u$ til $v$ der alle nodene er hvite.
+</Statement>
+
+Hver node på en slik hvit sti blir oppdaget mens kallet på $u$ pågår, fordi noden foran den på stien
+ikke blir ferdig før den har sett kanten videre. En node som oppdages mens kallet på $u$ pågår, er en
+etterkommer av $u$ etter parentesteoremet. Med grafen fra figur 1 er 4 hvit når 3 oppdages, ved tid
+2, så 4 havner under 3, selv om DFS går til 5 og 6 først. 2 kan ikke nås fra 1 og havner i et eget
+tre.
+
+<Derivation title="Bevis for hvit-sti-teoremet">
+Anta først at $v$ er en etterkommer av $u$. Tre-kantene fra $u$ ned til $v$ er en sti, og hver node
+$w$ på den er oppdaget etter $u$, så ${u.d < w.d}$ etter parentesteoremet. Ved tiden $u.d$ var alle
+disse nodene hvite, $u$ selv i det øyeblikket den ble oppdaget.
+
+Anta så at det ved tiden $u.d$ finnes en hvit sti fra $u$ til $v$, men at $v$ ikke blir en
+etterkommer av $u$. La $w$ være den første noden på stien som ikke blir en etterkommer, og $x$ noden
+foran den. Da er $x$ en etterkommer av $u$ eller $u$ selv, så ${x.f \le u.f}$. $w$ var hvit ved tiden
+$u.d$, så ${u.d < w.d}$. Kallet på $x$ ser på kanten ${(x, w)}$ før $x$ blir ferdig, og da er $w$
+enten hvit og blir oppdaget, eller allerede oppdaget. Altså er ${u.d < w.d < x.f \le u.f}$. $w.d$
+ligger inni intervallet til $u$, og etter parentesteoremet ligger da hele intervallet til $w$ inni
+det, så $w$ er en etterkommer av $u$. Det motsier valget av $w$.
+</Derivation>
+
+<Callout title="Tidene som parenteser">
+Intervallene ${[u.d, u.f]}$ og ${[v.d, v.f]}$ er enten disjunkte, eller det ene ligger inni det
+andre, og da er den indre noden en etterkommer av den ytre. $v$ havner under $u$ når det går en hvit
+sti fra $u$ til $v$ i det øyeblikket $u$ oppdages.
 </Callout>
 
-Koden trenger ikke tidene, bare rekkefølgen nodene blir ferdige i.
+<Quiz
+  question="DFS gir noden $u$ tidene 2/7. Hvilke tider kan en annen node $v$ i samme DFS ikke ha?"
+  options={["3/6", "8/9", "1/10", "5/9"]}
+  answer={3}
+  explanation={"5/9 starter inne i intervallet til $u$ og slutter etter det. $v$ ble da oppdaget mens kallet på $u$ pågikk, så den er en etterkommer av $u$ og må bli ferdig før $u$. 3/6 ligger inni, så $v$ er en etterkommer av $u$. 8/9 er disjunkt fra 2/7, så ingen av dem er etterkommer av den andre. 2/7 ligger inni 1/10, så $v$ er en forfader til $u$."}
+/>
+
+## Kantklassifisering
+
+Når DFS-Visit ser på kanten ${(u, v)}$ på linje 5, er $v$ hvit, grå eller svart, og fargen sier hva
+slags kant det er. Figur 4 viser alle ni kantene i grafen fra figur 1 etter DFS, med klassen som
+bokstav.
+
+<Figure
+  src="/figures/kantklasser.svg"
+  alt="Den samme grafen etter DFS, med starttid og sluttid ved hver node: 1: 1/10, 3: 2/9, 5: 3/6, 6: 4/5, 4: 7/8, 2: 11/12. Tre-kantene 1 til 3, 3 til 5, 5 til 6 og 3 til 4 har et bredt bånd og bokstaven T. Kanten 4 til 1 er en bakoverkant, B. Kanten 3 til 6 er en foroverkant, F. Kantene 4 til 6, 2 til 1 og 2 til 4 er krysskanter, K."
+  caption="Grafen fra figur 1 etter DFS, med $u.d/u.f$ ved hver node. T er tre-kant, B bakoverkant, F foroverkant og K krysskant."
+  number={4}
+  width={340}
+  height={206}
+/>
+
+<Table
+  columns={["$v$ er", "$(u, v)$ er", "I figur 4"]}
+  rows={[
+    ["hvit", "tre-kant", "${(1, 3)}$, ${(3, 5)}$, ${(5, 6)}$, ${(3, 4)}$"],
+    ["grå", "bakoverkant", "${(4, 1)}$"],
+    ["svart, ${u.d < v.d}$", "foroverkant", "${(3, 6)}$"],
+    ["svart, ${v.d < u.d}$", "krysskant", "${(4, 6)}$, ${(2, 1)}$, ${(2, 4)}$"],
+  ]}
+  rowHeader={false}
+  caption="Klassen til kanten $(u, v)$ etter fargen $v$ har når DFS-Visit ser på kanten."
+/>
+
+En hvit $v$ blir oppdaget fra $u$, og ${(u, v)}$ blir en tre-kant. En grå $v$ har et kall som ikke er
+ferdig. De grå nodene er kjeden av kall fra rota ned til $u$, så $v$ er en forfader til $u$, og
+${(u, v)}$ er en bakoverkant: 1 er grå når 4 ser på ${(4, 1)}$. En svart $v$ er ferdig. Hvis $v$ ble
+oppdaget etter $u$, skjedde det mens kallet på $u$ pågikk, så $v$ er en etterkommer, og ${(u, v)}$ er
+en foroverkant, som ${(3, 6)}$. Hvis $v$ ble oppdaget før $u$, var $v$ ferdig før $u$ ble oppdaget,
+ellers ville $v$ vært grå. Da er ingen av dem etterkommer av den andre, og ${(u, v)}$ er en krysskant,
+som ${(4, 6)}$, ${(2, 1)}$ og ${(2, 4)}$.
+
+Bakoverkantene viser sykler. En bakoverkant ${(u, v)}$ går til en forfader $v$, og tre-kantene fra
+$v$ ned til $u$ sammen med ${(u, v)}$ er en sykel: ${1 \to 3 \to 4 \to 1}$ i figur 4. Omvendt gir en
+sykel alltid en bakoverkant. La $v$ være den første noden DFS oppdager på sykelen, og $u$ noden foran
+$v$ på sykelen. Ved tiden $v.d$ er resten av sykelen hvit, så $u$ blir en etterkommer av $v$ etter
+hvit-sti-teoremet. Når $u$ ser på ${(u, v)}$, pågår kallet på $v$ ennå, $v$ er grå, og ${(u, v)}$ er en
+bakoverkant.
+
+<Callout title="Fargen avgjør klassen">
+Når DFS ser på ${(u, v)}$, er kanten en tre-kant hvis $v$ er hvit, en bakoverkant hvis $v$ er grå og en
+forover- eller krysskant hvis $v$ er svart. En rettet graf har en sykel hvis og bare hvis DFS finner en
+bakoverkant.
+</Callout>
+
+## Topologisk sortering
+
+Om morgenen må noen klær på før andre. Trusa må på før buksa og skoene, buksa før beltet og skoene,
+og sokkene før skoene. Skjorta må på før beltet og slipset, og beltet og slipset før jakka. Klokka kan
+du ta på når som helst. Plaggene er nodene i en rettet graf, med en kant for hvert krav: fra plagget
+som må på først, til plagget som må på etter.
+
+En <Term name="Topologisk sortering">topologisk sortering</Term> er en rekkefølge av nodene der $u$
+kommer før $v$ for hver kant ${(u, v)}$. Den finnes bare når grafen ikke har noen sykel. På en sykel
+måtte hver node komme før den neste, og dermed før seg selv. En rettet graf uten sykler kalles en
+<Term name="DAG">DAG</Term>, en rettet asyklisk graf.
+
+DFS gir en topologisk sortering, men ikke etter starttid. Ta grafen med nodene 1, 2 og 3 og den ene
+kanten ${(2, 3)}$. Hvis hovedløkka tar nodene i rekkefølgen 1, 3, 2, blir tidene ${1/2}$ for 1,
+${3/4}$ for 3 og ${5/6}$ for 2. Da oppdages 3 før 2, selv om 2 må komme først. Sluttiden til 2 er
+likevel høyere enn sluttiden til 3, i alle rekkefølger.
+
+Når DFS ser på en kant ${(u, v)}$ i en DAG, er $v$ hvit eller svart. Grå ville gjort ${(u, v)}$ til en
+bakoverkant, og en DAG har ingen sykel. Hvis $v$ er hvit, blir $v$ en etterkommer av $u$ og ferdig før
+$u$. Hvis $v$ er svart, er $v$ allerede ferdig. I begge tilfeller er ${v.f < u.f}$, så hver kant går
+fra høyere til lavere sluttid, og nodene i synkende sluttid er en topologisk sortering.
+
+<Formula
+  tex="(u, v) \in E \;\Rightarrow\; v.f < u.f"
+  caption="I en DAG går hver kant fra høyere til lavere sluttid."
+/>
+
+<Example label="Eksamensoppgave" title="DFS på en DAG">
+<ExamRef id="2018-des" task="10" />
+
+Din venn Smartnes utfører DFS på en DAG. Hvilke typer kanter kan hun få? (Her refererer typer til DFS
+sin kantklassifisering.)
+
+<Solution>
+En DAG har ingen sykel, og en bakoverkant ville gitt en sykel, så DFS finner ingen bakoverkanter. De
+tre andre klassene kan alle forekomme. Grafen i figur 4 uten kanten ${(4, 1)}$ er en DAG, og DFS gir
+den både tre-kanter, foroverkanten ${(3, 6)}$ og krysskantene ${(4, 6)}$, ${(2, 1)}$ og ${(2, 4)}$.
+
+<Answer>Tre-kanter, foroverkanter og krysskanter, men aldri bakoverkanter.</Answer>
+</Solution>
+</Example>
+
+Topological-Sort trenger ikke tidene selv, bare rekkefølgen nodene blir ferdige i. Den setter hver
+node først i en lenket liste idet noden blir svart:
 
 <CodeBlock
-  id="topologisk-sortering"
-  title="topologisk_sortering.py"
-  lang="python"
-  code={`from collections import deque
-
-def topological_sort(G):
-    color = {u: "white" for u in G}
-    order = deque()  # appendleft setter inn først i O(1)
-
-    def visit(u):
-        color[u] = "gray"
-        for v in G[u]:
-            if color[v] == "white":
-                visit(v)
-        color[u] = "black"
-        order.appendleft(u)
-
-    for u in G:
-        if color[u] == "white":
-            visit(u)
-    return list(order)`}
+  id="topsort-kode"
+  lang="text"
+  code={`Topological-Sort(G)
+1  call DFS(G) to compute v.f for each v
+2  as each is finished, insert in front of a list
+3  return the list of vertices`}
 />
 
 <Stepper
   src="/steppers/topologisk-sortering.js"
-  codeId="topologisk-sortering"
+  codeId="topsort-kode"
   title="Topological-Sort"
-  caption="Påkledningen fra forelesningen: en kant $(u, v)$ betyr at $u$ må på før $v$. Hver boks viser plagget og tidene d/f. Til høyre står lista order med det første plagget øverst, og buene ved siden av den er kantene ut av plaggene i lista."
   height={330}
+  caption="Plaggene med $u.d/u.f$ under navnet og fargen som fyll, og ringen markerer kallet som pågår. Til høyre står lista med det første elementet øverst, og til slutt er kantene tegnet som buer langs lista."
 />
 
-<Example label="Eksamensoppgave" title="Synkende starttid">
-<ExamRef id="2019-nov" task="4" />
+Stepperen starter med skjorta først i hovedløkka. Hvert plagg settes først i lista når det blir
+svart, så lista ender i synkende sluttid: sokker, truse, bukse, sko, klokke, skjorte, belte, slips,
+jakke. I siste steg peker alle buene nedover i lista. Stokk om, så får hovedløkka og nabolistene en ny
+rekkefølge. Lista blir som regel en annen, og buene peker fortsatt nedover.
 
-Vurder følgende utsagn om Topological-Sort:
+Topological-Sort bruker ${\Theta(V + E)}$: DFS, og konstant tid for hver innsetting først i en lenket
+liste.
 
-> Nodene sorteres etter synkende starttid (discover-time).
+Memoisering løser delinstansene i en slik rekkefølge. Et memoisert kall går videre til delinstansene
+instansen bygger på, og en delinstans som er løst, løses ikke igjen, slik en svart node ikke besøkes
+igjen. Det er et dybde-først-søk på delinstansene. Hver delinstans er ferdig før instansene som
+bygger på den, enten fordi en av dem kalte den, eller fordi den var løst før. I stigende sluttid går
+derfor hver pil i delinstansgrafen fremover, fra delinstansen til instansen som bygger på den, og det
+er en topologisk sortering.
 
-Stemmer dette? Svar ja eller nei og forklar kort.
+<Callout title="Synkende sluttid">
+I en DAG går hver kant fra en node med høyere sluttid til en node med lavere, så Topological-Sort gir
+nodene i synkende sluttid. Starttiden gir ingen slik garanti.
+</Callout>
 
-<Solution>
-Se på grafen med nodene 2 og 3 og kanten $(2, 3)$. Starter DFS i 2, blir 3 en
-etterkommer med $3.d = 2$ og $2.d = 1$, og synkende starttid setter 3 foran 2.
-Kanten peker da bakover. Det som er trygt, er sluttiden: $v.f < u.f$ for hver
-kant $(u, v)$, uansett hvor DFS starter. Stigende starttid er ikke trygt heller,
-for starter DFS i 3, får 3 den laveste starttiden.
-
-<Answer>Nei. Nodene sorteres etter synkende sluttid (finish-time).</Answer>
-</Solution>
-</Example>
-
-<Derivation title="Memoisering er DFS">
-Memoisering i dynamisk programmering er DFS i delinstansgrafen, men mot kantene:
-et kall går fra en instans til delinstansene den bygger på. Et kall blir ferdig
-først når alle disse er løst, og en delinstans som alt er løst, er svart og slås
-bare opp. Rekkefølgen kallene blir ferdige i, er derfor en topologisk sortering
-av delinstansgrafen, med grunntilfellene først. En løsning nedenfra og opp går
-gjennom delinstansene i den samme rekkefølgen.
-</Derivation>
+<Quiz
+  question="Topological-Sort kjøres på en rettet graf der DFS finner bakoverkanten $(u, v)$. Hva skjer?"
+  options={["Den returnerer en liste der $v$ står foran $u$", "Den går i ring og blir aldri ferdig", "Den returnerer en topologisk sortering likevel", "Den returnerer en liste der $u$ står foran $v$"]}
+  answer={0}
+  explanation={"DFS blir ferdig på alle grafer, og Topological-Sort returnerer nodene i synkende sluttid. $v$ er en forfader til $u$, så ${v.f > u.f}$, og $v$ står foran $u$. Da peker $(u, v)$ bakover i lista, og lista er ingen topologisk sortering. Det finnes heller ingen, fordi bakoverkanten ligger på en sykel."}
+/>
 
 ## Sterke komponenter
 
-En urettet graf er sammenhengende når det finnes en sti mellom hvert par av noder,
-og de sammenhengende komponentene er de største delene som er sammenhengende. DFS
-finner dem direkte: hvert dybde-først-tre er én komponent, for traverseringen fra
-en node stopper når det ikke er flere kanter å følge.
+I en rettet graf er to noder sterkt sammenhengende når hver av dem kan nå den andre langs rettede
+stier. De <Term name="Sterke komponenter">sterke komponentene</Term> er de største mengdene av noder
+der alle når alle. Hver node ligger i nøyaktig én, og en node som ikke ligger på noen sykel, er en
+komponent alene. Grafen øverst i figur 5 har fire.
 
-En rettet graf er sterkt sammenhengende når det for hvert par $u$ og $v$ finnes
-en sti fra $u$ til $v$ og en sti fra $v$ til $u$. De
-<Term name="Sterke komponenter">sterke komponentene</Term> er de største
-mengdene av noder der alle kan nå alle. Kollapser du hver komponent til én node,
-får du komponentgrafen. Den er en DAG, for en sykel mellom to komponenter ville
-gjort dem til én.
+<Figure
+  src="/figures/komponentgraf.svg"
+  alt="Øverst en rettet graf med åtte noder, delt i fire sterke komponenter som er tonet grønne: {1, 2, 5}, {6, 7}, {3, 4} og {8}. Kantene mellom komponentene er tykkere. Ved hver komponent står den høyeste sluttiden fra DFS: 6, 14, 10 og 16. Nederst er hver komponent slått sammen til én node, i synkende sluttid: {8}, {6, 7}, {3, 4}, {1, 2, 5}. Alle kantene mellom dem går mot høyre, fra høyere til lavere sluttid."
+  caption="Øverst en graf med de fire sterke komponentene tonet, og ved hver den høyeste sluttiden $f(C)$ fra DFS med hovedløkka i nummerrekkefølge. Nederst er hver komponent slått sammen til én node."
+  number={5}
+  width={340}
+  height={362}
+/>
 
-Kjører du DFS rett på $G$, kan et tre gå fra én komponent og inn i en annen.
-Starter DFS i en komponent der alle nodene er hvite og alle kantene ut av
-komponenten går til svarte noder, blir treet nøyaktig den komponenten. Du trenger
-derfor startnoder i en rekkefølge der hver komponent bare har kanter ut til
-komponenter som alt er besøkt. Sluttidene fra en første runde med DFS på $G$ gir
-en slik rekkefølge, men for den transponerte grafen og ikke for $G$ selv.
+I en urettet graf gir DFS komponentene direkte. Hvert tre i dybde-først-skogen er én sammenhengende
+komponent, fordi ingen kant fører ut av den. I en rettet graf kan et tre fortsette inn i andre
+komponenter. Et DFS som starter i 8 i figur 5, når hele grafen, så alle åtte nodene havner i ett tre.
 
-La sluttiden til en komponent være den høyeste sluttiden i den. Går en kant i $G$
-fra komponent $C$ til en annen komponent $C'$, har $C$ høyere sluttid enn $C'$.
-Oppdager DFS en node i $C$ først, når den hele $C'$ langs hvite stier før den
-noden blir ferdig. Oppdager den en node i $C'$ først, kan den ikke nå $C$
-derfra, for da ville $C$ og $C'$ vært én komponent. Da er hele $C'$ ferdig før
-$C$ blir oppdaget.
+Slå sammen hver komponent til én node, som nederst i figur 5. Grafen du får, har ingen sykel, fordi en
+sykel gjennom to komponenter ville latt hver node i den ene nå hver node i den andre, og da var de én
+komponent. La $f(C)$ være den høyeste sluttiden i komponenten $C$ etter en DFS på $G$. Alle kantene
+mellom komponentene går fra høyere til lavere $f(C)$. Ta en kant fra komponenten $C$ til komponenten
+$C'$, og la $x$ være den første noden DFS oppdager i $C$ og $C'$ til sammen.
 
-Komponenten med høyest sluttid har derfor ingen kanter inn fra andre komponenter
-i $G$. Noden med lavest sluttid ligger derimot ikke nødvendigvis i en komponent
-uten kanter ut. Med kantene $(a, b)$, $(b, a)$ og $(a, c)$ og DFS fra $a$, som
-følger $(a, b)$ først, blir $b$ ferdig først, men komponenten $\{a, b\}$ har en
-kant ut til $c$. Snur du alle kantene, får du den transponerte grafen $G^{\mathrm T}$, og
-der har komponenten ingen kanter ut. $G$ og $G^{\mathrm T}$ har de samme sterke
-komponentene, for hver sti i den ene er en sti baklengs i den andre.
-Strongly-Connected-Components kjører derfor en runde til, på $G^{\mathrm T}$.
+- Hvis $x$ ligger i $C$, er alle nodene i $C$ og $C'$ hvite ved tiden $x.d$, og $x$ når dem alle langs
+  stier som bare går gjennom $C$ og $C'$. Etter hvit-sti-teoremet blir de etterkommere av $x$ og
+  ferdige før $x$, så ${f(C) = x.f > f(C')}$.
+- Hvis $x$ ligger i $C'$, blir hele $C'$ etterkommere av $x$ på samme måte og ferdig ved tiden $x.f$.
+  Ingen node i $C'$ kan nå $C$, ellers var de én komponent, så hele $C$ er fortsatt hvit da, og
+  ${f(C') < f(C)}$.
 
-<Steps>
-<Step title="DFS på $G$">
-Kjør DFS på $G$ for å finne sluttiden $u.f$ for hver node.
-</Step>
-<Step title="Snu kantene">
-Lag $G^{\mathrm T}$. Med nabolister tar det $\Theta(V + E)$.
-</Step>
-<Step title="DFS på $G^{\mathrm T}$">
-Kjør DFS på $G^{\mathrm T}$, men la hovedløkka ta nodene etter synkende $u.f$ fra første runde.
-</Step>
-<Step title="Les av trærne">
-Hvert dybde-først-tre fra andre runde er én sterk komponent.
-</Step>
-</Steps>
+Komponenten der DFS ble ferdig sist, har altså ingen kant inn fra andre komponenter. I figur 5 er det
+${\{8\}}$, med ${f = 16}$.
 
-Andre runde starter i noden med høyest sluttid, og DFS besøker nøyaktig
-komponenten dens. Hver ny startnode har høyest sluttid av nodene som er igjen, og
-i $G^{\mathrm T}$ fører kantene ut av komponenten dens bare til komponenter som
-alt er svarte. Hvert tre blir dermed én komponent, og hele algoritmen tar
-$\Theta(V + E)$.
-
-<Callout title="To runder med DFS">
-Andre runde går på $G^{\mathrm T}$ og tar startnodene etter synkende sluttid fra
-første runde på $G$. Da er hvert tre i andre runde én sterk komponent.
-</Callout>
-
-Koden bruker `topological_sort` ovenfor som første runde. Grafen kan ha sykler,
-så lista er ikke en topologisk sortering, men den har fortsatt nodene etter
-synkende sluttid.
+Snu alle kantene, og kall grafen ${G^{\mathrm T}}$. Komponentene er de samme, fordi en sti fra $u$ til
+$v$ i $G$ er en sti fra $v$ til $u$ i ${G^{\mathrm T}}$. Kantene mellom komponentene peker nå andre
+veien, fra lavere til høyere $f(C)$. Et DFS i ${G^{\mathrm T}}$ som starter i noden med høyest
+sluttid, er fanget i komponenten sin, fordi ingen kant fører ut av den, og treet blir akkurat
+${\{8\}}$. Neste start er den hvite noden med høyest sluttid, 6. Kantene ut av ${\{6, 7\}}$ i
+${G^{\mathrm T}}$ går bare til komponenter med høyere $f(C)$, og der er alt svart, så treet blir
+${\{6, 7\}}$. Slik fortsetter det, og hvert tre i den andre runden er én sterk komponent.
 
 <CodeBlock
-  id="sterke-komponenter"
-  title="sterke_komponenter.py"
-  lang="python"
-  code={`def transpose(G):
-    GT = {u: [] for u in G}
-    for u in G:
-        for v in G[u]:
-            GT[v].append(u)
-    return GT
-
-def strongly_connected_components(G):
-    order = topological_sort(G)
-    GT = transpose(G)
-    color = {u: "white" for u in G}
-    components = []
-
-    def visit(u, component):
-        color[u] = "gray"
-        component.append(u)
-        for v in GT[u]:
-            if color[v] == "white":
-                visit(v, component)
-        color[u] = "black"
-
-    for u in order:
-        if color[u] == "white":
-            component = []
-            visit(u, component)
-            components.append(component)
-    return components`}
+  id="scc-kode"
+  lang="text"
+  code={`Strongly-Connected-Components(G)
+1  DFS(G) to get u.f for each u
+2  create Gᵀ
+3  DFS(Gᵀ) by decreasing u.f
+4  output DFS-trees as SCCs`}
 />
 
 <Stepper
   src="/steppers/sterke-komponenter.js"
-  codeId="sterke-komponenter"
+  codeId="scc-kode"
   title="Strongly-Connected-Components"
-  caption="Grafen fra forelesningen, med tidene d/f fra første runde ved hver node og lista order under grafen. I andre runde er kantene snudd, og et ferdig tre fra andre runde har grønn bakgrunn."
   height={330}
+  caption="Første runde viser $u.d/u.f$, og andre runde bare $u.f$ fra første runde. Ringen markerer kallet som pågår, en sterk komponent som er funnet, er tonet grønn, og raden under grafen er nodene i synkende sluttid."
 />
 
-<Example label="Eksamensoppgave" title="En ny kant">
+Stepperen starter med grafen fra figur 5. Den første runden gir sluttidene i figuren. Så snus
+kantene, og den andre runden starter trærne i 8, 6, 3 og 1, som gir ${\{8\}}$, ${\{6, 7\}}$,
+${\{3, 4\}}$ og ${\{1, 2, 5\}}$. Algoritmen bruker ${\Theta(V + E)}$: to DFS, og ${G^{\mathrm T}}$ lages
+ved å gå gjennom nabolistene én gang.
+
+<Callout title="Hvert tre er én komponent">
+Strongly-Connected-Components kjører DFS på $G$, snur kantene og kjører DFS på ${G^{\mathrm T}}$ med
+startnodene i synkende sluttid. Hver start er fanget i én komponent, så hvert tre i den andre runden
+er én sterk komponent.
+</Callout>
+
+<Example label="Eksamensoppgave" title="En kant til">
 <ExamRef id="2025-des" task="10" />
 
-Hvordan kan antall sterke komponenter (strongly connected components) i en
-rettet graf endres hvis man legger til en ny kant? Forklar kort.
+Hvordan kan antall sterke komponenter (strongly connected components) i en rettet graf endres hvis
+man legger til en ny kant? Forklar kort.
 
 <Solution>
-Antallet kan ikke øke, for en ny kant fjerner ingen stier. La den nye kanten være
-$(u, v)$. Kan $v$ ikke nå $u$, lager kanten ingen ny sykel, og ingenting endres.
-Kan $v$ nå $u$, slås komponenten til $u$, komponenten til $v$ og alle
-komponentene på stier fra $v$ til $u$ sammen til én. Det kan være mange: en
-rettet sti med $n$ noder har $n$ sterke komponenter, og kanten fra den siste
-noden til den første gjør stien til en sykel med én komponent.
+En ny kant fjerner ingen sti, så noder som nådde hverandre, gjør det fortsatt, og ingen komponent
+deles. En ny kant ${(u, v)}$ slår sammen alle komponentene på stier fra $v$ til $u$, fordi kanten
+lukker en sykel gjennom dem. Hvis det ikke går noen sti fra $v$ til $u$, endres ingenting. Hvis
+grafen er en rettet sti ${1 \to 2 \to \cdots \to n}$, er hver node en komponent, og kanten ${(n, 1)}$
+gjør grafen til én sykel og én komponent.
 
-<Answer>Antallet blir det samme eller synker. Det kan synke helt fra $n$ til 1.</Answer>
+<Answer>Antallet kan synke eller stå stille, men aldri øke. Med $n$ noder kan det synke fra $n$ helt
+til 1.</Answer>
 </Solution>
 </Example>
 
-## Bredde-først-søk
+## Huskelisten
 
-<Term name="Bredde-først-søk">Bredde-først-søk</Term> (BFS) bruker en FIFO-kø
-$Q$ som huskeliste, så nodene som ble oppdaget først, besøkes først. BFS$(G, s)$
-farger alle nodene hvite med $u.d = \infty$, gjør startnoden $s$ grå med
-$s.d = 0$ og legger den i køen. Så lenge køen ikke er tom, tas den første noden
-$u$ ut. Hver hvite nabo $v$ blir grå med $v.d = u.d + 1$ og $v.\pi = u$ og settes
-bakerst i køen. Når alle naboene er sett, blir $u$ svart. I BFS teller $u.d$ kanter fra
-$s$ og er ikke en starttid som i DFS.
+Traverse′ og DFS holder <Term name="Huskeliste">huskelista</Term> si i kallstakken. Hver grå node er
+et kall som ikke er ferdig, og nyeste først er regelen kallstakken følger. En traversering kan like
+gjerne holde lista selv. Ta en node fra lista og besøk den: se på alle naboene, og legg hver hvit
+nabo på lista. Gjenta til lista er tom.
 
-Avstanden $\delta(s, v)$ er det minste antallet kanter på en sti fra $s$ til $v$,
-og $\infty$ hvis $v$ ikke kan nås. Traverseringen går ut fra $s$ lag for lag.
-Hver kant $(u, v)$ som gjør $v$ grå, gir $v.d = u.d + 1$, så $v.d$ er lengden av
-stien fra $s$ til $v$ i bredde-først-treet. Ingen sti er kortere enn
-$\delta(s, v)$, så $v.d \ge \delta(s, v)$.
+Fargene betyr det samme som før. En hvit node er ikke oppdaget, en grå node er oppdaget, men ikke
+ferdig, og en svart node er ferdig. Forskjellen er når en node besøkes. DFS-Visit besøker en node i
+det øyeblikket den oppdages, så en grå node har et kall som pågår. Med en egen liste venter en grå
+node på lista til den blir tatt ut og besøkt, og da blir den svart.
 
-Køen er FIFO, og en node som settes inn, får $d$ én høyere enn noden som ble
-tatt ut. Nodene tas derfor ut i stigende $d$, og køen har aldri mer enn to
-verdier av $d$.
+<Simulation
+  src="/sims/huskeliste.js"
+  host="dom"
+  title="Huskelisten"
+  height={330}
+  caption="Et gatenett med 5 × 5 kryss, med $s$ øverst til venstre. En tom node er hvit, en halvfylt grå og en fylt svart. Tallet i en node er antall gatestykker fra $s$ langs treet, gatestykkene i treet har bredt bånd, og ringen markerer noden regelen tar neste gang."
+/>
 
-At $v.d \le \delta(s, v)$, viser du med induksjon på avstanden $k$. Har alle nodene med avstand $k$ fått
-$d = k$, har en node $v$ med $\delta(s, v) = k + 1$ en kant inn fra en node $u$
-med avstand $k$. Når $u$ tas ut, er $v$ hvit og får $v.d = k + 1$, eller den er
-alt oppdaget av en node som ble tatt ut før $u$, og da er
-$v.d \le u.d + 1 = k + 1$.
+Velg «du velger» og trykk på de grå nodene i den rekkefølgen du vil. Når lista er tom, er alle
+kryssene svarte, og hvert ble besøkt én gang. Ingen node tas av lista uten å bli besøkt, så
+argumentet om den første noden på stien som ikke blir besøkt, gjelder for hvilken som helst
+rekkefølge.
 
-Når BFS er ferdig, er altså $v.d = \delta(s, v)$ (<FormulaRef id="bfs-avstand" />).
-Forgjengerkantene danner et bredde-først-tre, og stien i treet fra $s$ til $v$ er
-en korteste vei. Print-Path skriver den ut ved å følge forgjengerne bakover fra
-$v$ og skrive ut nodene på vei ut av rekursjonen.
+Rekkefølgen bestemmer derimot forgjengerne, og dermed traverseringstreet. Velg «eldste først» og
+trykk «Besøk alle». Tallet i hvert kryss er da det minste antallet gatestykker fra $s$. Velg «nyeste
+først» og gjør det samme. Med nyeste først flyttes også en grå node som oppdages på nytt, fremst i
+lista, og den får ny forgjenger. Traverseringen slynger seg rad for rad, og hjørnet nederst til høyre
+får 24, der den korteste veien har 8 gatestykker. Trykk til slutt «Nye gater» og besøk alle med en
+hvilken som helst regel. Et kryss som ikke kan nås fra $s$, blir stående hvitt.
 
-<Callout title="BFS og korteste vei">
-Når BFS er ferdig, er $v.d = \delta(s, v)$, det minste antallet kanter fra $s$
-til $v$, og stien fra $s$ til $v$ i bredde-først-treet er en korteste vei.
-</Callout>
+Nyeste først er dybde-først-søk. Med en stakk som huskeliste kan DFS skrives uten rekursjon:
 
 <CodeBlock
-  id="bfs"
-  title="bfs.py"
-  lang="python"
-  code={`from collections import deque
+  lang="text"
+  code={`Iter-DFS-Visit(G, s)
+1  for each vertex u ∈ G.V
+2      u.color = white
+3      u.π = nil
+4  Q = ∅
+5  Push(Q, s)
+6  while Q ≠ ∅
+7      u = Peek(Q)
+8      if u.color ≠ white
+9          u.color = black
+10         Pop(Q)
+11         continue
+12     u.color = gray
+13     for each v ∈ G.Adj[u]
+14         if v.color == white
+15             v.π = u
+16             Push(Q, v)`}
+/>
 
-def bfs(G, s):
-    color = {u: "white" for u in G}
-    d = {u: float("inf") for u in G}
-    pi = {u: None for u in G}
-    color[s] = "gray"
-    d[s] = 0
-    Q = deque([s])
-    while Q:
-        u = Q.popleft()
-        for v in G[u]:
-            if color[v] == "white":
-                color[v] = "gray"
-                d[v] = d[u] + 1
-                pi[v] = u
-                Q.append(v)
-        color[u] = "black"
-    return d, pi
+Her blir en node grå først når den kommer øverst og besøket starter, som i DFS-Visit, så en hvit node
+kan ligge i stakken. Peek ser på noden øverst uten å ta den ut. En hvit node øverst blir grå, og de
+hvite naboene legges oppå den. Noden blir liggende til alt over den er ferdig. Når den kommer øverst
+igjen, er den grå, og da blir den svart og tas ut, i det samme øyeblikket som DFS-Visit ville
+returnert.
 
-def print_path(pi, s, v):
-    if v == s:
-        print(s)
-    elif pi[v] is None:
-        print("ingen sti fra", s, "til", v)
-    else:
-        print_path(pi, s, pi[v])
-        print(v)`}
+Fordi en node er hvit til den kommer øverst, kan den legges i stakken flere ganger, fra flere naboer.
+Kopien som ble lagt på sist, ligger øverst, tas først og har satt $v.\pi$, slik DFS ville oppdaget
+den. En eldre kopi av noden som kommer øverst senere, er svart og tas bare ut. «Nyeste først» i
+simuleringen gjør det samme ved å flytte en grå node fremst. Naboene besøkes i motsatt rekkefølge av
+nabolista, fordi den siste som legges på, tas først.
+
+Eldste først og nyeste først er to prioriteringer: tiden noden kom på lista, lavest eller høyest først.
+Lista kan være en hvilken som helst prioritetskø. Traverseringen besøker fortsatt alle nodene som kan
+nås, men treet og kostnaden endres. Med en binær haug tar det ${O(\lg V)}$ å sette inn og ta ut en
+node, og hvis en kant kan endre prioriteten til en node på lista, gjør hver kant høyst én slik
+endring, også til ${O(\lg V)}$. Traverseringen tar da ${O((V + E) \lg V)}$. Prims algoritme for
+minimale spenntrær og Dijkstras algoritme for korteste vei med vekter er traverseringer av denne
+typen, med prioriteter fra vektene.
+
+<Callout title="Regelen bestemmer treet">
+En traversering med huskeliste besøker alle nodene som kan nås fra startnoden, uansett hvilken node
+den tar fra lista. Regelen bestemmer treet: nyeste først gir dybde-først-søk, og eldste først gir
+korteste vei til hver node.
+</Callout>
+
+## Bredde-først-søk
+
+<Term name="Bredde-først-søk">Bredde-først-søk</Term>, BFS, er traversering med eldste først:
+huskelista er en FIFO-kø. Avstanden ${\delta(s, v)}$ er det minste antallet kanter på en sti fra $s$
+til $v$. FIFO-køen tar nodene ut i stigende avstand, og derfor finner BFS den.
+
+$s$ har avstand 0 og legger naboene sine, som har avstand 1, i køen. Anta at alle nodene med avstand
+$k$ står i køen foran nodene med større avstand. En node $v$ med avstand ${k + 1}$ har en kant inn fra
+en node med avstand $k$, noden foran den på en korteste sti. Den har ingen kant inn fra en node med
+avstand under $k$, ellers var avstanden mindre. Når nodene med avstand $k$ tas ut, blir $v$ derfor
+oppdaget første gang fra en av dem. Den får ${v.d = k + 1}$ og havner i køen bak alle nodene med
+avstand $k$, så det samme gjelder for ${k + 1}$. I simuleringen «Huskelisten» med «eldste først» viser
+de grå nodene derfor aldri mer enn to tall, og de følger etter hverandre. «Nyeste først» viste at DFS
+ikke gir korteste vei, fordi treet følger den første stien DFS fant.
+
+<Formula
+  tex="v.d = \delta(s, v)"
+  caption="Etter BFS fra $s$ er $v.d$ det minste antallet kanter på en sti fra $s$ til $v$, og $\infty$ hvis $v$ ikke kan nås."
+/>
+
+BFS lagrer avstanden i $v.d$ og forgjengeren i $v.\pi$. Print-Path skriver ut stien fra $s$ til $v$
+etterpå ved å gå baklengs langs $\pi$: først stien til ${v.\pi}$, så $v$.
+
+<CodeBlock
+  id="bfs-kode"
+  lang="text"
+  code={`BFS(G, s)
+1  for each vertex u ∈ G.V − {s}
+2      u.color = white
+3      u.d = ∞
+4      u.π = nil
+5  s.color = gray
+6  s.d = 0
+7  s.π = nil
+8  Q = ∅
+9  Enqueue(Q, s)
+10 while Q ≠ ∅
+11     u = Dequeue(Q)
+12     for each vertex v ∈ G.Adj[u]
+13         if v.color == white
+14             v.color = gray
+15             v.d = u.d + 1
+16             v.π = u
+17             Enqueue(Q, v)
+18     u.color = black
+
+Print-Path(G, s, v)
+1  if v == s
+2      print s
+3  elseif v.π == nil
+4      print "no path from" s "to" v
+5  else Print-Path(G, s, v.π)
+6      print v`}
 />
 
 <Stepper
   src="/steppers/bfs.js"
-  codeId="bfs"
-  title="BFS"
-  caption="Den samme grafen som for DFS, med startnode 1. Tallet ved hver node er $d$, og forgjengerkantene har et bånd. Under grafen står alle nodene som har vært i køen $Q$, og de som er tatt ut, er bleke. De siste stegene viser stien print_path skriver ut til noden lengst unna."
-  height={310}
+  codeId="bfs-kode"
+  title="BFS og Print-Path"
+  height={270}
+  caption="En tom node er hvit, en halvfylt grå og en fylt svart, og ved hver node står $v.d$. Ringen markerer noden som er tatt ut av køen, den røde kanten er den BFS ser på, og tre-kantene har bredt bånd. Under grafen står køen $Q$ med hodet til venstre, og til slutt nodene Print-Path skriver ut."
 />
 
-Ta grafen fra forelesningen, den første grafen i begge stepperne. DFS fra node 1
-når node 4 via 2, 3, 7 og 8, fem kanter fra 1, mens BFS når den med to, langs
-$(1, 2)$ og $(2, 4)$. DFS følger én sti så langt den kan og kan oppdage en node via en
-omvei før den undersøker den korte kanten, så dybde-først-treet gir ikke
-nødvendigvis korteste vei.
+Stepperen starter med en graf med ni noder og ${s = 1}$. Når 3 tas ut av køen, legges 7 og 5 bakerst,
+og køen har da 4, med avstand 2, foran 7 og 5, med avstand 3. 9 kan ikke nås fra 1 og blir stående
+hvit med ${d = \infty}$. Til slutt skriver Print-Path(G, 1, 8) ut 1 2 3 7 8, fire kanter, like mange
+som ${8.d}$.
 
-Hver node settes i køen høyst én gang, for den blir grå idet den settes inn, og
-nabolista til en node gås gjennom én gang, når noden tas ut. BFS bruker derfor
-$O(V + E)$. DFS starter fra alle nodene og bruker alltid $\Theta(V + E)$, mens
-BFS bare starter i $s$. Har $s$ ingen kanter ut, er det bare initialiseringen
-igjen, og den tar $\Theta(V)$.
+Kantene ${(v.\pi, v)}$ danner traverseringstreet til BFS, et bredde-først-tre med $s$ som rot, og
+stien fra $s$ til $v$ i treet er en korteste vei. BFS tar ${O(V + E)}$: hver node settes inn i og tas
+ut av køen høyst én gang, og hver naboliste leses én gang. DFS tar ${\Theta(V + E)}$ også i beste
+fall, fordi hovedløkka går gjennom hele grafen. BFS starter bare i $s$, men initialiseringen tar
+${\Theta(V)}$ selv når $s$ ikke har noen naboer.
 
 <Table
-  rowHeader={false}
-  columns={["Algoritme", "Verste", "Beste"]}
+  columns={["", "Verste", "Beste"]}
   rows={[
-    ["DFS", "$\\Theta(V + E)$", "$\\Theta(V + E)$"],
-    ["BFS", "$\\Theta(V + E)$", "$\\Theta(V)$"],
-    ["Topological-Sort", "$\\Theta(V + E)$", "$\\Theta(V + E)$"],
-    ["Strongly-Connected-Components", "$\\Theta(V + E)$", "$\\Theta(V + E)$"],
+    ["DFS", "${\\Theta(V + E)}$", "${\\Theta(V + E)}$"],
+    ["BFS", "${\\Theta(V + E)}$", "${\\Theta(V)}$"],
   ]}
+  rowHeader={false}
+  caption="Kjøretidene i verste og beste tilfelle, med nabolister."
 />
 
-## Traversering med andre huskelister
-
-Huskelista i BFS er køen $Q$. Nodene er hvite før de settes inn, grå mens de står
-i køen og svarte etterpå. FIFO-køen gjør at BFS finner korteste veier, men
-traverseringen besøker alle nodene som kan nås fra $s$ uansett hvilken node som
-tas ut i hver runde.
-
-Bytter du bare køen med en stakk, blir traverseringen ikke DFS-Visit. Ta kantene
-$(s, a)$, $(s, b)$, $(a, b)$ og $(b, a)$. BFS med stakk gjør $a$ og $b$ grå idet
-$s$ legger dem på stakken, så begge får forgjengeren $s$, og når $b$ besøkes, er
-$a$ alt grå. DFS-Visit går fra $s$ til $a$ og kaller seg selv på $b$ fra $a$, så
-$b$ får forgjengeren $a$. DFS-Visit gjør en node grå først når kallet på den
-starter, og ikke når noden oppdages. Versjonen under venter på samme måte og gjør
-en node grå først når den kommer øverst i stakken.
-
-Løkka ser på noden øverst i stakken. Er den hvit, blir den grå, og alle de hvite
-naboene legges på stakken. Er den ikke hvit, er alt som ble lagt over den, tatt
-av igjen, så den blir svart og tas av. En node kan ligge i stakken flere
-ganger. Den besøkes fra kopien som ble lagt på sist, og forgjengeren er noden som
-la den der. Naboene besøkes i motsatt rekkefølge
-av DFS-Visit, og stakken kan bli $O(E)$ lang.
-
-<CodeBlock
-  id="iterativ-dfs"
-  title="iterativ_dfs.py"
-  lang="python"
-  code={`def iter_dfs_visit(G, s):
-    color = {u: "white" for u in G}
-    pi = {u: None for u in G}
-    S = [s]
-    while S:
-        u = S[-1]
-        if color[u] != "white":
-            color[u] = "black"
-            S.pop()
-            continue
-        color[u] = "gray"
-        for v in G[u]:
-            if color[v] == "white":
-                pi[v] = u
-                S.append(v)
-    return pi`}
-/>
-
-BFS prioriterer de eldste nodene i huskelista, og DFS de nyeste. Med en
-prioritetskø kan du prioritere etter noe annet, og da får du andre algoritmer.
-Prims algoritme for minimale spenntrær og Dijkstras algoritme for korteste vei er
-traverseringer av dette slaget, der nøklene i køen oppdateres underveis. Med en
-binær haug koster hver køoperasjon $O(\lg V)$, og traverseringen tar
-$O(E \lg V)$ når alle nodene kan nås fra $s$.
+<Callout title="Bredde-først gir korteste vei">
+BFS bruker en FIFO-kø og besøker nodene i stigende avstand fra $s$. Den gir ${v.d = \delta(s, v)}$, og
+stien langs $\pi$ fra $s$ til $v$ er en korteste vei.
+</Callout>
 
 <Example label="Eksamensoppgave" title="Køen er ikke FIFO">
 <ExamRef id="2018-aug-kont" task="6" />
 
-Du prøver å implementere BFS for urettede grafer, men på grunn av en kodefeil, er
-rekkefølgen på nodene i køen din ikke lenger FIFO, men helt vilkårlig. Kan du nå
-være sikker på å besøke alle nodene? Forklar.
+Du prøver å implementere BFS for urettede grafer, men på grunn av en kodefeil, er rekkefølgen på
+nodene i køen din ikke lenger FIFO, men helt vilkårlig. Kan du nå være sikker på å besøke alle nodene?
+Forklar.
 
 <Solution>
-Hver node som oppdages, legges i køen, og traverseringen stopper ikke før køen er
-tom, så alt som legges i køen, blir besøkt. Anta at en node $v$ som kan nås fra
-$s$, aldri blir besøkt, og se på en sti fra $s$ til $v$. Den første noden på
-stien som ikke blir besøkt, har en nabo foran seg på stien som blir besøkt. Da
-ble den oppdaget og lagt i køen, og det er en motsigelse. Rekkefølgen avgjør bare
-når hver node besøkes. Det som går tapt, er korteste vei: $v.d$ er ikke lenger
-nødvendigvis avstanden fra $s$.
+Køen er fortsatt en huskeliste: hver node som oppdages, legges inn, og ingen tas ut uten å bli
+besøkt. Tenk deg at en node som kan nås fra startnoden, aldri blir besøkt. På en sti fra startnoden
+dit finnes en første node som ikke blir besøkt. Når noden foran den på stien blir besøkt, er den
+første noden oppdaget og lagt i køen, nå eller tidligere, og den tas ut før køen er tom. Det motsier
+antagelsen.
 
-<Answer>Ja, hvis grafen er sammenhengende. Da besøkes de samme nodene som med BFS, men $v.d$ er ikke nødvendigvis den korteste avstanden.</Answer>
+<Answer>Ja, alle nodene som kan nås fra startnoden, altså alle hvis grafen er sammenhengende. Bare
+avstandene $v.d$ kan bli feil.</Answer>
 </Solution>
 </Example>
 
-## Sjekk deg selv
+<Example label="Eksamensoppgave" title="Korteste vei til én node">
+<ExamRef id="2024-aug-kont" task="7" />
 
-<Quiz
-  question="DFS har gitt $u.d = 2$, $u.f = 9$, $v.d = 4$ og $v.f = 5$, og grafen har kanten $(v, u)$. Hva slags kant er $(v, u)$?"
-  options={["Tre-kant", "Bakoverkant", "Foroverkant", "Krysskant"]}
-  answer={1}
-  explanation="$[4, 5]$ ligger inni $[2, 9]$, så $v$ er en etterkommer av $u$ etter parentesteoremet. Kanten $(v, u)$ går fra $v$ til forfaren $u$, som er grå mens $v$ undersøker kantene sine, så den er en bakoverkant og lukker en sykel. Nøstede intervaller frister til å svare foroverkant, men en foroverkant går motsatt vei, fra $u$ ned til $v$. En krysskant går mellom noder med disjunkte intervaller."
-/>
+Du har en rettet, uvektet graf G = (V, E), og skal finne korteste veier fra alle noder i V til én gitt
+node t. Hvordan vil du gå frem?
 
-<Quiz
-  question={"En rettet graf er lagret med nabolister. Hvor lang tid tar det å finne inngraden til alle nodene?"}
-  options={["$\\Theta(V)$", "$\\Theta(V + E)$", "$\\Theta(V^2)$", "$\\Theta(VE)$"]}
-  answer={1}
-  explanation={"Gå gjennom alle listene og tell hver gang en node står i en av dem. Alle de $|V|$ listene må åpnes, og de har $|E|$ elementer til sammen. $\\Theta(VE)$ får du hvis du går gjennom alle listene på nytt for hver node, men én gjennomgang teller alle nodene samtidig."}
-/>
+<Solution>
+Snu alle kantene, så du får ${G^{\mathrm T}}$. En sti fra $v$ til $t$ i $G$ er en sti fra $t$ til $v$ i
+${G^{\mathrm T}}$ med like mange kanter, så den korteste veien fra $v$ til $t$ i $G$ er like lang som den
+korteste veien fra $t$ til $v$ i ${G^{\mathrm T}}$. Kjør BFS fra $t$ i ${G^{\mathrm T}}$. Da er $v.d$
+avstanden fra $v$ til $t$ i $G$, og ${v.\pi}$ er neste node på en korteste vei fra $v$ til $t$. Begge
+stegene tar ${O(V + E)}$.
+
+<Answer>Snu retningen på alle kantene og kjør BFS fra $t$.</Answer>
+</Solution>
+</Example>
 
 <KeyTakeaways>
-- Nabolister tar $\Theta(V + E)$ plass og egner seg til traversering. En nabomatrise tar $\Theta(V^2)$ plass og svarer på om $(u, v)$ er en kant i konstant tid.
-- En traversering besøker nodene den har oppdaget og fører opp naboene. Fargene hvit, grå og svart gjør at hver node behandles én gang, og forgjengerkantene danner et traverseringstre.
-- DFS går videre fra den nyeste noden og gir hver node en starttid $u.d$ og en sluttid $u.f$. Intervallene $[u.d, u.f]$ er nøstet som parenteser.
-- Fargen til $v$ når $(u, v)$ undersøkes, klassifiserer kanten: hvit gir tre-kant, grå bakoverkant og svart forover- eller krysskant. En rettet graf har en sykel hvis og bare hvis DFS finner en bakoverkant.
-- Topological-Sort ordner nodene i en DAG etter synkende sluttid, fordi $v.f < u.f$ for hver kant $(u, v)$.
-- Strongly-Connected-Components kjører DFS på $G$ og så på $G^{\mathrm T}$ med startnodene etter synkende sluttid. Hvert tre i andre runde er en sterk komponent.
-- BFS bruker en FIFO-kø, går ut fra $s$ lag for lag og finner $v.d = \delta(s, v)$ når kantene ikke har vekt. Med en annen huskeliste blir traverseringen en annen algoritme.
-- DFS, BFS, Topological-Sort og Strongly-Connected-Components bruker alle $\Theta(V + E)$ i verste tilfelle.
+- En traversering besøker alle nodene som kan nås fra startnoden. Fargen på hver node gjør at den besøkes én gang, og arbeidet blir ${O(V + E)}$ med nabolister.
+- Nabolistene tar ${\Theta(V + E)}$ plass og er laget for traversering. Nabomatrisen tar ${\Theta(V^2)}$ og slår opp en kant i konstant tid.
+- DFS gir hver node en starttid og en sluttid. To intervaller er disjunkte eller ligger inni hverandre, som parenteser, og $v$ blir en etterkommer av $u$ når det går en hvit sti fra $u$ til $v$ i det øyeblikket $u$ oppdages.
+- Fargen til $v$ når DFS ser på ${(u, v)}$, gir klassen: hvit tre-kant, grå bakoverkant og svart forover- eller krysskant. En rettet graf har en sykel hvis og bare hvis DFS finner en bakoverkant.
+- I en DAG går hver kant fra høyere til lavere sluttid, så Topological-Sort setter hver node først i en liste idet den blir ferdig.
+- Strongly-Connected-Components kjører DFS på $G$ og så på ${G^{\mathrm T}}$ i synkende sluttid, og hvert tre i den andre runden er én sterk komponent.
+- Hvilken node traverseringen tar fra huskelista, bestemmer treet: nyeste først gir DFS, og eldste først, en FIFO-kø, gir BFS, som finner korteste vei målt i antall kanter.
 </KeyTakeaways>

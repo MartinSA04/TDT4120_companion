@@ -1,43 +1,42 @@
 /**
- * Topological-Sort trace for <Stepper>, driving the Python block
- * `topologisk-sortering` in modul 08. The stage has the lecture's
- * dressing graph on the left: an edge (u, v) means u has to go on before v.
- * Each box shows the garment and its start and finish time, "d/f", as in
- * DFS. On the right is the list `order`: a garment is inserted at the front
- * when it turns black, so the list grows upwards. Every edge out of a node in
- * the list is drawn as an arc on the right of the list, and every arc points
- * down, because a node finishes after everything it has an edge to.
+ * Topological-Sort, for <Stepper>, driving the block `topsort-kode` in modul
+ * 09 «Traversering av grafer». The one idea: when DFS finishes a node, every
+ * node it has an edge to is already finished, so putting each finished node at
+ * the front of a list leaves every edge pointing down the list.
  *
- * Line numbers refer to that <CodeBlock>:
- *    1 from collections import deque
- *    2
- *    3 def topological_sort(G):
- *    4     color = {u: "white" for u in G}
- *    5     order = deque()
- *    6
- *    7     def visit(u):
- *    8         color[u] = "gray"
- *    9         for v in G[u]:
- *   10             if color[v] == "white":
- *   11                 visit(v)
- *   12         color[u] = "black"
- *   13         order.appendleft(u)
- *   14
- *   15     for u in G:
- *   16         if color[u] == "white":
- *   17             visit(u)
- *   18     return list(order)
+ * Block lines (header = line 1):
+ *   1 Topological-Sort(G)
+ *   2 1  call DFS(G) to compute finish times v.f for each vertex v
+ *   3 2  as each vertex is finished, insert it onto the front of a linked list
+ *   4 3  return the linked list of vertices
  *
- * Shuffling keeps the graph and changes the order of the main loop and of
- * the adjacency lists, so the reader sees that the sorting is not unique.
+ * Frames: the start [2]; per node the main loop starts a call from [2]; per
+ * discovery [2]; per edge (u, v) [2] (v white: the call goes on; v black: v
+ * is already in the list); per finish [3], with the node put at the front of
+ * the list; the end [4], with the edges drawn as arcs beside the list.
  *
- * Colours are framework tokens only, so frames re-theme on the light/dark
- * toggle without the module knowing which theme is active.
+ * The first instance is the lecture's and the textbook's (CLRS 4th ed. fig.
+ * 20.7; lecture 8 slides 526–544): truse→bukse, truse→sko, bukse→sko,
+ * bukse→belte, belte→jakke, skjorte→belte, skjorte→slips, slips→jakke,
+ * sokker→sko, and klokke alone. Main loop skjorte, slips, jakke, belte,
+ * klokke, truse, bukse, sko, sokker gives the lecture's times (skjorte 1/8,
+ * slips 2/5, jakke 3/4, belte 6/7, klokke 9/10, truse 11/16, bukse 12/15,
+ * sko 13/14, sokker 17/18) and the list sokker, truse, bukse, sko, klokke,
+ * skjorte, belte, slips, jakke. Later instances (the shuffle button): the same
+ * garments and edges, with the main loop and every adjacency list in random
+ * order, which gives another valid order.
+ *
+ * Drawing (_graf.js): the garments as boxes in the lecture's two columns,
+ * each with d/f under its name; box fill = colour; the running call ringed in
+ * the accent; tree edges with a band, the edge looked at accent. To the right,
+ * the list, front at the top; the node just put in is accent. At the end the
+ * edges are drawn as arcs on the list's right side, all pointing down.
  */
-
 import { EDGE, FONT, NODE, esc, graphSvg, place, shuffle, wrapSvg } from "./_graf.js";
+import { firstView } from "./_dp.js";
 
-// The lecture's layout: two columns of garments.
+const view = firstView(import.meta.url);
+
 const NODES = [
   { id: "klokke", gx: 0, gy: 0 },
   { id: "truse", gx: 0, gy: 1 },
@@ -49,203 +48,134 @@ const NODES = [
   { id: "slips", gx: 1, gy: 3 },
   { id: "jakke", gx: 1, gy: 4 },
 ];
-
-// G.V and the adjacency lists in an order that gives the lecture's times:
-// skjorte 1/8, klokke 9/10, truse 11/16 and sokker 17/18.
-const FIRST = {
-  V: ["skjorte", "slips", "jakke", "belte", "klokke", "truse", "bukse", "sko", "sokker"],
-  adj: {
-    skjorte: ["slips", "belte"],
-    slips: ["jakke"],
-    jakke: [],
-    belte: ["jakke"],
-    klokke: [],
-    truse: ["bukse", "sko"],
-    bukse: ["sko", "belte"],
-    sko: [],
-    sokker: ["sko"],
-  },
-};
-
-let calls = 0;
-
-function sample() {
-  const adj = {};
-  for (const u of Object.keys(FIRST.adj)) adj[u] = shuffle(FIRST.adj[u]);
-  return { V: shuffle(FIRST.V), adj };
-}
-
-const LIST_W = 64;
-const ARC_W = 34;
+const EDGES = [
+  ["skjorte", "slips"], ["skjorte", "belte"], ["slips", "jakke"], ["belte", "jakke"],
+  ["truse", "bukse"], ["truse", "sko"], ["bukse", "sko"], ["bukse", "belte"], ["sokker", "sko"],
+];
+const LECTURE_LOOP = ["skjorte", "slips", "jakke", "belte", "klokke", "truse", "bukse", "sko", "sokker"];
 
 export default {
-  // The first run is the lecture's order; after that, the same graph with the
-  // main loop and the adjacency lists in random order.
   defaultData() {
-    if (calls++ === 0) return FIRST;
-    return sample();
+    if (view.isFirst()) return { loop: LECTURE_LOOP, edges: EDGES };
+    return { loop: shuffle(LECTURE_LOOP), edges: shuffle(EDGES) };
   },
 
-  run(input) {
-    const { V, adj } = input;
-    const graph = {
-      nodes: NODES,
-      edges: V.flatMap((u) => adj[u].map((v) => ({ from: u, to: v }))),
-    };
-    const color = Object.fromEntries(V.map((u) => [u, "white"]));
+  run({ loop, edges }) {
+    const graph = { nodes: NODES, edges: edges.map(([from, to]) => ({ from, to })) };
+    const adj = new Map(NODES.map((n) => [n.id, []]));
+    for (const [a, b] of edges) adj.get(a).push(b);
+    const color = Object.fromEntries(NODES.map((n) => [n.id, "white"]));
     const d = {};
     const f = {};
-    const seen = {}; // "u>v" → "tree" | "other"
-    const order = [];
+    const tree = new Set();
+    const list = [];
+    const stack = [];
+    const cap = (x) => x[0].toUpperCase() + x.slice(1);
     let time = 0;
     const frames = [];
-    const snap = (line, desc, vars, extra = {}) =>
+    const snap = (line, desc, extra = {}) =>
       frames.push({
-        line, desc, vars, graph, adj,
-        color: { ...color }, d: { ...d }, f: { ...f }, seen: { ...seen }, order: [...order], ...extra,
+        line,
+        desc,
+        vars: { time },
+        act: { graph, color: { ...color }, d: { ...d }, f: { ...f }, tree: [...tree], list: [...list], ring: stack.at(-1) ?? null, ...extra },
       });
 
-    snap([4, 5], "Alle nodene er hvite, og lista order er tom.", {});
-
-    const visit = (u, fromLoop) => {
+    snap(2, "Alle plaggene er hvite, og lista er tom.");
+    const visit = (u) => {
       time += 1;
       d[u] = time;
       color[u] = "gray";
-      snap(
-        fromLoop ? [15, 16, 17, 8] : 8,
-        fromLoop
-          ? `Hovedløkka: ${u} er hvit, så visit(${u}). ${u} blir grå.`
-          : `visit(${u}): ${u} blir grå.`,
-        { u },
-        { cur: u },
-      );
-      for (const v of adj[u]) {
-        const key = `${u}>${v}`;
+      stack.push(u);
+      snap(2, `${cap(u)} oppdages: ${u}.d = ${time}.`);
+      for (const v of adj.get(u)) {
+        const k = `${u}>${v}`;
         if (color[v] === "white") {
-          seen[key] = "tree";
-          snap([9, 10, 11], `Kanten (${u}, ${v}): ${v} er hvit, så visit(${v}).`, { u, v }, { cur: u, edge: key });
-          visit(v, false);
+          tree.add(k);
+          snap(2, `Kanten (${u}, ${v}): ${v} er hvit, så DFS går videre til ${v}.`, { cur: k });
+          visit(v);
         } else {
-          seen[key] = "other";
-          snap(
-            [9, 10],
-            `Kanten (${u}, ${v}): ${v} er svart og står alt i lista. ${u} kommer til å havne foran den.`,
-            { u, v },
-            { cur: u, edge: key },
-          );
+          snap(2, `Kanten (${u}, ${v}): ${v} er svart og står allerede i lista. ${cap(u)} er ikke ferdig, så ${u} havner foran ${v}.`, { cur: k });
         }
       }
       time += 1;
       f[u] = time;
       color[u] = "black";
-      order.unshift(u);
-      const outs = adj[u].length;
-      snap(
-        [12, 13],
-        outs === 0
-          ? `${u} har ingen kanter ut. ${u} blir svart med sluttid ${time} og settes først i lista.`
-          : `Alle naboene til ${u} er ferdige. ${u} blir svart med sluttid ${time} og settes først i lista, så ${outs === 1 ? "kanten ut av den peker" : `de ${outs} kantene ut av den peker`} nedover.`,
-        { u },
-        { cur: u, inserted: u },
-      );
+      stack.pop();
+      list.unshift(u);
+      snap(3, `${cap(u)} er ferdig: ${u}.f = ${time}, og ${u} settes inn først i lista.`, { fresh: u });
     };
-
-    let skipped = [];
-    const flush = () => {
-      if (!skipped.length) return;
-      const list = skipped.length === 1 ? `${skipped[0]} er` : `${skipped.slice(0, -1).join(", ")} og ${skipped.at(-1)} er`;
-      snap([15, 16], `Hovedløkka: ${list} svart, og hoppes over.`, {});
-      skipped = [];
-    };
-    for (const u of V) {
-      if (color[u] === "white") {
-        flush();
-        visit(u, true);
-      } else {
-        skipped.push(u);
-      }
+    for (const u of loop) {
+      if (color[u] !== "white") continue;
+      snap(2, `Hovedløkka i DFS finner ${u} hvit og starter et nytt kall der.`, { loop: u });
+      visit(u);
     }
-    flush();
-    snap(18, "Lista er en topologisk sortering, ordnet etter synkende sluttid: alle kantene peker nedover.", {}, { done: true });
+    snap(4, `Lista er ${list.join(", ")}. Hver kant går fra et plagg til et plagg lenger ned i lista.`, { end: true });
     return frames;
   },
 
-  render(stage, frame, api) {
+  render(stage, fr, api) {
+    view.drawn.add(stage);
     const { w, h } = api.getSize();
-    const { graph } = frame;
-    if (!graph || w <= 0 || h <= 0) {
+    if (w <= 0 || h <= 0) {
       stage.innerHTML = "";
       return;
     }
-    const n = graph.nodes.length;
-    const hw = 31;
+    const a = fr.act;
+    const g = a.graph;
+    const listW = Math.max(76, Math.min(110, w * 0.3));
+    const arcW = 34;
+    const hw = Math.max(34, Math.min(46, (w - listW - arcW) / 5.2));
     const hh = 17;
-    const shape = { hw, hh };
-    const listX = w - LIST_W - ARC_W;
-    const gw = listX - 14;
-    const pos = place(graph.nodes, { x: 0, y: 0, w: gw, h }, { l: hw + 6, r: hw + 6, t: hh + 6, b: hh + 6 });
-
-    const nodeStyle = (nd) => ({
-      st: NODE[frame.color[nd.id]],
-      ring: frame.cur === nd.id,
-      sub: frame.d[nd.id] == null ? "" : `${frame.d[nd.id]}/${frame.f[nd.id] ?? ""}`,
+    const SH = { hw, hh };
+    const gw = w - listW - arcW - 10;
+    const pos = place(g.nodes, { x: 0, y: 0, w: gw, h }, { l: hw + 6, r: hw + 6, t: hh + 6, b: hh + 6 });
+    const tree = new Set(a.tree);
+    const nodeStyle = (n) => ({
+      st: NODE[a.color[n.id]],
+      ring: a.ring === n.id || a.loop === n.id,
+      sub: a.d[n.id] != null ? `${a.d[n.id]}/${a.f[n.id] ?? ""}` : "",
     });
     const edgeStyle = (e) => {
-      const key = `${e.from}>${e.to}`;
-      if (frame.edge === key) return { st: EDGE.cur };
-      const k = frame.seen[key];
-      if (!k) return { st: EDGE.plain };
-      return { st: k === "tree" ? EDGE.tree : EDGE.other };
+      const k = `${e.from}>${e.to}`;
+      if (k === a.cur) return { st: EDGE.cur };
+      if (tree.has(k)) return { st: EDGE.tree };
+      return { st: EDGE.plain };
     };
-    let svg = graphSvg(graph, pos, () => shape, nodeStyle, edgeStyle);
+    let svg = graphSvg(g, pos, () => SH, nodeStyle, edgeStyle);
 
-    // The list, bottom-aligned: the first node to finish sits in the lowest
-    // slot, and each new one goes in above it, at the front.
-    const TOP = 18;
-    const slotH = (h - TOP) / n;
-    const slotY = (k) => TOP + (n - frame.order.length + k) * slotH; // k = index in order
-    svg +=
-      `<text x="${(listX + LIST_W / 2).toFixed(1)}" y="12" text-anchor="middle" ` +
-      `style="fill:var(--muted);${FONT}">order</text>`;
-    for (let i = 0; i < n; i++) {
-      const y = TOP + i * slotH + 2;
+    // The list, front at the top.
+    const lx = w - arcW - listW;
+    const rowH = Math.min(30, (h - 22) / 9);
+    svg += `<text x="${(lx + listW / 2).toFixed(1)}" y="13" text-anchor="middle" style="fill:var(--muted);${FONT}">lista</text>`;
+    const at = new Map();
+    a.list.forEach((u, i) => {
+      const y = 20 + i * rowH;
+      at.set(u, y + (rowH - 4) / 2);
+      const fresh = a.fresh === u;
       svg +=
-        `<rect x="${listX}" y="${y.toFixed(1)}" width="${LIST_W}" height="${(slotH - 4).toFixed(1)}" rx="4" ` +
-        `style="fill:none;stroke:var(--border)" stroke-width="1" stroke-dasharray="3 3"/>`;
-    }
-    const at = new Map(frame.order.map((u, k) => [u, k]));
-    frame.order.forEach((u, k) => {
-      const y = slotY(k) + 2;
-      const st = NODE.black;
-      const isNew = frame.inserted === u;
-      svg +=
-        `<rect x="${listX}" y="${y.toFixed(1)}" width="${LIST_W}" height="${(slotH - 4).toFixed(1)}" rx="4" ` +
-        `style="fill:${st.fill};stroke:${isNew ? "var(--accent)" : st.stroke}" stroke-width="${isNew ? 2.4 : 1.2}"/>`;
-      svg +=
-        `<text x="${(listX + LIST_W / 2).toFixed(1)}" y="${(y + (slotH - 4) / 2 + 4).toFixed(1)}" text-anchor="middle" ` +
-        `style="fill:${st.text};${FONT};font-weight:600">${esc(u)}</text>`;
+        `<rect x="${lx.toFixed(1)}" y="${y.toFixed(1)}" width="${listW.toFixed(1)}" height="${(rowH - 4).toFixed(1)}" rx="4" ` +
+        `style="fill:var(--bg);stroke:${fresh ? "var(--accent)" : "var(--border)"}" stroke-width="${fresh ? 2 : 1.2}"/>` +
+        `<text x="${(lx + listW / 2).toFixed(1)}" y="${(y + (rowH - 4) / 2 + 4).toFixed(1)}" text-anchor="middle" ` +
+        `style="fill:var(--fg);${FONT}">${esc(u)}</text>`;
     });
-
-    // Arcs for the edges out of every listed node. They all point down.
-    const xr = listX + LIST_W + 1;
-    for (const u of frame.order) {
-      for (const v of frame.adj[u]) {
-        const a = slotY(at.get(u)) + slotH / 2;
-        const b = slotY(at.get(v)) + slotH / 2;
-        const span = Math.abs(at.get(v) - at.get(u));
-        const bulge = Math.min(ARC_W - 3, 6 + 3.6 * span);
-        const hot = frame.inserted === u;
-        const col = hot ? "var(--accent)" : "var(--muted)";
+    if (a.end) {
+      // Every edge as an arc on the right of the list, from the higher row down to the lower. A
+      // longer arc bulges further out, so the arcs nest instead of bundling.
+      const x0 = lx + listW;
+      const rowOf = new Map(a.list.map((u, i) => [u, i]));
+      for (const e of g.edges) {
+        const y1 = at.get(e.from);
+        const y2 = at.get(e.to);
+        const span = Math.abs(rowOf.get(e.to) - rowOf.get(e.from));
+        const bulge = Math.min(arcW - 2, 3 + span * 3.6);
         svg +=
-          `<path d="M${xr} ${(a + 3).toFixed(1)} C${(xr + bulge).toFixed(1)} ${(a + 3).toFixed(1)} ` +
-          `${(xr + bulge).toFixed(1)} ${(b - 3).toFixed(1)} ${(xr + 7).toFixed(1)} ${(b - 3).toFixed(1)}" ` +
-          `fill="none" style="stroke:${col}" stroke-width="${hot ? 2 : 1.2}"/>`;
-        svg +=
-          `<polygon points="${xr},${(b - 3).toFixed(1)} ${xr + 8},${(b - 7).toFixed(1)} ${xr + 8},${(b + 1).toFixed(1)}" ` +
-          `style="fill:${col}"/>`;
+          `<path d="M${x0.toFixed(1)} ${y1.toFixed(1)} C${(x0 + bulge * 1.33).toFixed(1)} ${y1.toFixed(1)} ${(x0 + bulge * 1.33).toFixed(1)} ${y2.toFixed(1)} ${(x0 + 3).toFixed(1)} ${y2.toFixed(1)}" ` +
+          `style="fill:none;stroke:var(--muted)" stroke-width="1.2"/>` +
+          `<polygon points="${(x0 + 1).toFixed(1)},${y2.toFixed(1)} ${(x0 + 7).toFixed(1)},${(y2 - 3.5).toFixed(1)} ${(x0 + 7).toFixed(1)},${(y2 + 3.5).toFixed(1)}" style="fill:var(--muted)"/>`;
       }
     }
-
     stage.innerHTML = wrapSvg(w, h, svg);
+    stage.setAttribute("aria-label", `Lista: ${a.list.join(", ") || "tom"}.`);
   },
 };
