@@ -2,11 +2,487 @@
 order: 12
 num: "11"
 title: Korteste vei fra alle til alle
-summary: "Korteste vei mellom alle par av noder, med dynamisk programmering over matriser og Floyd-Warshall. Modulen er under arbeid."
+summary: "Korteste vei mellom alle par av noder i en vektet, rettet graf med Floyd-Warshall, som bygger stiene opp etter hvilke noder de får gå innom. Forgjengermatrisen gir selve stiene, og Transitive-Closure svarer bare på om det finnes en sti."
 importance: core
+tag: "Uke 44"
 part: "Del 4: Grafer og flyt"
+updated: 2026-11-01
 ---
 
-<Callout type="note" title="Under arbeid">
-Denne modulen er ikke skrevet ennå.
+<LearningGoals>
+- Forklar korteste-vei-problemet fra alle til alle, og hvorfor dynamisk programmering lønner seg framfor å kjøre en algoritme for korteste vei fra én til alle fra hver node.
+- Forklar delinstansene $d^{(k)}_{ij}$ og rekurrensen i <Term name="Floyd-Warshall">Floyd-Warshall</Term>, og kjør algoritmen for hånd.
+- Forklar hvorfor løkka over $k$ må ligge ytterst, hvorfor én tabell er nok og hvorfor kjøretiden er $\Theta(n^3)$.
+- Forklar <Term name="Forgjengermatrise">forgjengermatrisen</Term> $\Pi$, hvordan Floyd-Warshall oppdaterer den og hvordan Print-All-Pairs-Shortest-Path skriver ut en sti.
+- Forklar hvorfor Floyd-Warshall krever at grafen ikke har negative sykler.
+- Forklar Transitive-Closure, som finner den <Term name="Transitiv lukning">transitive lukningen</Term>, og hvordan den henger sammen med Floyd-Warshall.
+</LearningGoals>
+
+Fra Bergen til Tromsø går det ikke noe direktefly. Den billigste reisen går via Trondheim og Bodø og
+koster $1200 + 600 + 500 = 2300$ kr. Reisen via Oslo koster $700 + 1800 = 2500$ kr.
+
+De fem flyplassene gir 20 par å reise mellom. En tabell med den billigste reisen mellom hvert av
+parene beskriver korteste vei fra alle til alle. Floyd-Warshall fyller ut tabellen med
+$5^3 = 125$ sammenligninger, én for hvert valg av fra-flyplass, til-flyplass og flyplass å
+mellomlande i.
+
+## Én kjøring fra hver node
+
+Du har allerede algoritmer som finner de korteste veiene fra én node til alle de andre. Kjør en av
+dem fra hver av de $n = |V|$ nodene, og du har hele tabellen. Tiden blir $n$ ganger tiden for én
+kjøring.
+Dijkstra krever at ingen vekter er negative, og med en tabell som prioritetskø tar én kjøring
+$O(V^2 + E)$, så alle $n$ kjøringene tar $O(V^3)$. Bellman-Ford tåler negative vekter, men tar
+$\Theta(VE)$ per kjøring og $\Theta(V^2 E)$ i alt. I en tett graf, der nesten alle par av noder har
+en kant, er $|E|$ nær $|V|^2$, og da tar Bellman-Ford fra hver node $\Theta(V^4)$.
+
+Kjøringene gjør mye av det samme arbeidet flere ganger. En korteste vei fra $i$ til $j$ som går
+innom $k$, slutter med en korteste vei fra $k$ til $j$, og den finner kjøringen fra $k$ også.
+Dynamisk programmering regner ut den korteste veien fra $k$ til $j$ én gang og slår den opp hver
+gang en lengre sti trenger den. Floyd-Warshall gjør det, og tar $\Theta(V^3)$ også med negative
+vekter.
+
+## Mellomlandinger
+
+Floyd-Warshall bygger tabellen opp etter hvilke noder stiene får gå innom. På flykartet betyr det
+hvilke flyplasser du får mellomlande i. Flyplassene har nummer fra sør til nord: Oslo er 1, Bergen 2,
+Trondheim 3, Bodø 4 og Tromsø 5. Først får du bare ta direktefly. Så får du mellomlande i
+flyplass 1, så i 1 og 2, og så videre, til du får mellomlande hvor du vil. I simuleringen bestemmer
+$k$ at du får mellomlande i flyplassene 1 til $k$, og et trykk på en celle i tabellen tegner reisen
+på kartet. Simuleringen starter med reisen fra Bergen til Tromsø, i rad 2 og kolonne 5.
+
+<Simulation
+  src="/sims/mellomlandinger.js"
+  host="dom"
+  title="Mellomlandinger"
+  height={470}
+  caption="Fem flyplasser der de ligger i Norge, med prisen på hvert direktefly. En halvfylt flyplass er en du får mellomlande i, en grå celle ble billigere da flyplass $k$ kom med, og reisen i den ringede cellen er tegnet på kartet. Rutene og prisene er laget for eksempelet, og prisen er lik begge veier."
+/>
+
+Tabellen gir prisen på den billigste reisen fra flyplassen i raden til flyplassen i kolonnen. Reisen
+på kartet er delt i to farger ved flyplassen med høyest nummer den mellomlander i, og cellene med
+farget kant gir prisen på hver del.
+
+Med $k = 0$ er tabellen prisene på direkteflyene, med $\infty$ der det ikke går noe direktefly, som
+fra Bergen til Bodø og Tromsø. Med $k = 1$ koster Bergen–Tromsø 2500 kr, summen av de to cellene med
+farget kant: 700 kr til Oslo og 1800 kr videre. Med $k = 2$ endrer ingen celle seg, fordi ingen reise
+blir billigere av å mellomlande i Bergen.
+
+Med $k = 3$ blir reisene fra Oslo og fra Bergen til Bodø
+billigere via Trondheim. Med $k = 4$ faller Bergen–Tromsø til 2300 kr, summen av Bergen–Bodø, 1800 kr
+fra $k = 3$, og Bodø–Tromsø, 500 kr. Med $k = 5$ endrer ingen celle seg.
+
+En celle blir altså billigere bare når en reise innom den nye flyplassen er billigere, og da er den
+nye reisen to reiser som allerede står i tabellen. Den ene går til den nye flyplassen og den andre
+fra den.
+
+Flykartet er en graf. Flyplassene er nodene, en rute i én retning er en kant, og prisen er vekten.
+En flyplass du mellomlander i, er en <Term name="Mellomnode">mellomnode</Term>: en node på stien som
+verken er start eller slutt. Nodene har nummer fra 1 til $n$, og $d^{(k)}_{ij}$ er vekten til den
+korteste stien fra $i$ til $j$ der alle mellomnodene er blant $1, 2, \ldots, k$. Med $k = 0$ har
+stien ingen mellomnoder, så den har høyst én kant, og $d^{(0)}_{ij}$ er vekten $w_{ij}$ i
+<Term name="Vektmatrise">vektmatrisen</Term> $W$:
+
+<Formula
+  tex="w_{ij} = \begin{cases} 0 & \text{hvis } i = j \\ w(i, j) & \text{hvis } i \ne j \text{ og } (i, j) \in E \\ \infty & \text{ellers} \end{cases}"
+  caption="Vektmatrisen $W = (w_{ij})$ er nabomatrisen med vekten i stedet for 1, 0 på diagonalen og $\infty$ der det ikke går noen kant."
+/>
+
+Med $k = n$ får stien gå innom alle nodene, så $d^{(n)}_{ij}$ er vekten til en korteste vei,
+$\delta(i, j)$. Tabellen
+$D^{(k)} = (d^{(k)}_{ij})$ er tabellen i simuleringen med verdien $k$, og $D^{(n)}$ er svaret.
+
+<Callout type="tip" title="Delinstansene">
+$d^{(k)}_{ij}$ er vekten til den korteste stien fra $i$ til $j$ som bare går innom noder med nummer fra 1 til $k$. $D^{(0)} = W$, og $D^{(n)}$ gir avstandene $\delta(i, j)$.
 </Callout>
+
+<Quiz
+  question={"Floyd-Warshall har regnet ut $D^{(3)}$ for en graf med seks noder, og $d^{(3)}_{25} = \\infty$. Hva vet du?"}
+  options={[
+    "Ingen sti fra 2 til 5 har alle mellomnodene blant 1, 2 og 3.",
+    "Det finnes ingen sti fra 2 til 5.",
+    "Ingen sti fra 2 til 5 går innom 3.",
+    "En korteste vei fra 2 til 5 går innom 4 eller 6.",
+  ]}
+  answer={0}
+  explanation={"$d^{(3)}_{25}$ ser bare på stier der alle mellomnodene er blant 1, 2 og 3, og $\\infty$ betyr at ingen slik sti finnes. Det utelukker stier som bare går innom 1, 2 og 3, men ikke en sti som også går innom 4 eller 6, for eksempel 2, 3, 4, 5. Du vet derfor ikke om det finnes noen sti fra 2 til 5 i det hele tatt, og det siste alternativet antar at det gjør det."}
+/>
+
+## Med eller uten k
+
+Anta at du kjenner alle verdiene i $D^{(k-1)}$ og vil finne $d^{(k)}_{ij}$. Se på den korteste
+stien $p$ fra $i$ til $j$ der alle mellomnodene er blant $1, \ldots, k$. Enten går $p$ utenom $k$,
+eller så går den innom $k$. Figur 1 viser de to tilfellene.
+
+<Figure
+  src="/figures/med-eller-uten-k.svg"
+  number={1}
+  alt="To stier fra i til j. Den øvre går innom k og er delt i en del fra i til k og en del fra k til j. Den nedre går utenom k."
+  caption="To stier fra $i$ til $j$ der alle mellomnodene har nummer fra 1 til $k$. De små nodene har nummer fra 1 til $k - 1$. Den øvre stien går innom $k$, og den nedre går utenom."
+/>
+
+Hvis $p$ går utenom $k$, er alle mellomnodene blant $1, \ldots, k - 1$, og vekten er
+$d^{(k-1)}_{ij}$.
+
+Hvis $p$ går innom $k$, deler $k$ stien i to: én del fra $i$ til $k$ og én fra $k$ til $j$. Når
+grafen ikke har negative sykler, kan $p$ velges enkel. En sykel på $p$ har da vekt minst 0, og stien
+blir ikke lengre av at sykelen tas ut. En enkel $p$ går innom $k$ bare én gang, så ingen av delene
+har $k$ som mellomnode, og begge har mellomnodene sine blant $1, \ldots, k - 1$. Hver del er den
+korteste stien med den begrensningen. Hvis ikke, kunne du byttet den ut med en kortere og fått en
+kortere $p$. Vekten til $p$ er derfor $d^{(k-1)}_{ik} + d^{(k-1)}_{kj}$.
+
+$d^{(k)}_{ij}$ er den minste av de to vektene:
+
+<Formula
+  tex="d^{(k)}_{ij} = \begin{cases} w_{ij} & \text{hvis } k = 0 \\ \min\bigl(d^{(k-1)}_{ij},\ d^{(k-1)}_{ik} + d^{(k-1)}_{kj}\bigr) & \text{hvis } k \ge 1 \end{cases}"
+  caption="Rekurrensen i Floyd-Warshall. Den korteste stien fra $i$ til $j$ med mellomnoder blant $1, \ldots, k$ går enten utenom $k$ eller innom $k$ én gang."
+/>
+
+I simuleringen «Mellomlandinger» er $d^{(4)}_{25} = \min(2500,\ 1800 + 500) = 2300$.
+
+Valget ligner det binære ryggsekkproblemet, der hver gjenstand enten er med eller ikke. Her er node
+$k$ enten med på stien eller ikke, og delinstansene har én node mindre å velge mellom.
+
+Sammenligningen er også en utvidet Relax. Relax sjekker om stien til $u$ med kanten $(u, v)$ til
+slutt er kortere enn den beste stien til $v$ så langt. Floyd-Warshall sjekker om stien til $k$ med
+hele stien fra $k$ til $j$ til slutt er kortere enn den beste stien til $j$ så langt. Fra én
+startnode kjenner du ikke stiene fra $k$, men når du regner ut alle par, står stien fra $k$ til $j$ i
+en annen celle i den samme tabellen.
+
+<Callout type="tip" title="Med eller uten k">
+Den korteste stien fra $i$ til $j$ med mellomnoder blant $1, \ldots, k$ går enten utenom $k$, med vekt $d^{(k-1)}_{ij}$, eller innom $k$ én gang, med vekt $d^{(k-1)}_{ik} + d^{(k-1)}_{kj}$. $d^{(k)}_{ij}$ er den minste av de to.
+</Callout>
+
+## Floyd-Warshall
+
+Rekurrensen gir én tabell $D^{(k)}$ for hver $k$, og hver celle i $D^{(k)}$ bruker bare celler fra
+$D^{(k-1)}$. Floyd-Warshall fyller ut tabellene med $k$ i den ytterste løkka:
+
+<CodeBlock
+  lang="text"
+  code={`Floyd-Warshall(W, n)
+1  D(0) = W
+2  for k = 1 to n
+3      let D(k) = (d(k)_ij) be a new n × n matrix
+4      for i = 1 to n
+5          for j = 1 to n
+6              d(k)_ij = min(d(k-1)_ij, d(k-1)_ik + d(k-1)_kj)
+7  return D(n)`}
+/>
+
+Koden skriver $d^{(k)}_{ij}$ som `d(k)_ij`. Løkka over $k$ må ligge ytterst. Cellen
+$d^{(k)}_{ij}$ trenger $d^{(k-1)}_{ik}$ og $d^{(k-1)}_{kj}$, og de er ferdige først når hele
+$D^{(k-1)}$ er ferdig. Rekkefølgen på løkkene over $i$ og $j$ spiller ingen rolle.
+
+Linje 6 tar konstant tid og kjøres $n^3$ ganger, så Floyd-Warshall tar $\Theta(n^3)$, også når noen
+vekter er negative. Koden er tre løkker uten noen annen datastruktur, så konstantleddet er lite.
+Tabellen under sammenligner med å kjøre en algoritme for én til alle fra hver node. I en tett graf
+er $|E| = \Theta(V^2)$.
+
+<Table
+  columns={["", "Alle par", "Tett graf"]}
+  rows={[
+    ["Dijkstra, tabell", "${O(V^3 + VE)}$", "${O(V^3)}$"],
+    ["Dijkstra, binær haug", "${O(V(V + E) \\lg V)}$", "${O(V^3 \\lg V)}$"],
+    ["Dijkstra, Fib.-haug", "${O(V^2 \\lg V + VE)}$", "${O(V^3)}$"],
+    ["Bellman-Ford", "${\\Theta(V^2 E)}$", "${\\Theta(V^4)}$"],
+    ["Floyd-Warshall", "${\\Theta(V^3)}$", "${\\Theta(V^3)}$"],
+  ]}
+  rowHeader={false}
+  caption="Kjøretiden for korteste vei mellom alle par. Dijkstra og Bellman-Ford kjøres fra hver node, og bare Bellman-Ford og Floyd-Warshall tåler negative vekter."
+/>
+
+I en tett graf er Floyd-Warshall like rask som det beste Dijkstra kan gjøre, og Floyd-Warshall tåler
+negative vekter. I en graf med få kanter er Dijkstra fra hver node raskere, når ingen vekter er negative.
+
+<Quiz
+  question={"En graf har 1000 noder og 4000 kanter, alle med positiv vekt. Du vil ha avstanden mellom alle par av noder. Hva er raskest i verste fall?"}
+  options={[
+    "Floyd-Warshall",
+    "Dijkstra med binær haug fra hver node",
+    "Bellman-Ford fra hver node",
+    "Alle tre er omtrent like raske, fordi alle må fylle ut en tabell med en million celler",
+  ]}
+  answer={1}
+  explanation={"Med $|V| = 1000$ og $|E| = 4000$ tar Floyd-Warshall rundt $|V|^3 = 10^9$ steg. Dijkstra med binær haug fra hver node tar $O(V(V + E) \\lg V)$, rundt $1000 \\cdot 5000 \\cdot 10 = 5 \\cdot 10^7$, og Bellman-Ford fra hver node $|V|^2 |E| = 4 \\cdot 10^9$. Tabellen har $10^6$ celler, men det er bare en nedre grense. Grafen har få kanter, så Dijkstra vinner."}
+/>
+
+## Én tabell og forgjengere
+
+Floyd-Warshall trenger ikke en ny tabell for hver $k$. I runde $k$ leser cellen $(i, j)$ bare seg
+selv og $d_{ik}$ og $d_{kj}$, altså celler i rad $k$ og kolonne $k$, og de cellene endrer seg ikke i
+runde $k$. For cellen $(i, k)$ gir rekurrensen
+
+$$
+d^{(k)}_{ik} = \min\bigl(d^{(k-1)}_{ik},\ d^{(k-1)}_{ik} + d^{(k-1)}_{kk}\bigr) = d^{(k-1)}_{ik},
+$$
+
+fordi $d^{(k-1)}_{kk} = 0$. En sti fra $k$ tilbake til $k$ er en sykel, og når grafen ikke har
+negative sykler, er den ikke kortere enn å bli stående i $k$. Det samme gjelder $d_{kj}$. Det gir
+derfor samme svar å lese $d_{ik}$ før eller etter at runden har kommet til den, og én tabell $D$ er
+nok. Plassen går ned fra $\Theta(n^3)$ til $\Theta(n^2)$.
+
+<Callout type="tip" title="Én tabell er nok">
+I runde $k$ leser hver celle fra rad $k$ og kolonne $k$, og de endrer seg ikke i runde $k$, fordi en sti fra $i$ til $k$ ikke blir kortere av å gå innom $k$ en gang til.
+</Callout>
+
+<Term name="Forgjengermatrise">Forgjengermatrisen</Term> $\Pi = (\pi_{ij})$ husker stiene.
+$\pi_{ij}$ er noden foran $j$ på den korteste stien fra $i$ til $j$ som er funnet så langt, og nil
+når $i = j$ eller ingen sti er funnet. I starten er hver sti én kant, så $\pi_{ij} = i$ når kanten
+$(i, j)$ finnes. Når stien innom $k$ vinner, er den nye stien fra $i$ til $j$ stien fra $i$ til $k$
+fulgt av stien fra $k$ til $j$. Den siste kanten på den nye stien er den siste kanten på stien fra
+$k$ til $j$, så noden foran $j$ er den samme som på stien fra $k$:
+
+<Formula
+  tex="\pi_{ij} = \pi_{kj} \quad \text{når } d_{ij} > d_{ik} + d_{kj}"
+  caption="Forgjengeren til $j$ når stien innom $k$ er kortere. Ellers står $\pi_{ij}$."
+/>
+
+<Callout type="tip" title="Forgjengeren kommer fra stien fra k">
+Når stien innom $k$ vinner, slutter den nye stien fra $i$ til $j$ med stien fra $k$ til $j$. Noden foran $j$ er derfor $\pi_{kj}$.
+</Callout>
+
+Med én tabell og forgjengerne blir koden slik:
+
+<CodeBlock
+  id="fw-kode"
+  lang="text"
+  code={`Floyd-Warshall′(W, n)
+1  initialize D and Π
+2  for k = 1 to n
+3      for i = 1 to n
+4          for j = 1 to n
+5              if d_ij > d_ik + d_kj
+6                  d_ij = d_ik + d_kj
+7                  π_ij = π_kj
+8  return D, Π`}
+/>
+
+Linje 1 setter $D = W$, og $\pi_{ij} = i$ for hver kant $(i, j)$ og nil ellers.
+
+<Stepper
+  src="/steppers/floyd-warshall.js"
+  codeId="fw-kode"
+  title="Floyd-Warshall′"
+  height={380}
+  caption="En rettet graf med fem noder og tabellene $D$ og $\Pi$ under, der en tom celle i $\Pi$ er nil. En halvfylt node kan være mellomnode. For cellen $(i, j)$ som sjekkes, har stien bak $d_{ij}$ bredt bånd, og stiene bak $d_{ik}$ og $d_{kj}$ har hver sin farge, den samme som cellene deres."
+/>
+
+I hver runde står rad $k$ og kolonne $k$ stille, uansett hvilke vekter stepperen deler ut. I runde 1
+er node 1 den eneste mulige mellomnoden, og bare node 4 har en kant inn til 1, så bare celler i rad 4
+kan endre seg. Med vektene stepperen starter med, er det $d_{42}$ og $d_{45}$. Med de samme vektene
+er $d_{12} = 1$ til slutt, langs stien 1, 5, 4, 3, 2, selv om kanten fra 1 til 2 har vekt 3.
+
+<Example label="Eksamensoppgave" title="Forgjengeren når stien innom $k$ vinner">
+<ExamRef id="2019-nov" task="14" />
+
+Vurder følgende utsagn om Floyd-Warshall:
+
+Hvis $d^{(k)}_{ij}$ settes til $d^{(k-1)}_{ik} + d^{(k-1)}_{kj}$ så settes $\pi^{(k)}_{ij}$ til $\pi^{(k-1)}_{ik}$.
+
+Stemmer dette? Svar ja eller nei og forklar kort.
+
+<Solution>
+Når $d^{(k)}_{ij}$ settes til $d^{(k-1)}_{ik} + d^{(k-1)}_{kj}$, er den nye stien fra $i$ til $j$
+stien fra $i$ til $k$ fulgt av stien fra $k$ til $j$. Noden foran $j$ er noden foran $j$ på stien
+fra $k$, altså $\pi^{(k-1)}_{kj}$. $\pi^{(k-1)}_{ik}$ er noden foran $k$ på stien fra $i$ til $k$.
+
+<Answer>Nei. $\pi^{(k)}_{ij}$ settes til $\pi^{(k-1)}_{kj}$.</Answer>
+</Solution>
+</Example>
+
+<Quiz
+  question={"Hva skjer hvis løkka over $k$ legges innerst i Floyd-Warshall′, med løkkene over $i$ og $j$ utenfor?"}
+  options={[
+    "Svaret blir det samme, fordi hver kombinasjon av $i$, $j$ og $k$ blir prøvd én gang uansett.",
+    "Noen $d_{ij}$ kan bli stående høyere enn $\\delta(i, j)$.",
+    "Noen $d_{ij}$ kan bli lavere enn $\\delta(i, j)$.",
+    "Bare diagonalen kan bli feil.",
+  ]}
+  answer={1}
+  explanation={"Med $k$ innerst blir cellen $(i, j)$ ferdig før cellene den bygger på. Rad 1 regnes ut først, mens de andre radene fremdeles bare har kantvektene, så $d_{1j}$ blir bare en sti til en node $k$ som rad 1 allerede har regnet ut, fulgt av kanten $(k, j)$. I grafen i stepperen, med vektene den starter med, blir $d_{12} = 3$ og $d_{13} = 8$ i stedet for 1 og $-3$. Hver verdi er likevel vekten til en sti som finnes, så ingen blir lavere enn $\\delta(i, j)$."}
+/>
+
+## Stien fra forgjengerne
+
+Kantene $(\pi_{ij}, j)$ fra rad $i$ i $\Pi$ danner et
+<Term name="Korteste-vei-tre">korteste-vei-tre</Term> med rot i $i$, akkurat som forgjengerne
+$v.\pi$ fra én startnode. Figur 2 viser rad 2 når Floyd-Warshall er ferdig med
+grafen og vektene stepperen starter med.
+
+<Figure
+  src="/figures/rad-i-pi.svg"
+  number={2}
+  alt="Grafen fra stepperen med kantene fra 2 til 4, 4 til 1, 4 til 3 og 1 til 5 uthevet, og rad 2 i Pi under: 4, tom, 4, 2, 1."
+  caption="Rad 2 i $\Pi$ når Floyd-Warshall er ferdig. Kantene $(\pi_{2j}, j)$ har bredt bånd og danner et tre med rot i 2."
+/>
+
+For å finne stien fra $i$ til $j$ går du bakover langs rad $i$, fra $j$ til $\pi_{ij}$ og videre,
+til du kommer til $i$. Print-All-Pairs-Shortest-Path gjør det rekursivt og skriver ut nodene når
+rekursjonen returnerer. Den er Print-Path med $\pi_{ij}$ i stedet for $v.\pi$:
+
+<CodeBlock
+  lang="text"
+  code={`Print-All-Pairs-Shortest-Path(Π, i, j)
+1  if i == j
+2      print i
+3  elseif π_ij == nil
+4      print "no path from" i "to" j "exists"
+5  else Print-All-Pairs-Shortest-Path(Π, i, π_ij)
+6      print j`}
+/>
+
+Print-All-Pairs-Shortest-Path$(\Pi, 2, 5)$ slår opp $\pi_{25} = 1$, $\pi_{21} = 4$ og
+$\pi_{24} = 2$, og skriver ut 2 4 1 5.
+
+## Negative sykler
+
+Floyd-Warshall tåler negative vekter, men ikke negative sykler. Rekurrensen bygger på at den
+korteste stien med mellomnoder blant $1, \ldots, k$ kan velges enkel, så den går innom $k$ høyst én
+gang, og én tabell er nok fordi $d_{kk} = 0$. Hvis
+en negativ sykel kan nås fra $i$, og $j$ kan nås fra sykelen, finnes det ingen korteste vei fra $i$
+til $j$, fordi stien blir kortere for hver gang den går rundt sykelen.
+
+Sykelen viser seg på diagonalen. $d_{ii}$ starter på 0 og blir lavere bare hvis Floyd-Warshall
+finner en sti fra $i$ tilbake til $i$ med negativ vekt, og da har grafen en negativ sykel. Omvendt
+ender minst én node med $d_{ii} < 0$ når grafen har en negativ sykel. La $k$ være noden med høyest
+nummer på en negativ sykel som ikke går innom noen node to ganger, og $i$ en annen node på den. I
+runde $k$ går de to delene av sykelen, fra $i$ til $k$ og fra $k$ til $i$, bare innom noder med
+lavere nummer, så $d_{ik} + d_{ki}$ er høyst vekten til sykelen, og $d_{ii}$ blir negativ.
+
+<Example label="Eksamensoppgave" title="Negative kantvekter">
+<ExamRef id="2026-aug-kont" task="3" />
+
+Hva kreves for at Floyd-Warshall skal gi riktig svar, hvis noen av kantvektene er negative?
+
+<Solution>
+Rekurrensen deler stien ved $k$ og bruker at stien går innom $k$ høyst én gang. Det er nok at stien
+kan velges enkel, og det kan den når ingen sykel har negativ vekt. Med en negativ sykel finnes det
+ingen korteste vei fra en node som når sykelen, til en node som sykelen når.
+
+<Answer>Grafen kan ikke ha negative sykler.</Answer>
+</Solution>
+</Example>
+
+## Transitiv lukning
+
+Noen ganger trenger du bare å vite om det finnes en sti fra $i$ til $j$, ikke hvor lang den er. Den
+<Term name="Transitiv lukning">transitive lukningen</Term> av $G = (V, E)$ er grafen
+$G^* = (V, E^*)$ der $(i, j) \in E^*$ hvis og bare hvis det finnes en sti fra $i$ til $j$ i $G$.
+
+Du kan finne den med et bredde-først-søk eller dybde-først-søk fra hver node, på
+$\Theta(V(V + E))$, og det er bra når grafen har få kanter. Du kan også gi hver kant vekt 1 og kjøre
+Floyd-Warshall: det finnes en sti fra $i$ til $j$ når $d_{ij} < \infty$. Transitive-Closure gjør det
+samme med sannhetsverdier i stedet for tall. $t^{(k)}_{ij}$ er 1 hvis det finnes en sti fra $i$ til
+$j$ med alle mellomnodene blant $1, \ldots, k$, og 0 ellers. Den samme delingen ved $k$ gir
+
+<Formula
+  tex="t^{(k)}_{ij} = t^{(k-1)}_{ij} \lor \bigl(t^{(k-1)}_{ik} \land t^{(k-1)}_{kj}\bigr)"
+  caption="Det finnes en sti fra $i$ til $j$ med mellomnoder blant $1, \ldots, k$ hvis det finnes en utenom $k$, eller en sti til $k$ og en sti fra $k$. $\lor$ er eller og $\land$ er og."
+/>
+
+med $t^{(0)}_{ij} = 1$ når $i = j$ eller kanten $(i, j)$ finnes, og 0 ellers.
+
+<CodeBlock
+  lang="text"
+  code={`Transitive-Closure(G, n)
+1   let T(0) = (t(0)_ij) be a new n × n matrix
+2   for i = 1 to n
+3       for j = 1 to n
+4           if i == j or (i, j) ∈ G.E
+5               t(0)_ij = 1
+6           else t(0)_ij = 0
+7   for k = 1 to n
+8       let T(k) = (t(k)_ij) be a new n × n matrix
+9       for i = 1 to n
+10          for j = 1 to n
+11              t(k)_ij = t(k-1)_ij ∨ (t(k-1)_ik ∧ t(k-1)_kj)
+12  return T(n)`}
+/>
+
+Transitive-Closure tar $\Theta(n^3)$, som Floyd-Warshall. Én bit per celle tar mindre plass enn et
+tall, og på noen maskiner er logiske operasjoner på biter raskere enn aritmetikk på tall. Også her
+er én tabell nok, fordi rad $k$ og kolonne $k$ ikke endrer seg i runde $k$. Uttrykket
+$t_{ik} \land t_{kk}$ er bare 1 når $t_{ik}$ allerede er 1, og det samme gjelder
+$t_{kk} \land t_{kj}$.
+
+<Example label="Eksamensoppgave" title="Én iterasjon av Transitive-Closure">
+<ExamRef id="2018-des" task="15" />
+
+Du har utført én iterasjon av Transitive-Closure, og endt opp med tabellen $T^{(1)}$ som vist i figur 4.
+Utfør neste iterasjon, og fyll inn de resulterende verdiene i tabellen nedenfor.
+
+<Table
+  columns={["$T^{(1)}$", "1", "2", "3", "4"]}
+  rows={[
+    ["1", "1", "0", "1", "0"],
+    ["2", "1", "1", "1", "0"],
+    ["3", "0", "0", "1", "0"],
+    ["4", "0", "1", "0", "1"],
+  ]}
+  caption="Figur 4 i oppgavesettet: forrige tilstand."
+/>
+
+<Table
+  columns={["$T^{(2)}$", "1", "2", "3", "4"]}
+  rows={[
+    ["1", "", "", "", ""],
+    ["2", "", "", "", ""],
+    ["3", "", "", "", ""],
+    ["4", "", "", "", ""],
+  ]}
+/>
+
+<Solution>
+Neste iterasjon er $k = 2$, så $t^{(2)}_{ij} = t^{(1)}_{ij} \lor (t^{(1)}_{i2} \land t^{(1)}_{2j})$.
+Kolonne 2 i $T^{(1)}$ har 1 i rad 2 og rad 4. Rad 2 endrer seg ikke, så bare rad 4 kan få nye 1-ere.
+Ny rad 4 er gammel rad 4 eller rad 2, element for element:
+${(0, 1, 0, 1) \lor (1, 1, 1, 0) = (1, 1, 1, 1)}$. Rad 1 og rad 3 har 0 i kolonne 2 og står.
+
+<Table
+  columns={["$T^{(2)}$", "1", "2", "3", "4"]}
+  rows={[
+    ["1", "1", "0", "1", "0"],
+    ["2", "1", "1", "1", "0"],
+    ["3", "0", "0", "1", "0"],
+    ["4", "1", "1", "1", "1"],
+  ]}
+/>
+
+<Answer>Som $T^{(1)}$, men rad 4 blir 1, 1, 1, 1.</Answer>
+</Solution>
+</Example>
+
+<Example label="Eksamensoppgave" title="Antall stier i en DAG">
+<ExamRef id="2024-aug-kont" task="15" />
+
+I Transitive-Closure angir $t_{ij}$ om det finnes en sti fra $i$ til $j$. Anta nå at den rettede
+grafen du får som input er asyklisk. Hvordan kan du endre algoritmen så $t_{ij}$ blir *antall*
+stier fra $i$ til $j$?
+
+Du kan ev. beskrive løsningen din som en endring av Floyd-Warshall.
+
+<Solution>
+Hver sti fra $i$ til $j$ med mellomnoder blant $1, \ldots, k$ går enten utenom $k$ eller innom $k$.
+Stiene utenom $k$ er talt i $t^{(k-1)}_{ij}$. En sti innom $k$ er en sti fra $i$ til $k$ fulgt av en
+sti fra $k$ til $j$, begge med mellomnoder blant $1, \ldots, k - 1$. Grafen har ingen sykler, så en
+sti går innom $k$ høyst én gang og deles på bare én måte, og de to delene har ingen felles noder
+utenom $k$. Hvert par av deler gir derfor én sti, og det er
+$t^{(k-1)}_{ik} \cdot t^{(k-1)}_{kj}$ stier innom $k$. Start med $t^{(0)}_{ij} = 1$ når kanten
+$(i, j)$ finnes, og 0 ellers, også på diagonalen. Med $t^{(0)}_{kk} = 1$ ville stien uten kanter fra
+$k$ til $k$ telle med, og tallene i rad $k$ og kolonne $k$ ville doblet seg.
+
+<Answer>Bytt linje 11 med $t^{(k)}_{ij} = t^{(k-1)}_{ij} + t^{(k-1)}_{ik} \cdot t^{(k-1)}_{kj}$,
+og start med $t^{(0)}_{ij} = 1$ bare når kanten $(i, j)$ finnes.</Answer>
+</Solution>
+</Example>
+
+<KeyTakeaways>
+- Korteste vei fra alle til alle gir en tabell med $\delta(i, j)$ for hvert par. Én kjøring fra hver node gjør mye av det samme arbeidet flere ganger, og Bellman-Ford fra hver node tar $\Theta(V^4)$ i en tett graf.
+- $d^{(k)}_{ij}$ er vekten til den korteste stien fra $i$ til $j$ med alle mellomnodene blant $1, \ldots, k$. $D^{(0)} = W$, og $D^{(n)}$ gir avstandene.
+- Den korteste stien går enten utenom $k$ eller innom $k$ én gang, så $d^{(k)}_{ij} = \min(d^{(k-1)}_{ij},\ d^{(k-1)}_{ik} + d^{(k-1)}_{kj})$. Løkka over $k$ ligger ytterst, og kjøretiden er $\Theta(n^3)$.
+- Rad $k$ og kolonne $k$ endrer seg ikke i runde $k$, så én tabell er nok.
+- Når stien innom $k$ vinner, blir $\pi_{ij} = \pi_{kj}$. Kantene $(\pi_{ij}, j)$ fra rad $i$ i $\Pi$ danner et korteste-vei-tre med rot i $i$, og Print-All-Pairs-Shortest-Path går bakover langs det.
+- Floyd-Warshall tåler negative vekter, men ikke negative sykler. En negativ verdi på diagonalen etterpå viser en negativ sykel.
+- Transitive-Closure er Floyd-Warshall med $\lor$ og $\land$ i stedet for min og $+$, og finner hvilke par som har en sti mellom seg.
+</KeyTakeaways>

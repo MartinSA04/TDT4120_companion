@@ -352,6 +352,37 @@ formulas:
       id: dijkstra-kjoretid,
     }
 
+  - {
+      tex: "w_{ij} = \\begin{cases} 0 & \\text{hvis } i = j \\\\ w(i, j) & \\text{hvis } i \\ne j \\text{ og } (i, j) \\in E \\\\ \\infty & \\text{hvis } i \\ne j \\text{ og } (i, j) \\notin E \\end{cases}",
+      label: "Vektmatrisen $W = (w_{ij})$: nabomatrisen med vekten i stedet for 1, 0 på diagonalen og $\\infty$ der det ikke går noen kant. Floyd-Warshall starter med $D^{(0)} = W$.",
+      section: "Korteste vei fra alle til alle",
+      id: vektmatrise,
+    }
+  - {
+      tex: "d^{(k)}_{ij} = \\min\\bigl(d^{(k-1)}_{ij},\\ d^{(k-1)}_{ik} + d^{(k-1)}_{kj}\\bigr)",
+      label: "Floyd-Warshall, for $k \\ge 1$: $d^{(k)}_{ij}$ er vekten av den korteste stien fra $i$ til $j$ med alle mellomnodene blant $1, \\ldots, k$. Stien går enten utenom $k$ eller innom $k$ én gang, når grafen ikke har negative sykler. $d^{(0)}_{ij} = w_{ij}$, og $d^{(n)}_{ij} = \\delta(i, j)$.",
+      section: "Korteste vei fra alle til alle",
+      id: floyd-warshall-rekurrens,
+    }
+  - {
+      tex: "\\pi_{ij} = \\pi_{kj} \\quad \\text{når } d_{ij} > d_{ik} + d_{kj}",
+      label: "Når stien innom $k$ er kortere, slutter den nye stien fra $i$ til $j$ med stien fra $k$ til $j$, så noden foran $j$ er $\\pi_{kj}$. Ellers står $\\pi_{ij}$. I starten er $\\pi_{ij} = i$ for hver kant $(i, j)$, og nil ellers.",
+      section: "Korteste vei fra alle til alle",
+      id: floyd-warshall-forgjenger,
+    }
+  - {
+      tex: "\\Theta(n^3)",
+      label: "Floyd-Warshall og Transitive-Closure: tre nestede løkker over $k$, $i$ og $j$, med konstant arbeid innerst. Rad $k$ og kolonne $k$ endrer seg ikke i runde $k$, så én tabell er nok, og plassen er $\\Theta(n^2)$.",
+      section: "Korteste vei fra alle til alle",
+      id: floyd-warshall-kjoretid,
+    }
+  - {
+      tex: "t^{(k)}_{ij} = t^{(k-1)}_{ij} \\lor \\bigl(t^{(k-1)}_{ik} \\land t^{(k-1)}_{kj}\\bigr)",
+      label: "Transitive-Closure: $t^{(k)}_{ij} = 1$ hvis det finnes en sti fra $i$ til $j$ med alle mellomnodene blant $1, \\ldots, k$, og 0 ellers. $t^{(0)}_{ij} = 1$ når $i = j$ eller $(i, j) \\in E$.",
+      section: "Korteste vei fra alle til alle",
+      id: transitiv-lukning-rekurrens,
+    }
+
 # ── Symbols → Symboler page ──────────────────────────────────────────────────
 # Bokstavene modulene bruker, gruppert som modulene. En bokstav med flere
 # betydninger får én rad per betydning, med en advarsel i `note`. Algoritmer har
@@ -472,6 +503,11 @@ symbols:
   - { tex: "v.\\pi", meaning: "I korteste vei: noden foran $v$ på stien som ga $v.d$", section: "Korteste vei fra én til alle", term: "Korteste-vei-tre", id: sp-pi, note: "Kantene $(v.\\pi, v)$ er et korteste-vei-tre når estimatene er riktige. I MST-Prim er $(v, v.\\pi)$ en kant i spenntreet." }
   - { tex: "S", meaning: "I Dijkstra: nodene som er ferdige, med riktig estimat", section: "Korteste vei fra én til alle", term: "Dijkstra", id: dijkstra-s, note: "Ikke snittet $(S, V - S)$." }
   - { tex: "Q", meaning: "Min-prioritetskøen i Dijkstra, med estimatene $v.d$ som prioritet", section: "Korteste vei fra én til alle", term: "Dijkstra", formula: dijkstra-kjoretid, id: dijkstra-q, note: "Samme kø som i MST-Prim, men med $v.d$ som prioritet. I BFS er $Q$ en FIFO-kø." }
+  # ── Korteste vei fra alle til alle ──
+  - { tex: "W = (w_{ij})", meaning: "Vektmatrisen: $w_{ij}$ er vekten av kanten $(i, j)$, 0 når $i = j$ og $\\infty$ når kanten ikke finnes", section: "Korteste vei fra alle til alle", term: "Vektmatrise", formula: vektmatrise, id: w-ij, note: "Ikke kapasiteten $W$ i ryggsekkproblemet." }
+  - { tex: "d^{(k)}_{ij}", meaning: "Vekten av den korteste stien fra $i$ til $j$ med alle mellomnodene blant $1, \\ldots, k$", section: "Korteste vei fra alle til alle", term: "Floyd-Warshall", formula: floyd-warshall-rekurrens, id: fw-d, note: "Med én tabell skrives den $d_{ij}$. Ikke estimatet $v.d$ eller starttiden $u.d$ i DFS." }
+  - { tex: "\\Pi = (\\pi_{ij})", meaning: "Forgjengermatrisen: $\\pi_{ij}$ er noden foran $j$ på en korteste vei fra $i$ til $j$, eller nil", section: "Korteste vei fra alle til alle", term: "Forgjengermatrise", formula: floyd-warshall-forgjenger, id: fw-pi, note: "Kantene $(\\pi_{ij}, j)$ fra rad $i$ danner et korteste-vei-tre med rot i $i$. Fra én startnode heter forgjengeren $v.\\pi$." }
+  - { tex: "t^{(k)}_{ij}", meaning: "1 hvis det finnes en sti fra $i$ til $j$ med alle mellomnodene blant $1, \\ldots, k$, og 0 ellers", section: "Korteste vei fra alle til alle", term: "Transitiv lukning", formula: transitiv-lukning-rekurrens, id: tl-t }
 
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
@@ -1003,6 +1039,31 @@ glossary:
       term: "Dijkstra",
       definition: "Dijkstras algoritme. Korteste vei fra én til alle når ingen vekter er negative: tar hver gang ut noden med lavest estimat fra en min-prioritetskø, og slakker ut-kantene fra den. Med negative vekter kan svaret bli feil. $O((V + E) \\lg V)$ med binær haug og $O(V \\lg V + E)$ med Fibonacci-haug.",
       section: "Korteste vei fra én til alle",
+    }
+  - {
+      term: "Mellomnode",
+      definition: "En node på en sti som verken er start eller slutt. I stien $\\langle v_1, v_2, \\ldots, v_l \\rangle$ er mellomnodene $v_2, \\ldots, v_{l-1}$. Delinstansene i Floyd-Warshall begrenser hvilke noder som får være mellomnoder.",
+      section: "Korteste vei fra alle til alle",
+    }
+  - {
+      term: "Vektmatrise",
+      definition: "Nabomatrisen til en vektet graf med vekten $w(i, j)$ i stedet for 1, 0 på diagonalen og $\\infty$ der det ikke går noen kant. Input til Floyd-Warshall.",
+      section: "Korteste vei fra alle til alle",
+    }
+  - {
+      term: "Floyd-Warshall",
+      definition: "Korteste vei mellom alle par av noder i en rettet graf gitt som vektmatrise. $d^{(k)}_{ij}$ er vekten av den korteste stien fra $i$ til $j$ med alle mellomnodene blant $1, \\ldots, k$, og runde $k$ setter $d_{ij} = \\min(d_{ij}, d_{ik} + d_{kj})$ for hvert par. Tåler negative vekter, men ikke negative sykler. $\\Theta(n^3)$ tid og $\\Theta(n^2)$ plass.",
+      section: "Korteste vei fra alle til alle",
+    }
+  - {
+      term: "Forgjengermatrise",
+      definition: "Tabellen $\\Pi$ der $\\pi_{ij}$ er noden foran $j$ på en korteste vei fra $i$ til $j$, og nil når $i = j$ eller ingen sti finnes. Kantene $(\\pi_{ij}, j)$ fra rad $i$ danner et korteste-vei-tre med rot i $i$. Print-All-Pairs-Shortest-Path skriver ut stien fra $i$ til $j$ ved å gå bakover langs rad $i$.",
+      section: "Korteste vei fra alle til alle",
+    }
+  - {
+      term: "Transitiv lukning",
+      definition: "Grafen $G^* = (V, E^*)$ der $(i, j) \\in E^*$ hvis og bare hvis det finnes en sti fra $i$ til $j$ i $G$. Transitive-Closure finner den som Floyd-Warshall med $\\lor$ og $\\land$ i stedet for min og $+$, på $\\Theta(n^3)$. Et søk fra hver node tar $\\Theta(V(V + E))$, som er raskere når grafen har få kanter.",
+      section: "Korteste vei fra alle til alle",
     }
 
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──
