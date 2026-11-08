@@ -382,6 +382,48 @@ formulas:
       section: "Korteste vei fra alle til alle",
       id: transitiv-lukning-rekurrens,
     }
+  - {
+      tex: "|f| = \\sum_{v \\in V} f(s, v) - \\sum_{v \\in V} f(v, s)",
+      label: "Verdien til flyten $f$: flyten ut av kilden $s$ minus flyten inn i den. Strekene står for verdien, ikke for absoluttverdi.",
+      section: "Maksimal flyt",
+      id: flytverdi,
+    }
+  - {
+      tex: "c_f(u, v) = \\begin{cases} c(u, v) - f(u, v) & \\text{hvis } (u, v) \\in E \\\\ f(v, u) & \\text{hvis } (v, u) \\in E \\\\ 0 & \\text{ellers} \\end{cases}",
+      label: "Restkapasiteten fra $u$ til $v$: med kanten $(u, v)$ det som er ledig, mot kanten $(v, u)$ det som går i den. Restnettet $G_f$ har en kant $(u, v)$ for hvert par med $c_f(u, v) > 0$.",
+      section: "Maksimal flyt",
+      id: restkapasitet,
+    }
+  - {
+      tex: "c_f(p) = \\min\\{\\, c_f(u, v) : (u, v) \\text{ er på } p \\,\\}",
+      label: "Flaskehalsen til en forøkende sti $p$. Flyten økes med $c_f(p)$ i hver kant stien går med, og senkes like mye i hver kant den går mot.",
+      section: "Maksimal flyt",
+      id: flaskehals,
+    }
+  - {
+      tex: "c(S, T) = \\sum_{u \\in S} \\sum_{v \\in T} c(u, v)",
+      label: "Kapasiteten til snittet $(S, T)$: bare kantene fra $S$ til $T$ teller.",
+      section: "Maksimal flyt",
+      id: snittkapasitet,
+    }
+  - {
+      tex: "|f| = f(S, T) \\le c(S, T)",
+      label: "Nettoflyten $f(S, T)$, flyten fra $S$ til $T$ minus flyten fra $T$ til $S$, er lik $|f|$ for hvert snitt, og høyst kapasiteten. Likhet for ett snitt betyr at $f$ er maksimal og snittet minimalt.",
+      section: "Maksimal flyt",
+      id: flyt-og-snitt,
+    }
+  - {
+      tex: "O(E\\,|f^*|)",
+      label: "Ford-Fulkerson når alle kapasitetene er heltall: hver runde øker $|f|$ med minst 1, så det blir høyst $|f^*|$ runder, hver $O(E)$. Pseudopolynomisk.",
+      section: "Maksimal flyt",
+      id: ford-fulkerson-kjoretid,
+    }
+  - {
+      tex: "O(VE^2)",
+      label: "Edmonds-Karp: BFS finner en korteste forøkende sti. Avstandene i restnettet synker aldri, og hver kant er flaskehals $O(V)$ ganger, så det blir $O(VE)$ runder, hver $O(E)$.",
+      section: "Maksimal flyt",
+      id: edmonds-karp-kjoretid,
+    }
 
 # ── Symbols → Symboler page ──────────────────────────────────────────────────
 # Bokstavene modulene bruker, gruppert som modulene. En bokstav med flere
@@ -508,6 +550,19 @@ symbols:
   - { tex: "d^{(k)}_{ij}", meaning: "Vekten av den korteste stien fra $i$ til $j$ med alle mellomnodene blant $1, \\ldots, k$", section: "Korteste vei fra alle til alle", term: "Floyd-Warshall", formula: floyd-warshall-rekurrens, id: fw-d, note: "Med én tabell skrives den $d_{ij}$. Ikke estimatet $v.d$ eller starttiden $u.d$ i DFS." }
   - { tex: "\\Pi = (\\pi_{ij})", meaning: "Forgjengermatrisen: $\\pi_{ij}$ er noden foran $j$ på en korteste vei fra $i$ til $j$, eller nil", section: "Korteste vei fra alle til alle", term: "Forgjengermatrise", formula: floyd-warshall-forgjenger, id: fw-pi, note: "Kantene $(\\pi_{ij}, j)$ fra rad $i$ danner et korteste-vei-tre med rot i $i$. Fra én startnode heter forgjengeren $v.\\pi$." }
   - { tex: "t^{(k)}_{ij}", meaning: "1 hvis det finnes en sti fra $i$ til $j$ med alle mellomnodene blant $1, \\ldots, k$, og 0 ellers", section: "Korteste vei fra alle til alle", term: "Transitiv lukning", formula: transitiv-lukning-rekurrens, id: tl-t }
+  # ── Maksimal flyt ──
+  - { tex: "s,\\ t", meaning: "Kilden og sluket i et flytnett", section: "Maksimal flyt", term: "Flytnett", id: kilde-sluk, note: "Ikke bare startnoden $s$ i en traversering: flyten går fra $s$ til $t$." }
+  - { tex: "c(u, v)", meaning: "Kapasiteten til kanten $(u, v)$, 0 når kanten ikke finnes", section: "Maksimal flyt", term: "Flytnett", id: kapasitet, note: "Ikke konstanten $c$ i asymptotisk notasjon eller tabellen $c[i, j]$ i LCS." }
+  - { tex: "f(u, v)", meaning: "Flyten fra $u$ til $v$", section: "Maksimal flyt", term: "Flyt", id: flyt-f, note: "Koden skriver den $(u, v).f$. Ikke sluttiden $u.f$ i DFS eller funksjonen $f(n)$." }
+  - { tex: "|f|", meaning: "Verdien til flyten: flyten ut av kilden minus flyten inn i den", section: "Maksimal flyt", term: "Flyt", formula: flytverdi, id: flytverdi }
+  - { tex: "f^*", meaning: "En maksimal flyt", section: "Maksimal flyt", formula: ford-fulkerson-kjoretid, id: maksflyt }
+  - { tex: "c_f(u, v)", meaning: "Restkapasiteten fra $u$ til $v$ med flyten $f$", section: "Maksimal flyt", term: "Restkapasitet", formula: restkapasitet, id: restkapasitet }
+  - { tex: "G_f = (V, E_f)", meaning: "Restnettet: en kant $(u, v)$ for hvert par med $c_f(u, v) > 0$", section: "Maksimal flyt", term: "Restnett", formula: restkapasitet, id: restnett, note: "$|E_f| \\le 2|E|$." }
+  - { tex: "c_f(p)", meaning: "Flaskehalsen til den forøkende stien $p$: den minste restkapasiteten på stien", section: "Maksimal flyt", term: "Forøkende sti", formula: flaskehals, id: flaskehals }
+  - { tex: "(S, T)", meaning: "Et snitt i et flytnett, med $T = V - S$, $s \\in S$ og $t \\in T$", section: "Maksimal flyt", term: "Snitt", id: snitt-st, note: "Det samme som snittet $(S, V - S)$, med kilden og sluket på hver sin side." }
+  - { tex: "c(S, T),\\ f(S, T)", meaning: "Kapasiteten til snittet og nettoflyten over det", section: "Maksimal flyt", term: "Minimalt snitt", formula: flyt-og-snitt, id: snitt-c-f }
+  - { tex: "L,\\ R", meaning: "De to nodemengdene i en bipartitt graf", section: "Maksimal flyt", term: "Bipartitt graf", id: bipartitt-l-r, note: "Ikke kopiene $L$ og $R$ i Merge-Sort." }
+  - { tex: "M", meaning: "En matching: kanter der ingen to har en node felles", section: "Maksimal flyt", term: "Matching", id: matching-m }
 
 # ── Glossary → Begreper page + inline <Term name="…"> ────────────────────────
 # Vokser med modulene, på samme vis som formlene over.
@@ -972,7 +1027,7 @@ glossary:
     }
   - {
       term: "Snitt",
-      definition: "En deling $(S, V - S)$ av nodene i en graf i to mengder. En kant krysser snittet når den har én ende i hver mengde, og snittet respekterer kantmengden $A$ når ingen kant i $A$ krysser det.",
+      definition: "En deling $(S, V - S)$ av nodene i en graf i to mengder. En kant krysser snittet når den har én ende i hver mengde, og snittet respekterer kantmengden $A$ når ingen kant i $A$ krysser det. I et flytnett skrives snittet $(S, T)$, med $T = V - S$, $s \\in S$ og $t \\in T$, og kapasiteten $c(S, T)$ er summen over kantene fra $S$ til $T$.",
       section: "Minimale spenntrær",
     }
   - {
@@ -1064,6 +1119,71 @@ glossary:
       term: "Transitiv lukning",
       definition: "Grafen $G^* = (V, E^*)$ der $(i, j) \\in E^*$ hvis og bare hvis det finnes en sti fra $i$ til $j$ i $G$. Transitive-Closure finner den som Floyd-Warshall med $\\lor$ og $\\land$ i stedet for min og $+$, på $\\Theta(n^3)$. Et søk fra hver node tar $\\Theta(V(V + E))$, som er raskere når grafen har få kanter.",
       section: "Korteste vei fra alle til alle",
+    }
+  - {
+      term: "Flytnett",
+      definition: "En rettet graf $G = (V, E)$ der hver kant har en kapasitet $c(u, v) > 0$, med en kilde $s$ og et sluk $t$. Ingen kant går fra en node til seg selv, grafen har ikke både $(u, v)$ og $(v, u)$, og hver node ligger på en sti fra $s$ til $t$. Der det ikke går noen kant, er $c(u, v) = 0$.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Flyt",
+      definition: "En funksjon $f$ på par av noder i et flytnett med $0 \\le f(u, v) \\le c(u, v)$, der flyten inn er lik flyten ut i hver node unntatt kilden og sluket. Verdien $|f|$ er flyten ut av kilden minus flyten inn i den, og maks-flyt-problemet ber om en flyt med størst mulig $|f|$.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Restkapasitet",
+      definition: "$c_f(u, v)$: hvor mye mer som kan sendes fra $u$ til $v$ med flyten $f$. Med en kant $(u, v)$ er det $c(u, v) - f(u, v)$, mot en kant $(v, u)$ er det $f(v, u)$, og ellers 0.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Restnett",
+      definition: "Grafen $G_f = (V, E_f)$ med en kant $(u, v)$ for hvert par med restkapasitet $c_f(u, v) > 0$. Hver kant i flytnettet gir høyst to kanter i restnettet: én med kanten når den har ledig kapasitet, og én mot den når den har flyt.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Oppheving av flyt",
+      definition: "Å senke flyten i en kant $(v, u)$ ved at en forøkende sti går fra $u$ til $v$, mot kanten. Steget har restkapasitet $f(v, u)$, og flyten som gikk gjennom kanten, finner en annen vei videre.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Forøkende sti",
+      definition: "En enkel sti $p$ fra $s$ til $t$ i restnettet. Flaskehalsen $c_f(p)$ er den minste restkapasiteten på stien, og flyten økes med $c_f(p)$: i kantene stien går med, øker flyten, og i kantene den går mot, synker den.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Ford-Fulkerson",
+      definition: "Start med flyt 0, og øk flyten langs en forøkende sti så lenge restnettet har en. Når ingen sti finnes, er flyten maksimal. Med heltallskapasiteter er det høyst $|f^*|$ runder, hver $O(E)$, så $O(E\\,|f^*|)$.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Edmonds-Karp",
+      definition: "Ford-Fulkerson der den forøkende stien finnes med BFS, så den har færrest mulig kanter. Avstandene i restnettet synker aldri, og hver kant er flaskehals $O(V)$ ganger, så det blir $O(VE)$ runder og $O(VE^2)$ i alt.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Minimalt snitt",
+      definition: "Et snitt $(S, T)$ i et flytnett med lavest mulig kapasitet $c(S, T)$, summen over kantene fra $S$ til $T$. Når Ford-Fulkerson stopper, er $S$ nodene kilden kan nå fram til i restnettet, og kapasiteten er lik verdien av den maksimale flyten.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Maks-flyt-min-snitt-teoremet",
+      definition: "For en flyt $f$ er disse ekvivalente: $f$ er maksimal, restnettet har ingen forøkende sti, og $|f| = c(S, T)$ for et snitt $(S, T)$. Den største flytverdien er altså lik den minste snittkapasiteten.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Heltallsteoremet",
+      definition: "Når alle kapasitetene er heltall, finner Ford-Fulkerson en maksimal flyt med et heltall i hver kant. Andre maksimale flyter kan ha brøker.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Bipartitt graf",
+      definition: "En urettet graf der nodene er delt i to mengder $L$ og $R$, og hver kant går mellom en node i $L$ og en i $R$.",
+      section: "Maksimal flyt",
+    }
+  - {
+      term: "Matching",
+      definition: "En mengde kanter $M$ i en urettet graf der ingen to kanter har en node felles. En maksimum matching har flest mulig kanter. I en bipartitt graf er den like stor som en maksimal flyt fra en kilde via $L$ og $R$ til et sluk, med kapasitet 1 på alle kantene.",
+      section: "Maksimal flyt",
     }
 
 # ── Past exams → Eksamen page. Linked from the NTNU algdat archive (not vendored). ──

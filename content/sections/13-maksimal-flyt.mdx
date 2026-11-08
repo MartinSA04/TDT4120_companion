@@ -2,11 +2,680 @@
 order: 13
 num: "12"
 title: Maksimal flyt
-summary: "Flytnett, restnett og forøkende stier, Ford-Fulkerson og Edmonds-Karp, og maks-flyt-min-snitt. Modulen er under arbeid."
+summary: "Hvor mye som kan strømme fra en kilde til et sluk gjennom et nett der hver kant har en kapasitet: restnettet og forøkende stier, Ford-Fulkerson og Edmonds-Karp, maks-flyt-min-snitt-teoremet, heltallsteoremet og bipartitt matching som flyt."
 importance: core
+tag: "Uke 45"
 part: "Del 4: Grafer og flyt"
+updated: 2026-11-08
 ---
 
-<Callout type="note" title="Under arbeid">
-Denne modulen er ikke skrevet ennå.
+<LearningGoals>
+- Definer et <Term name="Flytnett">flytnett</Term>, en <Term name="Flyt">flyt</Term> og flytverdien $|f|$, og forklar maks-flyt-problemet.
+- Finn <Term name="Restnett">restnettet</Term> til et flytnett med en gitt flyt, og forklar hvordan en sti i restnettet kan oppheve flyt.
+- Forklar hva en <Term name="Forøkende sti">forøkende sti</Term> er, og kjør Ford-Fulkerson og <Term name="Edmonds-Karp">Edmonds-Karp</Term> for hånd.
+- Forklar snitt, snittkapasitet og <Term name="Minimalt snitt">minimalt snitt</Term>.
+- Forklar maks-flyt-min-snitt-teoremet og hvordan Ford-Fulkerson finner et minimalt snitt.
+- Forklar kjøretiden $O(E\,|f^*|)$ for Ford-Fulkerson med heltallskapasiteter og $O(VE^2)$ for Edmonds-Karp.
+- Forklar heltallsteoremet, og bruk det til å finne en maksimum bipartitt <Term name="Matching">matching</Term> med flyt.
+- Gjør om antiparallelle kanter og flere kilder og sluk til et vanlig flytnett, og konstruer reduksjoner til maks-flyt.
+</LearningGoals>
+
+Vann renner fra en kilde ned til et sluk gjennom ni rør. Hvert rør går én vei og tåler et visst
+antall liter i sekundet. Rørene ut fra kilden tåler ${13 + 13 = 26}$ liter i sekundet til sammen, og
+rørene inn til sluket ${4 + 20 = 24}$. Likevel kommer det aldri mer enn 16 liter i sekundet fram,
+uansett hvordan du fordeler vannet på rørene.
+
+Ford-Fulkerson finner de 16 literne ved å sende vann langs én sti fra kilden til sluket om gangen.
+Når den stopper, peker den også ut rørene som setter grensen.
+
+## Flytnett og flyt
+
+Simuleringen tegner rørene. En sti starter i kilden 1, og rørene den kan gå videre gjennom, er markert.
+Trykk på et markert rør for å la stien gå gjennom det. Når stien er kommet fram til sluket 6, sender
+«Send» så mye vann langs den som det trangeste steget har plass til.
+
+<Simulation
+  src="/sims/vann.js"
+  host="dom"
+  title="Vann fra kilden til sluket"
+  height={440}
+  caption="Ni rør fra kilden 1 ned til sluket 6. Et rør er bredere jo mer det tåler, vannet inne i det er like bredt som flyten, og tallene ved røret er flyt/kapasitet i liter i sekundet. Rørene stien kan ta neste, har ramme og en svak pil den veien stien vil gå, og når ingen sti kommer fram til 6, fylles nodene en sti kan nå fram til."
+/>
+
+Legg stien 1, 3, 4, 6 og send. Røret fra 4 til 6 er det smaleste på stien, og bare 4 liter i sekundet
+kommer fram. Send så langs 1, 3, 5, 6, og det kommer 13 liter i sekundet fram i alt.
+
+Rørene er kantene i et <Term name="Flytnett">flytnett</Term>: en rettet graf ${G = (V, E)}$ der hver kant
+$(u, v)$ har en kapasitet ${c(u, v) > 0}$, med to bestemte noder, kilden $s$ og sluket $t$. I
+simuleringen er ${s = 1}$ og ${t = 6}$, og kapasiteten er det et rør tåler. Mellom to noder uten kant er
+${c(u, v) = 0}$. Ingen kant går fra en node til seg selv, og hver node ligger på en sti fra $s$ til $t$.
+
+Vannet du har sendt, er en <Term name="Flyt">flyt</Term>: et tall $f(u, v)$ for hvert par av noder,
+mengden som går fra $u$ til $v$. Simuleringen skriver $f(u, v)/c(u, v)$ ved hvert rør, og etter de to
+stiene står det 4/9 ved røret fra 3 til 4. En flyt må følge to regler.
+
+<Statement kind="definition" name="Flyt">
+En flyt i $G$ gir et tall $f(u, v)$ for hvert par av noder, slik at ${0 \le f(u, v) \le c(u, v)}$ for alle $u, v \in V$, og slik at flyten inn er lik flyten ut i hver node $u$ unntatt $s$ og $t$:
+
+$$
+\sum_{v \in V} f(v, u) = \sum_{v \in V} f(u, v) .
+$$
+</Statement>
+
+Den første regelen sier at flyten i et rør ligger mellom 0 og det røret tåler. Den andre sier at vann ikke samles opp
+eller forsvinner i en node. I node 3 renner 13 liter i sekundet inn fra 1, og ${4 + 9 = 13}$ renner ut,
+til 4 og 5. Verdien til flyten er det som går ut av kilden, minus det som går inn i den:
+
+<Formula
+  tex="|f| = \sum_{v \in V} f(s, v) - \sum_{v \in V} f(v, s)"
+  caption="Flytverdien. Strekene står for verdien til flyten, ikke for absoluttverdi."
+/>
+
+Når ingen kant går inn til $s$, er den siste summen 0. I simuleringen er ${|f| = 4 + 9 = 13}$, det
+samme som kommer fram til sluket. Maks-flyt-problemet tar et flytnett som input og ber om en flyt med
+størst mulig $|f|$.
+
+<Quiz
+  question={"I simuleringen går 3 liter i sekundet fra 1 til 2, og ingenting går fra 3 til 2. Hvor mye går fra 2 til 4?"}
+  options={[
+    "Nøyaktig 3",
+    "Høyst 3, resten kan bli stående i 2",
+    "Høyst 14, kapasiteten til røret",
+    "13: like mye som røret fra 1 til 2 tåler",
+  ]}
+  answer={0}
+  explanation={"Node 2 er verken kilden eller sluket, så flyten inn er lik flyten ut. Inn kommer ${3 + 0 = 3}$, og røret til 4 er det eneste røret ut av 2, så det fører nøyaktig 3. Kapasiteten 14 er bare en øvre grense, og en flyt lar ikke vann bli stående i en node. Røret fra 1 til 2 tåler 13, men det er flyten i det, 3, som kommer inn i 2."}
+/>
+
+## Å oppheve flyt
+
+Etter de to stiene kommer 13 liter i sekundet fram, og ingen sti langs rørene kommer lenger fram til
+sluket. Røret fra kilden til 3 er fullt, så en ny sti må gå via 2. Fra 2 kommer den bare til 4, og
+røret fra 4 til sluket er fullt.
+
+Likevel er det plass til mer. Vannet som går fra 3 til 4, fyller røret fra 4 til sluket. Det vannet
+kunne heller gått fra 3 til 5, der det er ledig plass, og da ville røret fra 4 til sluket vært ledig for
+vann fra 2.
+
+Tenk deg en kran i hvert rør: flyten sier hvordan kranene står. Å skru ned kranen i røret fra 3 til 4
+virker på flyten som å sende vann baklengs gjennom røret. En sti kan derfor gå mot et rør som fører
+vann, og det kalles å <Term name="Oppheving av flyt">oppheve</Term> flyt.
+
+Legg stien 1, 2, 4 i simuleringen. Fra 4 er bare røret fra 3 markert, med pilen mot 3. Fortsett til 5 og
+6, og send. Nå kommer 16 liter i sekundet fram.
+
+Hadde den første stien gått via 2 i stedet for via 3, hadde ingenting trengt å gjøres om. En algoritme
+som legger én sti om gangen, vet ikke på forhånd hvilke stier som er gode, så en senere sti må kunne
+gjøre om det en tidligere sti sendte.
+
+<Callout type="tip" title="Oppheving">
+En sti kan gå mot en kant som har flyt. Da synker flyten i kanten, og flyten som gikk gjennom den, finner en annen vei videre.
 </Callout>
+
+## Restnettet
+
+Hvilke steg en sti kan ta, avhenger av flyten. Fra $u$ til $v$ kan den gå med kanten $(u, v)$ når
+kanten har ledig kapasitet, og mot kanten $(v, u)$ når den har flyt. Tallet ved hvert steg av en sti i simuleringen er hvor
+mye mer steget kan ta, <Term name="Restkapasitet">restkapasiteten</Term>:
+
+<Formula
+  tex="c_f(u, v) = \begin{cases} c(u, v) - f(u, v) & \text{hvis } (u, v) \in E \\ f(v, u) & \text{hvis } (v, u) \in E \\ 0 & \text{ellers} \end{cases}"
+  caption="Restkapasiteten fra $u$ til $v$ med flyten $f$."
+/>
+
+Den midterste linja er steget mot en kant: mot kanten $(v, u)$ kan du sende tilbake det som går i den,
+$f(v, u)$, uansett kapasiteten. Formelen trenger at bare én av $(u, v)$ og $(v, u)$ er en kant i $G$,
+fordi paret ellers ville høre til to linjer. Derfor har et flytnett ikke både $(u, v)$ og
+$(v, u)$, såkalte antiparallelle kanter.
+
+<Term name="Restnett">Restnettet</Term> ${G_f = (V, E_f)}$ har en kant $(u, v)$ for hvert par med
+${c_f(u, v) > 0}$, med $c_f(u, v)$ som kapasitet. Hver kant i $G$ gir høyst to kanter i restnettet, så
+${|E_f| \le 2|E|}$. Figur 1 viser hvordan ett rør med kapasitet 9 blir til kanter i restnettet. Et tomt
+rør gir én kant med røret, et fullt rør én kant mot det, og et rør med 4 liter begge: 5 med røret og
+4 mot det.
+
+<Figure
+  src="/figures/ett-ror-i-restnettet.svg"
+  alt="Ett rør fra u til v med kapasitet 9 og restnettet for flyt 0, 4 og 9. Med flyt 0 en kant fra u til v med 9, med flyt 4 en kant fra u til v med 5 og en fra v til u med 4, med flyt 9 bare kanten fra v til u med 9."
+  caption="Ett rør fra $u$ til $v$ med kapasitet 9 og tre ulike flyter, og kantene røret gir i restnettet."
+  number={1}
+  width={340}
+  height={280}
+/>
+
+Flytnettet sier hvor mye som går i hver kant, og restnettet hvilke steg en sti kan ta. I simuleringen
+fører røret fra 3 til 4 vann uten å være fullt, som det midterste røret i figur 1, så restnettet har en
+kant hver vei mellom 3 og 4. Kanten fra 4 til 3 er steget mot røret som stien 1, 2, 4, 3, 5, 6 tok.
+
+En <Term name="Forøkende sti">forøkende sti</Term> $p$ er en enkel sti fra $s$ til $t$ i restnettet.
+Den minste restkapasiteten på stien er flaskehalsen,
+
+$$
+c_f(p) = \min\{\, c_f(u, v) : (u, v) \in p \,\} ,
+$$
+
+og flyten kan økes med $c_f(p)$ langs hele stien. Et steg med en kant øker flyten i kanten med
+$c_f(p)$, og et steg mot en kant senker flyten i den like mye. Ingen restkapasitet på stien er mindre
+enn $c_f(p)$, så ingen kant får mer enn kapasiteten eller mindre enn 0. En kant på stien med
+restkapasitet $c_f(p)$ kalles også en flaskehals.
+
+Flyten inn er fortsatt lik flyten ut i hver node på stien, fordi steget inn til noden og steget videre
+veier hverandre opp. I node 4 på stien 1, 2, 4, 3, 5, 6 kommer det mer inn fra 2 og like mye mindre inn
+fra 3. Det første steget går fra $s$, så $|f|$ øker med $c_f(p)$.
+
+<Callout type="tip" title="Restnettet">
+Med en kant $(u, v)$ kan en sti sende det som er ledig, $c(u, v) - f(u, v)$, og mot den det som går i den, $f(u, v)$. En forøkende sti er en sti fra $s$ til $t$ i restnettet, og flyten øker med den minste restkapasiteten på stien.
+</Callout>
+
+<Quiz
+  question={"Ved 13 liter i sekundet, etter stiene 1, 3, 4, 6 og 1, 3, 5, 6: hvorfor er 1, 2, 4, 5, 6 ingen forøkende sti?"}
+  options={[
+    "Røret fra 5 til 4 fører ikke vann, så ${c_f(4, 5) = 0}$.",
+    "Det går ikke noe rør fra 4 til 5, og en sti kan bare følge rørene.",
+    "Røret fra 2 til 4 er fullt, så ${c_f(2, 4) = 0}$.",
+    "Røret fra 5 til 6 er fullt, så ${c_f(5, 6) = 0}$.",
+  ]}
+  answer={0}
+  explanation={"Steget fra 4 til 5 går mot røret $(5, 4)$, så restkapasiteten er ${c_f(4, 5) = f(5, 4) = 0}$: det er ingen flyt å oppheve. En sti i restnettet kan gå mot et rør, men bare et rør som fører vann. Røret fra 2 til 4 fører 0 av 14, og røret fra 5 til 6 fører 9 av 20, så begge har plass."}
+/>
+
+<Example label="Eksamensoppgave" title="Flyt og kapasitet fra restkapasitetene">
+<ExamRef id="2019-nov" task="13" />
+
+I et flytnett, hvis du har restkapasiteter (residual capacities) ${c_f(u, v) = 9}$ og
+${c_f(v, u) = 3}$, og ${f(u, v) > 0}$, hva er flyten $f(u, v)$ og kapasiteten $c(u, v)$? Oppgi verdiene som
+normalt, som to tall med skråstrek imellom, f.eks. 1/2 hvis du mener ${f(u, v) = 1}$ og ${c(u, v) = 2}$.
+
+<Solution>
+Flyt går bare langs kanter, så ${f(u, v) > 0}$ betyr at $(u, v)$ er en kant i $G$. Et flytnett har ikke antiparallelle kanter, så $(v, u)$ er ikke det. Steget fra $v$ til $u$ går da
+mot kanten, så ${c_f(v, u) = f(u, v) = 3}$. Steget fra $u$ til $v$ går med kanten, så
+${c_f(u, v) = c(u, v) - f(u, v)}$, og ${c(u, v) = 9 + 3 = 12}$.
+
+<Answer>3/12</Answer>
+</Solution>
+</Example>
+
+## Ford-Fulkerson
+
+Ford-Fulkerson gjør det du gjorde i simuleringen: start med flyt 0, og øk flyten langs en forøkende
+sti så lenge restnettet har en. Hvordan stien finnes, er ikke bestemt, og derfor kalles
+Ford-Fulkerson en metode:
+
+<CodeBlock
+  lang="text"
+  code={`Ford-Fulkerson-Method(G, s, t)
+1  initialize flow f to 0
+2  while there exists an augmenting path p in the residual network G_f
+3      augment flow f along p
+4  return f`}
+/>
+
+I den fulle koden er flyten et attributt $(u, v).f$ på hver kant i $G$. Linje 3 leter etter en sti i
+restnettet, og linje 5 til 8 går gjennom stien. Et steg med en kant i $G$ øker flyten i kanten
+(linje 7), og et steg mot en kant senker flyten i den (linje 8). Koden skriver $c_f$ som `c_f`.
+
+<CodeBlock
+  id="ff-kode"
+  lang="text"
+  code={`Ford-Fulkerson(G, s, t)
+1  for each edge (u, v) ∈ G.E
+2      (u, v).f = 0
+3  while there is a path p from s to t in G_f
+4      c_f(p) = min {c_f(u, v) : (u, v) is in p}
+5      for each edge (u, v) in p
+6          if (u, v) ∈ G.E
+7              (u, v).f = (u, v).f + c_f(p)
+8          else (v, u).f = (v, u).f − c_f(p)
+9  return f`}
+/>
+
+Finner linje 3 stien med bredde-først-søk (BFS), heter algoritmen
+<Term name="Edmonds-Karp">Edmonds-Karp</Term>. BFS finner en sti med færrest mulig kanter. Stepperen
+kjører Edmonds-Karp på rørene fra simuleringen.
+
+<Stepper
+  src="/steppers/edmonds-karp.js"
+  codeId="ff-kode"
+  title="Edmonds-Karp"
+  height={360}
+  caption="Rørene fra simuleringen med flyt/kapasitet i $G$ til venstre og restnettet $G_f$ til høyre. Stien BFS fant, er markert i restnettet, flaskehalsen får ramme når den velges, og tallet ved en node i restnettet er avstanden fra kilden i antall kanter. Restnettet står slik BFS så det til flyten er oppdatert langs hele stien."
+/>
+
+Med kapasitetene stepperen starter med, finner BFS de to stiene du sendte langs først i simuleringen, og
+så stien mot røret fra 3 til 4, der koden bruker linje 8. BFS tar alltid en sti med færrest mulig kanter.
+Når flere er like korte, tar den stien den finner først, og stepperen ser på 3 før 2 fra kilden. Til slutt
+kommer ikke BFS fram til sluket, og løkka stopper med ${|f| = 16}$.
+
+<Example label="Eksamensoppgave" title="Stiene Edmonds-Karp finner">
+<ExamRef id="2023-des" task="6" />
+
+Hvilke forøkende stier vil Edmonds-Karp finne i flytnettet i figur 2? Det er altså meningen at du
+skal utføre Edmonds-Karp på flytnettet, men uten initialiseringen ${(u, v).f = 0}$. Oppgi stiene som
+sekvenser av noder. Skriv én sti per linje, i den rekkefølgen de finnes. For eksempel:
+
+```text
+1, 2, 3, 4, 5
+7, 6, 5, 4, 3, 2, 1
+4, 5, 6, 7, 8, 9
+```
+
+(Dette er kun et eksempel på formatet, ikke et faktisk gyldig sett med stier.)
+
+<Figure
+  src="/figures/eksamen-2023-12-oppgave-6.svg"
+  alt="Et flytnett med noder 1 til 9 i tre rader, kilde s = 4 og sluk t = 6, med flyt og kapasitet på hver kant."
+  caption="Flytnettet i oppgavesettet, med flyt/kapasitet på hver kant."
+  number={2}
+  width={340}
+  height={284}
+/>
+
+<Solution>
+Fra 4 er kantene til 1 og 8 fulle, så BFS kommer bare videre til 5 (restkapasitet ${3 - 1 = 2}$) og 7
+(${5 - 2 = 3}$). Fra 5 er kanten til 6 full, men kanten fra 3 til 5 fører 2, så restnettet har kanten
+fra 5 til 3 med 2. Fra 3 til 6 er det ${6 - 3 = 3}$ ledig. Fra 7 kommer BFS til 8, men kanten fra 8 til 6 er full, så
+4, 5, 3, 6 er den eneste stien med tre kanter. Den korteste stien er altså 4, 5, 3, 6, med
+flaskehals ${\min(2, 2, 3) = 2}$. Flyten i $(3, 5)$ synker til 0, $(4, 5)$ blir 3/3 og $(3, 6)$ 5/6.
+
+Nå er kanten fra 4 til 5 full. Fra 7 går det 2 ledig til 8, fra 8 til 6 er fullt, fra 8 til 9 er
+det 2 ledig og fra 9 til 6 4 ledig. Stien er 4, 7, 8, 9, 6 med flaskehals 2. Deretter er kanten fra 7
+til 8 full, og BFS kommer bare fram til 4 og 7, så det finnes ingen flere stier. Flyten har økt fra 13 til 17.
+
+<Answer>
+4, 5, 3, 6 og deretter 4, 7, 8, 9, 6.
+</Answer>
+</Solution>
+</Example>
+
+## Snitt
+
+Figur 3 viser rørene fra simuleringen ved 16 liter i sekundet. Ingen sti kommer fram til sluket, og
+nodene 1, 2, 3 og 4, de som en sti kan nå fram til, er fylt. Alt vann fra kilden må ut av disse nodene for å komme til sluket, og bare to rør går ut av
+dem: røret fra 3 til 5, som tåler 12, og røret fra 4 til 6, som tåler 4. Mer enn ${12 + 4 = 16}$ kan
+derfor aldri komme fram, uansett hvordan vannet fordeles.
+
+<Figure
+  src="/figures/snitt-ved-16.svg"
+  alt="Rørene fra simuleringen ved 16 liter i sekundet. Nodene 1, 2, 3 og 4 er fylt, og en stiplet linje skiller dem fra 5 og 6. Linja krysser de fulle rørene fra 3 til 5 og fra 4 til 6 og det tomme røret fra 5 til 4."
+  caption="Rørene fra simuleringen ved 16 liter i sekundet. De fylte nodene er dem en sti fra kilden kan nå fram til, og den stiplede linja skiller dem fra resten."
+  number={3}
+  width={340}
+  height={360}
+/>
+
+Delingen i nodene 1, 2, 3 og 4 og resten er et <Term name="Snitt">snitt</Term> $(S, T)$, med ${T = V - S}$. I et
+flytnett krever et snitt at $s \in S$ og $t \in T$. Kapasiteten til snittet er summen over kantene fra
+$S$ til $T$, og nettoflyten over snittet er flyten fra $S$ til $T$ minus flyten fra $T$ til $S$:
+
+$$
+c(S, T) = \sum_{u \in S} \sum_{v \in T} c(u, v) ,
+$$
+
+$$
+f(S, T) = \sum_{u \in S} \sum_{v \in T} f(u, v) \allowbreak - \sum_{u \in S} \sum_{v \in T} f(v, u) .
+$$
+
+Kapasiteten teller bare kantene fra $S$ til $T$. Røret fra 5 til 4 går fra $T$ til $S$ og er ikke med
+i ${c(S, T) = 16}$.
+
+Nettoflyten over hvert snitt er $|f|$. Vannet starter i $s$, som er i $S$, og skal til $t$, som er i
+$T$, og det samles ikke opp noe sted på veien. En liter som går tilbake fra $T$ til $S$, må over
+snittet en gang til for å nå sluket, så den teller med pluss og minus og bare én gang i alt.
+Utregningen står under. Flyten fra $T$ til $S$ er minst 0, og flyten fra $S$ til $T$ er høyst
+kapasiteten, så
+
+<Formula
+  tex="|f| = f(S, T) \le c(S, T)"
+  caption="For hver flyt $f$ og hvert snitt $(S, T)$."
+/>
+
+<Derivation title="Hvorfor nettoflyten over et snitt er $|f|$">
+For hver node $u$ i $S$, se på flyten ut av $u$ minus flyten inn i $u$. For ${u = s}$ er den $|f|$. For alle andre noder i $S$ er den 0, fordi $t$ er i $T$ og flyten inn er lik flyten ut i alle noder unntatt $s$ og $t$. Summen over hele $S$ er derfor
+
+$$
+|f| = \sum_{u \in S} \sum_{v \in V} f(u, v) \allowbreak - \sum_{u \in S} \sum_{v \in V} f(v, u) .
+$$
+
+Del summene over $v$ i ${v \in S}$ og ${v \in T}$. En kant $(x, y)$ med begge ender i $S$ står med pluss i den første summen, der ${u = x}$, og med minus i den andre, der ${u = y}$, så den faller bort. Bare leddene med ${v \in T}$ er igjen:
+
+$$
+|f| = \sum_{u \in S} \sum_{v \in T} f(u, v) \allowbreak - \sum_{u \in S} \sum_{v \in T} f(v, u) \allowbreak = f(S, T) .
+$$
+</Derivation>
+
+Et <Term name="Minimalt snitt">minimalt snitt</Term> er et snitt med lavest mulig kapasitet. For
+rørene i figur 3 er det $(\{1, 2, 3, 4\}, \{5, 6\})$, med kapasitet 16. Ingen flyt er større
+enn 16, og Edmonds-Karp fant en flyt på 16, så den er maksimal.
+
+<Callout type="tip" title="Snitt">
+Nettoflyten over hvert snitt er $|f|$, og den er høyst kapasiteten, summen over kantene fra $S$ til $T$. Ett snitt med kapasitet $k$ viser at ingen flyt er større enn $k$.
+</Callout>
+
+<Quiz
+  question={"Hva er kapasiteten til snittet $(\\{1, 2, 4\\}, \\{3, 5, 6\\})$ i figur 3?"}
+  options={["17", "37", "$-3$", "13"]}
+  answer={0}
+  explanation={"Kantene fra ${S = \\{1, 2, 4\\}}$ til $T$ er $(1, 3)$ med 13 og $(4, 6)$ med 4, så ${c(S, T) = 17}$. Kantene $(3, 2)$, $(3, 4)$ og $(5, 4)$ går fra $T$ til $S$ og telles ikke, verken med pluss, som gir 37, eller med minus, som gir ${17 - 20 = -3}$. 13 er flyten etter de to første stiene, ikke kapasiteten."}
+/>
+
+## Maks-flyt-min-snitt-teoremet
+
+Figur 4 viser rørene ved 13 liter i sekundet, etter de to første stiene i simuleringen. En sti uten
+oppheving kan bare nå fram til nodene 1, 2 og 4, og rørene ut av dem er fulle. Likevel er ikke 13 det
+meste. Røret fra 3 til 4 går inn til de fylte nodene og fører vann, og nettoflyten trekker fra det som
+går inn. Snittet rundt de fylte nodene har derfor høyere kapasitet enn flyten, og vannet i røret fra 3
+til 4 er flyt en sti kan oppheve.
+
+<Figure
+  src="/figures/stopp-ved-13.svg"
+  alt="Rørene fra simuleringen ved 13 liter i sekundet. Nodene 1, 2 og 4 er fylt. Rørene fra 1 til 3 og fra 4 til 6 er fulle, og røret fra 3 til 4 fører 4 av 9."
+  caption="Rørene fra simuleringen ved 13 liter i sekundet, etter stiene 1, 3, 4, 6 og 1, 3, 5, 6. De fylte nodene er dem en sti uten oppheving kan nå fram til."
+  number={4}
+  width={340}
+  height={360}
+/>
+
+Når restnettet ikke har noen sti fra $s$ til $t$, finnes ingen slik flyt å oppheve. La $S$ være nodene
+$s$ kan nå fram til i restnettet, og $T$ resten. En kant $(u, v)$ fra $S$ til $T$ er full, fordi
+restnettet ellers ville hatt en kant fra $u$ til $v$, og $v$ kunne vært nådd. En kant $(v, u)$ fra $T$
+til $S$ er tom, fordi restnettet ellers ville hatt en kant fra $u$ til $v$ mot den. Da er ${f(S, T) = c(S, T)}$, og siden ${|f| \le c(S, T)}$
+for hver flyt, finnes ingen større flyt.
+
+<Statement kind="theorem" name="Maks-flyt-min-snitt-teoremet" id="teoremet-maks-flyt-min-snitt">
+For en flyt $f$ i et flytnett $G$ med kilde $s$ og sluk $t$ er disse tre utsagnene ekvivalente:
+
+1. $f$ er en maksimal flyt i $G$.
+2. Restnettet $G_f$ har ingen forøkende sti.
+3. ${|f| = c(S, T)}$ for et snitt $(S, T)$ i $G$.
+</Statement>
+
+Fra 1 til 2: hvis $G_f$ hadde en forøkende sti, kunne $|f|$ økes langs den, og $f$ ville ikke vært
+maksimal. Fra 2 til 3 er argumentet over, med $S$ som nodene $s$ kan nå fram til i $G_f$. Fra 3 til 1: hver
+flyt er høyst ${c(S, T) = |f|}$. Den største flytverdien er altså lik den minste snittkapasiteten.
+
+En traversering fra $s$ i restnettet gir dermed ett av to svar: en forøkende sti, eller et snitt som
+viser at flyten er maksimal. Når Ford-Fulkerson stopper, har den siste traverseringen ikke nådd $t$,
+og nodene den nådde, er $S$ i et minimalt snitt. Med kapasitetene stepperen starter med, er det de
+fylte nodene 1, 2, 3 og 4 i siste steg.
+
+<Callout type="tip" title="Minimalt snitt fra Ford-Fulkerson">
+Når Ford-Fulkerson stopper, er nodene $s$ kan nå fram til i restnettet, $S$ i et minimalt snitt. Kantene ut av $S$ er fulle, og kantene inn til $S$ er tomme.
+</Callout>
+
+<Quiz
+  question={"Du har en flyt $f$ med ${|f| = 10}$ og et snitt $(S, T)$ med ${c(S, T) = 10}$ i det samme flytnettet. Hva vet du?"}
+  options={[
+    "$f$ er maksimal, og $(S, T)$ er et minimalt snitt.",
+    "$f$ er maksimal, men et annet snitt kan ha lavere kapasitet.",
+    "$(S, T)$ er minimalt, men $G_f$ kan ha en forøkende sti.",
+    "Ingenting, før du har kjørt Ford-Fulkerson.",
+  ]}
+  answer={0}
+  explanation={"Hver flyt er høyst kapasiteten til hvert snitt. Ingen flyt er større enn ${c(S, T) = 10}$, så $f$ er maksimal, og da har $G_f$ ingen forøkende sti. Et snitt med kapasitet under 10 ville gitt ${|f| \\le}$ den kapasiteten ${< 10}$, så ingen snitt har lavere kapasitet, og $(S, T)$ er minimalt."}
+/>
+
+## Kjøretid
+
+Hver runde i Ford-Fulkerson finner en sti i restnettet med en traversering. Restnettet har $|V|$
+noder og høyst $2|E|$ kanter, og siden hver node ligger på en sti fra $s$, er ${|E| \ge |V| - 1}$. Én
+runde tar derfor $O(E)$. Antall runder avhenger av kapasitetene. Når alle kapasitetene er heltall,
+starter flyten på 0, og hver runde legger til eller trekker fra $c_f(p)$, som da er et heltall. Hver
+runde øker $|f|$ med minst 1, så med $f^*$ for en maksimal flyt blir det høyst $|f^*|$ runder:
+
+<Formula
+  tex="O(E\,|f^*|)"
+  caption="Ford-Fulkerson når alle kapasitetene er heltall: høyst $|f^*|$ runder, hver $O(E)$."
+/>
+
+Figur 5 viser at antall runder kan følge $|f^*|$. Fire rør tåler 1 000 000 hver, og røret fra $u$ til $v$
+tåler 1. Velger Ford-Fulkerson stien ${s, u, v, t}$, sender den 1. Neste runde kan den velge
+${s, v, u, t}$, som går mot det tynne røret, opphever den ene literen og sender 1 til. Veksler den slik
+mellom de to stiene, tar det 2 000 000 runder. Med stiene ${s, u, t}$ og ${s, v, t}$ er Ford-Fulkerson ferdig etter 2 runder.
+
+<Figure
+  src="/figures/ford-fulkerson-sakte.svg"
+  alt="Fire noder s, u, v og t med fire rør på 1 000 000 og røret fra u til v på 1. Øverst går stien s, u, v, t gjennom det tynne røret, nederst går stien s, v, u, t mot det."
+  caption="Et flytnett der Ford-Fulkerson kan bruke 2 000 000 runder. Bredden på rørene er ikke i skala. Øverst går den første stien gjennom røret fra $u$ til $v$, nederst går den neste mot det."
+  number={5}
+  width={340}
+  height={372}
+/>
+
+Kjøretiden er <Term name="Pseudopolynomisk kjøretid">pseudopolynomisk</Term>, som for det binære ryggsekkproblemet: kapasiteten 1 000 000 tar bare 20 bits
+å skrive, men antall runder følger verdien. Kapasiteter som er brøker, kan skaleres opp til heltall.
+Med irrasjonale kapasiteter er det ikke sikkert at Ford-Fulkerson stopper.
+
+Edmonds-Karp lar BFS velge stien. I figur 5 har ${s, u, t}$ og ${s, v, t}$ to kanter og ${s, u, v, t}$ tre,
+så BFS tar de korte stiene og er ferdig etter 2 runder. Uansett kapasiteter gjør Edmonds-Karp
+$O(VE)$ runder:
+
+<Formula
+  tex="O(VE^2)"
+  caption="Edmonds-Karp: $O(VE)$ runder, hver $O(E)$."
+/>
+
+To ting holder antall runder nede. Den første er at avstanden fra $s$ til en node i restnettet, i
+antall kanter, aldri synker fra én runde til den neste. I stepperen er avstandene tallene ved nodene i
+restnettet, og ingen av dem blir mindre fra én runde til den neste. Den andre er at kanten som
+er flaskehals, forsvinner fra restnettet. Før den kan bli flaskehals igjen, må en senere sti gå den
+andre veien, og da har avstanden fra $s$ til $u$, noden kanten går ut fra, økt med minst 2. En avstand er høyst $|V|$, så
+hver kant er flaskehals $O(V)$ ganger. Hver runde har minst én flaskehals, og restnettet kan ha høyst
+$2|E|$ ulike kanter, så det blir $O(VE)$ runder.
+
+<Derivation title="Hvorfor avstandene i restnettet ikke synker">
+La $\delta(v)$ være avstanden fra $s$ til $v$ i restnettet før en runde, og $\delta'(v)$ etter. Anta at noen noder kom nærmere, og la $v$ være den av dem som har lavest $\delta'(v)$. La $u$ være noden foran $v$ på en korteste sti fra $s$ til $v$ i det nye restnettet, så ${\delta'(u) = \delta'(v) - 1}$. Siden $\delta'(u)$ er lavere enn $\delta'(v)$, kom ikke $u$ nærmere, og ${\delta(u) \le \delta'(u)}$.
+
+Hvis kanten $(u, v)$ fantes i restnettet før runden, er
+
+$$
+\delta(v) \le \delta(u) + 1 \allowbreak \le \delta'(u) + 1 \allowbreak = \delta'(v) ,
+$$
+
+og $v$ kom ikke nærmere. Altså fantes ikke $(u, v)$ før runden, men gjør det etter. Da må runden ha sendt flyt fra $v$ til $u$. Stien BFS fant, er en korteste sti, så den gikk fra $v$ til $u$ med ${\delta(u) = \delta(v) + 1}$. Da er
+
+$$
+\delta(v) = \delta(u) - 1 \allowbreak \le \delta'(u) - 1 \allowbreak = \delta'(v) - 2 ,
+$$
+
+og igjen kom ikke $v$ nærmere. Ingen node kan altså komme nærmere $s$.
+</Derivation>
+
+<Derivation title="Hvorfor en kant er flaskehals høyst $|V|/2$ ganger">
+La $(u, v)$ være flaskehals i en runde. Stien er en korteste sti, så ${\delta(v) = \delta(u) + 1}$, og etter runden er $(u, v)$ borte fra restnettet. Kanten kommer bare tilbake når en senere runde sender flyt fra $v$ til $u$, langs en korteste sti. Da er ${\delta''(u) = \delta''(v) + 1}$, der $\delta''$ er avstandene i den senere runden. Avstandene synker ikke, så ${\delta''(v) \ge \delta(v)}$, og
+
+$$
+\delta''(u) = \delta''(v) + 1 \allowbreak \ge \delta(v) + 1 \allowbreak = \delta(u) + 2 .
+$$
+
+Mellom to ganger $(u, v)$ er flaskehals, øker altså $\delta(u)$ med minst 2. Avstanden er minst 0 og høyst $|V| - 2$ så lenge $u$ kan nås og ikke er $t$, så $(u, v)$ er flaskehals høyst $|V|/2$ ganger.
+</Derivation>
+
+<Quiz
+  question={"I figur 5 bytter du ut 1 000 000 med 1000 i de fire store rørene. Hvor mange runder kan Ford-Fulkerson bruke i verste fall, og hvor mange bruker Edmonds-Karp?"}
+  options={[
+    "2000 og 2",
+    "2000 og 2000",
+    "1000 og 2",
+    "2 og 2",
+  ]}
+  answer={0}
+  explanation={"Den største flyten er ${1000 + 1000 = 2000}$. Ford-Fulkerson kan veksle mellom ${s, u, v, t}$ og ${s, v, u, t}$ og sende 1 hver gang, altså 2000 runder. BFS velger stiene med to kanter, ${s, u, t}$ og ${s, v, t}$, som sender 1000 hver."}
+/>
+
+## Heltallsteoremet
+
+Argumentet for kjøretiden viser mer enn antall runder. Når kapasitetene er heltall, er flyten i hver
+kant et heltall gjennom hele kjøringen, også når Ford-Fulkerson stopper.
+
+<Statement kind="theorem" name="Heltallsteoremet" id="teoremet-heltall">
+Hvis alle kapasitetene i et flytnett er heltall, finner Ford-Fulkerson en maksimal flyt $f$ der $|f|$ og flyten $f(u, v)$ i hver kant er heltall.
+</Statement>
+
+Teoremet sier ikke at hver maksimal flyt er heltallig. Ta et flytnett med kantene fra $s$ til $a$, fra $s$ til $b$,
+fra $a$ til $d$, fra $b$ til $d$ og fra $d$ til $t$, alle med kapasitet 1. Den største flyten er 1,
+fordi alt må gjennom kanten fra $d$ til $t$. Ford-Fulkerson sender hele 1 via $a$ eller via $b$, men
+en flyt med $\tfrac12$ via $a$ og $\tfrac12$ via $b$ har også verdi 1. Med heltallsteoremet kan
+flyt løse problemer der svaret må være hele ting, som hvem som får hvilken jobb.
+
+<Example label="Eksamensoppgave" title="Heltallsflyt">
+<ExamRef id="2026-aug-kont" task="11" />
+
+Gløgsund, Klokland og Flinckenhagen diskuterer flyt. De er enige om at i et flytnett (flow network)
+med heltallskapasiteter så vil den største mulige flytverdien være et heltall. Men:
+
+- Gløgsund mener også at flyten i alle kantene da også må være heltall.
+- Klokland mener at det stemmer for løsninger funnet med Ford–Fulkerson-metoden, men at det kan finnes
+  andre optimale løsninger der noen av kantene ikke har heltallsflyt.
+- Flinckenhagen mener også at det kan finnes optimale løsninger der noen kanter ikke har heltallsflyt,
+  men hun mener også at Ford–Fulkerson-metoden også kan ende opp med noen av disse.
+
+Hvem av dem har rett? Gi en kort, intuitiv forklaring. Forklaringen trenger ikke være et bevis eller
+fullstendig argument.
+
+<Solution>
+Ford-Fulkerson starter med flyt 0 i alle kanter, og hver runde endrer flyten med flaskehalsen
+$c_f(p)$. Når kapasitetene er heltall, er alle restkapasitetene heltall, så flaskehalsen er det også,
+og flyten i hver kant forblir et heltall. Flinckenhagen tar feil om Ford-Fulkerson. Men andre
+maksimale flyter kan dele flyten: med to stier som møtes i én kant med kapasitet 1, kan $\tfrac12$ gå
+langs hver av dem. Gløgsund tar derfor feil.
+
+<Answer>Klokland har rett.</Answer>
+</Solution>
+</Example>
+
+## Bipartitt matching
+
+Tre kandidater skal intervjues, og det er tre ledige tider, kl. 9, 10 og 11. A kan kl. 9 og 10, B
+bare kl. 9, og C kl. 10 og 11. Hver tid kan brukes til én kandidat. Setter du A til kl. 9 og C til
+kl. 10, får B ingen tid, men alle tre får en tid med A kl. 10, B kl. 9 og C kl. 11.
+
+Kandidatene og tidene er nodene i en urettet graf, med en kant mellom en kandidat og hver tid
+kandidaten kan. Grafen er <Term name="Bipartitt graf">bipartitt</Term>: nodene er delt i to mengder
+$L$ og $R$, her kandidatene og tidene, og hver kant går mellom dem. En
+<Term name="Matching">matching</Term> er en mengde kanter $M$ der ingen to kanter har en node felles,
+og en maksimum matching har flest mulig kanter.
+
+<Figure
+  src="/figures/matching-som-flyt.svg"
+  alt="Kandidatene A, B og C og tidene kl. 9, 10 og 11 som et flytnett fra s til t med kapasitet 1 i hvert rør. Øverst er A satt til kl. 9 og C til kl. 10, og en forøkende sti går s, B, 9, A, 10, C, 11, t. Nederst er A satt til kl. 10, B til kl. 9 og C til kl. 11."
+  caption="Intervjuene som flytnett, med kapasitet 1 i alle rørene. Øverst en matching med to kanter og en forøkende sti, nederst matchingen etter at flyten er økt langs stien."
+  number={6}
+  width={340}
+  height={400}
+/>
+
+Figur 6 viser intervjuene som flytnett. Rett kantene fra $L$ til $R$, legg til en kilde $s$ med en kant til
+hver node i $L$ og et sluk $t$ med en kant fra hver node i $R$, og gi alle kantene kapasitet 1. En
+matching gir en flyt: send 1 fra $s$ langs hver kant i matchingen og videre til $t$. Omvendt sender en
+kandidat høyst 1 videre, fordi bare 1 kommer inn, og en tid tar imot høyst 1, fordi bare 1 kan gå ut.
+Er flyten i hver kant 0 eller 1, er kantene fra $L$ til $R$ med flyt 1 derfor en matching med $|f|$
+kanter. Heltallsteoremet sier at Ford-Fulkerson finner en slik flyt, så en maksimum matching har like
+mange kanter som verdien av en maksimal flyt.
+
+
+Øverst i figur 6 er A satt til kl. 9 og C til kl. 10, og den forøkende
+stien er $s$, B, 9, A, 10, C, 11, $t$. Den går mot kanten fra A til 9 og mot kanten fra C til 10: B
+tar kl. 9 fra A, A tar kl. 10 fra C, og C tar kl. 11. Annenhver kant mellom kandidater og tider på
+stien kommer med i matchingen, og annenhver går ut, så matchingen får én kant mer.
+
+En kandidat får høyst 1, så ${|f^*| \le |L| \le |V|}$. Flytnettet har $|E| + |V|$ kanter, som er $O(E)$
+når hver node har minst én kant, så Ford-Fulkerson finner en maksimum matching på ${O(E\,|f^*|) = O(VE)}$.
+
+<Callout type="tip" title="Matching som flyt">
+Gi kilden en kant til hver node i $L$, rett kantene fra $L$ til $R$, og gi hver node i $R$ en kant til sluket, alle med kapasitet 1. Heltallsteoremet gir en flyt med 0 eller 1 i hver kant, og kantene fra $L$ til $R$ med flyt 1 er en maksimum matching.
+</Callout>
+
+<Quiz
+  question={"Hva skjer hvis kantene fra $s$ til kandidatene får kapasitet 2 i stedet for 1?"}
+  options={[
+    "En kandidat kan få to tider, så flyten er ikke lenger en matching.",
+    "En tid kan få to kandidater, så flyten er ikke lenger en matching.",
+    "Ingenting, kantene mellom kandidater og tider har fortsatt kapasitet 1.",
+    "Heltallsteoremet gjelder ikke lenger, så flyten kan bli en brøk.",
+  ]}
+  answer={0}
+  explanation={"Med 2 inn kan en kandidat sende 1 til hver av to tider, og begge kantene har kapasitet 1. Da deler to kanter i flyten en node. En tid tar fortsatt imot høyst 1, fordi kanten til $t$ har kapasitet 1, og kapasiteten 2 er et heltall, så heltallsteoremet gjelder."}
+/>
+
+## Reduksjoner til flyt
+
+Intervjuene ble løst med en reduksjon. Du bygger et flytnett av instansen, løser maks-flyt og leser
+svaret av flyten. Mange problemer løses slik, og nettet du bygger, må passe til definisjonen av et flytnett.
+Figur 7 viser hvordan du gjør om to ting definisjonen ikke tillater.
+
+<Figure
+  src="/figures/antiparallelle-og-superkilde.svg"
+  alt="Øverst blir kantene fra u til v med 10 og fra v til u med 4 til kanten fra u til v og kantene fra v til en ny node x og fra x til u, begge med 4. Nederst får tre kilder en felles superkilde s og to sluk et felles supersluk t, med kanter med uendelig kapasitet."
+  caption="Øverst: et par antiparallelle kanter, og det samme nettet med en ny node $x$. Nederst: tre kilder og to sluk, med en superkilde $s$ og et supersluk $t$."
+  number={7}
+  width={340}
+  height={312}
+/>
+
+Har nettet både $(u, v)$ og $(v, u)$, deler du den ene med en ny node $x$: $(v, u)$ blir $(v, x)$ og
+$(x, u)$, begge med kapasitet $c(v, u)$. Alt som kunne gå fra $v$ til $u$, kan gå via $x$, så den
+største flyten er den samme. Har nettet flere kilder og flere sluk, legger du til en superkilde $s$
+med en kant med kapasitet $\infty$ til hver kilde, og et supersluk $t$ med en kant med kapasitet
+$\infty$ fra hvert sluk. Kildene og slukene blir vanlige noder, og en flyt fra $s$ til $t$ er en flyt
+fra kildene til slukene.
+
+<Example title="Ferievakter på et legekontor">
+Et legekontor vil ha minst én lege på vakt hver dag i feriene. Hver lege kan bare noen av feriedagene,
+og ingen lege skal jobbe mer enn $c$ feriedager i alt eller mer enn én dag i hver ferie.
+Finn en vaktplan, eller vis at det ikke finnes noen.
+
+<Solution>
+Bygg et flytnett med en node for hver lege, en node for hver feriedag og en node for hvert par av lege
+og ferie:
+
+- En kant fra $s$ til hver lege med kapasitet $c$, så ingen lege jobber mer enn $c$ dager.
+- En kant fra hver lege til hvert av parene sine med kapasitet 1, så ingen lege jobber mer enn én dag
+  i hver ferie.
+- En kant fra paret (lege, ferie) til hver dag i ferien legen kan jobbe, med kapasitet 1.
+- En kant fra hver feriedag til $t$ med kapasitet 1.
+
+Kapasitetene er heltall, så Ford-Fulkerson finner en flyt der hver kant har 0 eller 1, bortsett fra
+kantene fra $s$. En feriedag med flyt 1 til $t$ har flyt fra nøyaktig ett par (lege, ferie), og det
+paret sier hvilken lege som tar dagen. Hver kant inn til $t$ har kapasitet 1, så $|f|$ er høyst
+antall feriedager.
+
+<Answer>
+En vaktplan finnes hvis og bare hvis den største flyten er lik antall feriedager. Legen på dag $x$ er
+legen som sender flyt til $x$ gjennom paret sitt for den ferien.
+</Answer>
+</Solution>
+</Example>
+
+<Example label="Eksamensoppgave" title="Ansatte på prosjekter">
+<ExamRef id="2023-aug-kont" task="17" />
+
+Et byggefirma har flere store oppdrag og skal fordele sine ansatte på disse. Hvert prosjekt har et
+sett med roller (tømrer, elektriker, rørlegger, etc.) og et antall som trengs av hver av disse. Hver
+ansatt er kompetent til å fylle én eller flere slike roller, men kan maksimalt delta i ett prosjekt,
+og fyller da nøyaktig én rolle. For å holde reiseavstandene nede kan hver ansatt bare bli tilordnet et
+prosjekt innenfor en gitt avstand fra hjemstedet.
+
+Hvordan ville du ha funnet en gyldig fordeling?
+
+<Solution>
+Reduser til maks-flyt, slik ferievaktene ble redusert. Lag en node for hver ansatt og en node for hvert
+par av prosjekt og rolle. Gi kanten fra $s$ til hver ansatt kapasitet 1, så hver ansatt fyller høyst
+én rolle i ett prosjekt. Legg en kant med kapasitet 1 fra en ansatt til paret (prosjekt, rolle) når
+den ansatte kan fylle rollen og prosjektet ligger innenfor avstanden. Gi kanten fra paret til $t$
+kapasitet lik antallet som trengs av rollen i prosjektet. Kjør Ford-Fulkerson. Heltallsteoremet gir
+en flyt der hver ansatt sender 0 eller 1, til ett par, og det paret er rollen den ansatte får.
+
+<Answer>
+En gyldig fordeling finnes hvis og bare hvis den største flyten er lik summen av antallene som trengs.
+</Answer>
+</Solution>
+</Example>
+
+<KeyTakeaways>
+- Et flytnett er en rettet graf med kapasiteter, en kilde $s$ og et sluk $t$. En flyt holder seg innenfor kapasitetene, og i hver node unntatt $s$ og $t$ går like mye inn som ut.
+- Restnettet har kanter med restkapasitet $c(u, v) - f(u, v)$ med hver kant og $f(u, v)$ mot den. En sti mot en kant opphever flyt i den.
+- Ford-Fulkerson øker flyten langs forøkende stier til restnettet ikke har noen sti fra $s$ til $t$. Med BFS er det Edmonds-Karp, som tar $O(VE^2)$.
+- For hver flyt og hvert snitt er ${|f| \le c(S, T)}$, og den største flytverdien er lik den minste snittkapasiteten. Nodene $s$ kan nå fram til i det siste restnettet, er $S$ i et minimalt snitt.
+- Med heltallskapasiteter tar Ford-Fulkerson $O(E\,|f^*|)$ og finner en flyt med et heltall i hver kant.
+- En maksimum bipartitt matching har like mange kanter som verdien av en maksimal flyt fra $s$ via $L$ og $R$ til $t$ med kapasitet 1 i alle kantene.
+</KeyTakeaways>
